@@ -7,8 +7,11 @@ import androidx.lifecycle.viewModelScope
 import com.example.points.models.Incident
 import com.example.points.models.EstadoIncidente
 import com.example.points.models.TipoIncidente
+import com.example.points.models.TipoUsuario
 import com.example.points.models.Ubicacion
+import com.example.points.models.User
 import com.example.points.repository.IncidentRepository
+import com.example.points.repository.UserRepository
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,7 +24,9 @@ data class IncidentUiState(
     val errorMessage: String? = null,
     val selectedIncident: Incident? = null,
     val filterType: TipoIncidente? = null,
-    val filterStatus: EstadoIncidente? = null
+    val filterStatus: EstadoIncidente? = null,
+    val currentUser: User? = null,
+    val isUserAdmin: Boolean = false
 )
 
 data class CreateIncidentUiState(
@@ -35,7 +40,11 @@ data class CreateIncidentUiState(
 )
 
 class IncidentViewModel(
-    private val repository: IncidentRepository = IncidentRepository()
+    val repository: IncidentRepository = IncidentRepository(),
+    private val userRepository: UserRepository = UserRepository(
+        com.google.firebase.firestore.FirebaseFirestore.getInstance(),
+        com.google.firebase.auth.FirebaseAuth.getInstance()
+    )
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(IncidentUiState())
@@ -46,6 +55,7 @@ class IncidentViewModel(
     
     init {
         loadAllIncidents()
+        loadCurrentUser()
     }
     
     fun loadAllIncidents() {
@@ -231,5 +241,27 @@ class IncidentViewModel(
     
     fun clearCreateIncidentError() {
         _createIncidentState.value = _createIncidentState.value.copy(errorMessage = null)
+    }
+    
+    fun loadCurrentUser() {
+        viewModelScope.launch {
+            try {
+                val user = userRepository.getCurrentUser().getOrNull()
+                val isAdmin = user?.tipo == TipoUsuario.ADMINISTRADOR
+                
+                _uiState.value = _uiState.value.copy(
+                    currentUser = user,
+                    isUserAdmin = isAdmin
+                )
+                
+                Log.d("IncidentViewModel", "Usuario cargado: ${user?.nombre}, Tipo: ${user?.tipo}, Es admin: $isAdmin")
+            } catch (e: Exception) {
+                Log.e("IncidentViewModel", "Error al cargar usuario actual", e)
+                _uiState.value = _uiState.value.copy(
+                    currentUser = null,
+                    isUserAdmin = false
+                )
+            }
+        }
     }
 }

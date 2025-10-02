@@ -1,11 +1,15 @@
 package com.example.points
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -15,6 +19,9 @@ import com.example.points.auth.LoginScreen
 import com.example.points.auth.RegisterScreen
 import com.example.points.profile.ProfileScreen
 import com.example.points.components.MainLayout
+import com.example.points.screens.HomeScreen
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.points.viewmodel.IncidentViewModel
 
 @Composable
 fun AppNavigation(navController: NavHostController = rememberNavController()) {
@@ -62,7 +69,11 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 navController = navController,
                 onProfileClick = { navController.navigate("profile") }
             ) {
-                HomeScreen()
+                val viewModel: IncidentViewModel = viewModel()
+                HomeScreen(
+                    navController = navController,
+                    viewModel = viewModel
+                )
             }
         }
 
@@ -72,7 +83,10 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 onProfileClick = { navController.navigate("profile") }
             ) {
                 com.example.points.screens.IncidentsMapScreen(
-                    onCreateIncidentClick = { navController.navigate("create_incident") }
+                    onCreateIncidentClick = { navController.navigate("create_incident") },
+                    onIncidentDetailClick = { incidentId -> 
+                        navController.navigate("incident_detail/$incidentId")
+                    }
                 )
             }
         }
@@ -82,6 +96,18 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 onBackClick = { navController.popBackStack() },
                 onIncidentCreated = { 
                     navController.popBackStack()
+                }
+            )
+        }
+        
+        composable("incident_detail/{incidentId}") { backStackEntry ->
+            val incidentId = backStackEntry.arguments?.getString("incidentId") ?: ""
+            com.example.points.screens.IncidentDetailScreen(
+                incidentId = incidentId,
+                onBackClick = { navController.popBackStack() },
+                onEditClick = { 
+                    // TODO: Implementar edición de incidente
+                    navController.navigate("edit_incident/$incidentId")
                 }
             )
         }
@@ -130,43 +156,96 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
     }
 }
 
-// Screens que antes estaban en MainScreen
-@Composable
-fun HomeScreen() {
-    Text(
-        text = "Inicio",
-        style = MaterialTheme.typography.headlineMedium
-    )
-}
-
-@Composable
-fun IncidentsScreen() {
-    Text(
-        text = "Incidentes",
-        style = MaterialTheme.typography.headlineMedium
-    )
-}
-
+// Pantallas temporales (placeholders)
 @Composable
 fun PlacesScreen() {
-    Text(
-        text = "Lugares",
-        style = MaterialTheme.typography.headlineMedium
-    )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            Icons.Default.LocationOn,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "🏢 Lugares de Interés",
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Próximamente: Restaurantes, cultura, entretenimiento y áreas verdes",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            textAlign = TextAlign.Center
+        )
+    }
 }
 
 @Composable
 fun EventsScreen() {
-    Text(
-        text = "Eventos",
-        style = MaterialTheme.typography.headlineMedium
-    )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            Icons.Default.Event,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "🎉 Eventos Urbanos",
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Próximamente: Actividades, festivales y eventos comunitarios",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            textAlign = TextAlign.Center
+        )
+    }
 }
 
 @Composable
 fun AlertsScreen() {
-    Text(
-        text = "Alertas",
-        style = MaterialTheme.typography.headlineMedium
-    )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            Icons.Default.NotificationImportant,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "🔔 Alertas y Notificaciones",
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Próximamente: Notificaciones en tiempo real sobre eventos cercanos",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            textAlign = TextAlign.Center
+        )
+    }
 }
