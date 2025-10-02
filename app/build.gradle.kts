@@ -49,7 +49,13 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-storage")
     implementation("com.google.firebase:firebase-analytics")
-// Coil para Compose
+    
+    // Google Maps
+    implementation("com.google.maps.android:maps-compose:4.4.1")
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+    
+    // Coil para Compose
     implementation("io.coil-kt:coil-compose:2.7.0")
 
     // Jetpack Compose
@@ -61,6 +67,8 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    // Extended icons (Event, Report, NotificationImportant, etc.)
+    implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.androidx.compose.runtime)
     implementation(libs.lifecycle.viewmodel.compose)
     // Tests
