@@ -31,6 +31,8 @@ import androidx.navigation.NavHostController
 import com.example.points.R
 import com.example.points.models.TipoUsuario
 import com.example.points.viewmodel.IncidentViewModel
+import com.example.points.components.*
+import com.valentinilk.shimmer.shimmer
 import kotlinx.coroutines.delay
 
 // Datos para las tarjetas de características principales
@@ -328,7 +330,22 @@ fun HomeScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(cityStats) { stat ->
-                StatsCard(stat = stat)
+                if (uiState?.isLoading == true) {
+                    ShimmerPanel(
+                        modifier = Modifier.width(150.dp).height(120.dp)
+                    ) {
+                        // Placeholder content
+                    }
+                } else {
+                    GradientCard(
+                        colors = listOf(
+                            stat.color.copy(alpha = 0.3f),
+                            stat.color.copy(alpha = 0.1f)
+                        )
+                    ) {
+                        StatsCard(stat = stat)
+                    }
+                }
             }
         }
         
@@ -346,31 +363,108 @@ fun HomeScreen(
             modifier = Modifier.padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            features.chunked(2).forEach { rowFeatures ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    rowFeatures.forEach { feature ->
-                        FeatureCard(
-                            feature = feature,
-                            modifier = Modifier.weight(1f),
-                            onClick = {
-                                when (feature.route) {
-                                    "create_incident" -> navController.navigate("create_incident")
-                                    "incidents" -> navController.navigate("incidents")
-                                    "places" -> navController.navigate("places")
-                                    "events" -> navController.navigate("events")
-                                }
+            features.forEach { feature ->
+                if (uiState?.isLoading == true) {
+                    ShimmerPanel(
+                        modifier = Modifier.height(84.dp)
+                    ) {
+                        // Placeholder content
+                    }
+                } else {
+                    ModernMenuItem(
+                        title = feature.title,
+                        subtitle = feature.description,
+                        icon = feature.icon,
+                        containerColor = when (feature.route) {
+                            "create_incident" -> MaterialTheme.colorScheme.errorContainer
+                            "incidents" -> MaterialTheme.colorScheme.primaryContainer
+                            "places" -> MaterialTheme.colorScheme.secondaryContainer
+                            "events" -> MaterialTheme.colorScheme.tertiaryContainer
+                            else -> MaterialTheme.colorScheme.primaryContainer
+                        },
+                        iconColor = when (feature.route) {
+                            "create_incident" -> MaterialTheme.colorScheme.onErrorContainer
+                            "incidents" -> MaterialTheme.colorScheme.onPrimaryContainer
+                            "places" -> MaterialTheme.colorScheme.onSecondaryContainer
+                            "events" -> MaterialTheme.colorScheme.onTertiaryContainer
+                            else -> MaterialTheme.colorScheme.onPrimaryContainer
+                        },
+                        titleColor = when (feature.route) {
+                            "create_incident" -> MaterialTheme.colorScheme.onErrorContainer
+                            "incidents" -> MaterialTheme.colorScheme.onPrimaryContainer
+                            "places" -> MaterialTheme.colorScheme.onSecondaryContainer
+                            "events" -> MaterialTheme.colorScheme.onTertiaryContainer
+                            else -> MaterialTheme.colorScheme.onPrimaryContainer
+                        },
+                        subtitleColor = when (feature.route) {
+                            "create_incident" -> MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.7f)
+                            "incidents" -> MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                            "places" -> MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                            "events" -> MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
+                            else -> MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                        },
+                        onClick = {
+                            when (feature.route) {
+                                "create_incident" -> navController.navigate("create_incident")
+                                "incidents" -> navController.navigate("incidents")
+                                "places" -> navController.navigate("places")
+                                "events" -> navController.navigate("events")
                             }
-                        )
-                    }
-                    // Agregar spacer si hay un número impar de elementos
-                    if (rowFeatures.size == 1) {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
+                        }
+                    )
                 }
             }
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        // Sección de menú adicional con diferentes estilos
+        Text(
+            text = "⚙️ Configuración y Herramientas",
+            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Ejemplo con secondaryContainer
+            ModernMenuItem(
+                title = "Perfil de Usuario",
+                subtitle = "Gestiona tu información personal y preferencias",
+                icon = Icons.Default.Person,
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                iconColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                titleColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                subtitleColor = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
+                onClick = { navController.navigate("profile") }
+            )
+            
+            // Ejemplo con tertiaryContainer
+            ModernMenuItem(
+                title = "Configuración",
+                subtitle = "Ajustes de la aplicación y notificaciones",
+                icon = Icons.Default.Settings,
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                iconColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                titleColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                subtitleColor = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f),
+                onClick = { navController.navigate("settings") }
+            )
+            
+            // Ejemplo con surfaceVariant
+            ModernMenuItem(
+                title = "Ayuda y Soporte",
+                subtitle = "Centro de ayuda, FAQ y contacto",
+                icon = Icons.Default.Help,
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                subtitleColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                onClick = { navController.navigate("help") }
+            )
         }
         
         Spacer(modifier = Modifier.height(24.dp))
@@ -626,7 +720,7 @@ private fun StatsCard(
 }
 
 @Composable
-private fun FeatureCard(
+fun FeatureCard(
     feature: FeatureCard,
     onClick: () -> Unit,
     modifier: Modifier = Modifier

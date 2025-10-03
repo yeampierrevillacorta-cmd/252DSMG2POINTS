@@ -68,13 +68,13 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             MainLayout(
                 navController = navController,
                 onProfileClick = { navController.navigate("profile") }
-            ) {
-                val viewModel: IncidentViewModel = viewModel()
-                HomeScreen(
-                    navController = navController,
-                    viewModel = viewModel
-                )
-            }
+                ) {
+                    val viewModel: IncidentViewModel = viewModel()
+                    HomeScreen(
+                        navController = navController,
+                        viewModel = viewModel
+                    )
+                }
         }
 
         composable("incidents") {

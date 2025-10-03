@@ -57,6 +57,26 @@ dependencies {
     
     // Coil para Compose
     implementation("io.coil-kt:coil-compose:2.7.0")
+    
+    // Lottie para animaciones
+    implementation("com.airbnb.android:lottie-compose:6.1.0")
+    
+    // Shimmer para efectos de carga
+    implementation("com.valentinilk.shimmer:compose-shimmer:1.2.0")
+    
+    // Accompanist para efectos adicionales
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
+    implementation("com.google.accompanist:accompanist-pager:0.32.0")
+    implementation("com.google.accompanist:accompanist-pager-indicators:0.32.0")
+    
+    // Material 3 Extended
+    implementation("androidx.compose.material3:material3-window-size-class:1.1.2")
+    
+    // ConstraintLayout para Compose
+    implementation("androidx.constraintlayout:constraintlayout-compose:1.0.1")
+    
+    // Navigation Animation
+    implementation("com.google.accompanist:accompanist-navigation-animation:0.32.0")
 
     // Jetpack Compose
     implementation(libs.androidx.core.ktx)
