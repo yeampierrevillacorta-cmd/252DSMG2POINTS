@@ -9,6 +9,11 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.NotificationImportant
 import androidx.compose.material.icons.filled.Report
+import androidx.compose.material.icons.filled.AdminPanelSettings
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -28,12 +33,21 @@ sealed class BottomNavItem(
     val label: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector
 ) {
+    // Elementos para ciudadanos
     object Home : BottomNavItem("home", "INICIO", Icons.Filled.Home)
     object Incidents : BottomNavItem("incidents", "INCIDENTES", Icons.Filled.Report)
     object Places : BottomNavItem("places", "LUGARES", Icons.Filled.LocationOn)
     object Events : BottomNavItem("events", "EVENTOS", Icons.Filled.Event)
     object Alerts : BottomNavItem("alerts", "ALERTAS", Icons.Filled.NotificationImportant)
     object Profile : BottomNavItem("profile", "PERFIL", Icons.Filled.NotificationImportant)
+    
+    // Elementos para administradores
+    object AdminHome : BottomNavItem("admin_home", "INICIO", Icons.Filled.AdminPanelSettings)
+    object AdminIncidents : BottomNavItem("admin_incidents", "INCIDENTES", Icons.Filled.Report)
+    object AdminUsers : BottomNavItem("admin_users", "USUARIOS", Icons.Filled.People)
+    object AdminAnalytics : BottomNavItem("admin_analytics", "ANALÍTICAS", Icons.Filled.Analytics)
+    object AdminSettings : BottomNavItem("admin_settings", "CONFIG", Icons.Filled.Settings)
+    object AdminProfile : BottomNavItem("admin_profile", "PERFIL", Icons.Filled.Person)
 }
 
 @Composable
@@ -55,6 +69,39 @@ fun MainLayout(
     Scaffold(
         topBar = {
             AppHeader(onProfileClick = onProfileClick)
+        },
+        bottomBar = {
+            BottomBar(navController = navController, items = items)
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            content()
+        }
+    }
+}
+
+@Composable
+fun AdminMainLayout(
+    navController: NavHostController,
+    onProfileClick: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    val items = listOf(
+        BottomNavItem.AdminHome,
+        BottomNavItem.AdminIncidents,
+        BottomNavItem.AdminUsers,
+        BottomNavItem.AdminAnalytics,
+        BottomNavItem.AdminSettings,
+        BottomNavItem.AdminProfile
+    )
+
+    BackToAdminHomeOnBack(navController = navController)
+
+    Scaffold(
+        topBar = {
+            AdminAppHeader()
         },
         bottomBar = {
             BottomBar(navController = navController, items = items)
@@ -100,6 +147,19 @@ private fun BackToHomeOnBack(navController: NavHostController) {
     val currentRoute = navBackStackEntry?.destination?.route
     BackHandler(enabled = currentRoute != BottomNavItem.Home.route) {
         navController.navigate(BottomNavItem.Home.route) {
+            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+}
+
+@Composable
+private fun BackToAdminHomeOnBack(navController: NavHostController) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    BackHandler(enabled = currentRoute != BottomNavItem.AdminHome.route) {
+        navController.navigate(BottomNavItem.AdminHome.route) {
             popUpTo(navController.graph.findStartDestination().id) { saveState = true }
             launchSingleTop = true
             restoreState = true

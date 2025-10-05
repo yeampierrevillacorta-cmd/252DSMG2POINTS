@@ -25,13 +25,22 @@ class UserRepository @Inject constructor(
             if (currentUser == null) {
                 Result.success(null)
             } else {
-                val userDoc = firestore.collection("usuarios")
+                val userDoc = firestore.collection("users")
                     .document(currentUser.uid)
                     .get()
                     .await()
                 
                 if (userDoc.exists()) {
-                    val user = userDoc.toObject(User::class.java)?.copy(id = userDoc.id)
+                    val data = userDoc.data
+                    val user = User(
+                        id = userDoc.id,
+                        nombre = data?.get("Nombre") as? String ?: "Usuario",
+                        email = data?.get("email") as? String ?: currentUser.email ?: "",
+                        telefono = data?.get("Telefono") as? String ?: "",
+                        notificaciones = data?.get("notificaciones") as? Boolean ?: true,
+                        tipo = parseTipoUsuario(data?.get("tipo") as? String),
+                        photoUrl = currentUser.photoUrl?.toString()
+                    )
                     Result.success(user)
                 } else {
                     // Si no existe en Firestore, crear un usuario básico
@@ -47,6 +56,18 @@ class UserRepository @Inject constructor(
             }
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+    
+    /**
+     * Convierte el string del tipo de usuario a enum
+     */
+    private fun parseTipoUsuario(tipoString: String?): TipoUsuario {
+        return when (tipoString) {
+            "ADMINISTRADOR" -> TipoUsuario.ADMINISTRADOR
+            "MODERADOR" -> TipoUsuario.MODERADOR
+            "CIUDADANO" -> TipoUsuario.CIUDADANO
+            else -> TipoUsuario.CIUDADANO // Por defecto ciudadano
         }
     }
     
@@ -86,11 +107,63 @@ class UserRepository @Inject constructor(
     }
     
     /**
+     * Verifica directamente desde Firestore si el usuario actual es administrador
+     */
+    suspend fun isCurrentUserAdminFromFirestore(): Boolean {
+        return try {
+            val currentUser = auth.currentUser
+            if (currentUser == null) {
+                false
+            } else {
+                val userDoc = firestore.collection("users")
+                    .document(currentUser.uid)
+                    .get()
+                    .await()
+                
+                if (userDoc.exists()) {
+                    val tipo = userDoc.data?.get("tipo") as? String
+                    tipo == "ADMINISTRADOR"
+                } else {
+                    false
+                }
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    /**
+     * Verifica directamente desde Firestore si el usuario actual es administrador o moderador
+     */
+    suspend fun isCurrentUserAdminOrModeratorFromFirestore(): Boolean {
+        return try {
+            val currentUser = auth.currentUser
+            if (currentUser == null) {
+                false
+            } else {
+                val userDoc = firestore.collection("users")
+                    .document(currentUser.uid)
+                    .get()
+                    .await()
+                
+                if (userDoc.exists()) {
+                    val tipo = userDoc.data?.get("tipo") as? String
+                    tipo == "ADMINISTRADOR" || tipo == "MODERADOR"
+                } else {
+                    false
+                }
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    /**
      * Actualiza el tipo de usuario (solo para testing o admin functions)
      */
     suspend fun updateUserType(userId: String, newType: TipoUsuario): Result<Unit> {
         return try {
-            firestore.collection("usuarios")
+            firestore.collection("users")
                 .document(userId)
                 .update("tipo", newType.name)
                 .await()

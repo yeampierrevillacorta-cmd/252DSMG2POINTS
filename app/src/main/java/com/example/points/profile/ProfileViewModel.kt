@@ -33,8 +33,8 @@ class ProfileViewModel : ViewModel() {
         firestore.collection("users").document(id).get()
             .addOnSuccessListener { doc ->
                 if (doc.exists()) {
-                    val name = doc.getString("name") ?: ""
-                    val phone = doc.getString("phone") ?: ""
+                    val name = doc.getString("Nombre") ?: ""
+                    val phone = doc.getString("Telefono") ?: ""
                     val photo = doc.getString("photoUrl")
                     _profile.value = UserProfile(name, phone, photo)
                 }
@@ -44,7 +44,7 @@ class ProfileViewModel : ViewModel() {
     fun updateProfile(name: String, phone: String, photoUri: Uri?, onSuccess: () -> Unit) {
         val id = uid ?: return
         _isLoading.value = true
-        val updates = hashMapOf<String, Any>("name" to name, "phone" to phone)
+        val updates = hashMapOf<String, Any>("Nombre" to name, "Telefono" to phone)
 
         if (photoUri != null) {
             val ref = storage.reference.child("profile_images/$id.jpg")

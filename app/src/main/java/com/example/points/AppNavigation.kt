@@ -1,26 +1,47 @@
 package com.example.points
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.NotificationImportant
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.NavHost  
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.points.auth.ForgotPasswordScreen
 import com.example.points.auth.LoginScreen
 import com.example.points.auth.RegisterScreen
-import com.example.points.profile.ProfileScreen
 import com.example.points.components.MainLayout
+import com.example.points.components.AdminMainLayout
+import com.example.points.models.TipoUsuario
+import com.example.points.profile.ProfileScreen
+import com.example.points.profile.EditProfileScreen
+import com.example.points.screens.AdminHomeScreen
+import com.example.points.screens.ClientHomeScreen
 import com.example.points.screens.HomeScreen
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.points.viewmodel.IncidentViewModel
 
 @Composable
@@ -30,10 +51,24 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
         // Pantallas de autenticación (sin header ni bottom bar)
         composable("login") {
             LoginScreen(
-                onLoginSuccess = {
+                onLoginSuccess = { userType ->
                     Toast.makeText(navController.context, "Login exitoso ✅", Toast.LENGTH_SHORT).show()
-                    navController.navigate("home") {
-                        popUpTo("login") { inclusive = true }
+                    when (userType) {
+                        TipoUsuario.ADMINISTRADOR -> {
+                            navController.navigate("admin_home") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        }
+                        TipoUsuario.MODERADOR -> {
+                            navController.navigate("admin_home") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        }
+                        else -> {
+                            navController.navigate("client_home") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        }
                     }
                 },
                 onRegisterClick = { navController.navigate("register") },
@@ -45,7 +80,7 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             RegisterScreen(
                 onRegisterSuccess = {
                     Toast.makeText(navController.context, "Registro exitoso ✅", Toast.LENGTH_SHORT).show()
-                    navController.navigate("home") {
+                    navController.navigate("client_home") {
                         popUpTo("login") { inclusive = true }
                     }
                 },
@@ -63,7 +98,35 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             )
         }
 
-        // Pantallas principales (con header y bottom bar)
+        // Pantalla de administrador
+        composable("admin_home") {
+            AdminMainLayout(
+                navController = navController,
+                onProfileClick = { navController.navigate("admin_profile") }
+            ) {
+                val viewModel: IncidentViewModel = viewModel()
+                AdminHomeScreen(
+                    navController = navController,
+                    viewModel = viewModel
+                )
+            }
+        }
+
+        // Pantalla de cliente/ciudadano
+        composable("client_home") {
+            MainLayout(
+                navController = navController,
+                onProfileClick = { navController.navigate("profile") }
+            ) {
+                val viewModel: IncidentViewModel = viewModel()
+                ClientHomeScreen(
+                    navController = navController,
+                    viewModel = viewModel
+                )
+            }
+        }
+
+        // Pantalla principal (legacy - mantener para compatibilidad)
         composable("home") {
             MainLayout(
                 navController = navController,
@@ -149,8 +212,117 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                         navController.navigate("login") {
                             popUpTo("profile") { inclusive = true }
                         }
+                    },
+                    onEditProfile = {
+                        navController.navigate("edit_profile")
                     }
                 )
+            }
+        }
+
+        composable("edit_profile") {
+            MainLayout(
+                navController = navController,
+                onProfileClick = { navController.navigate("profile") }
+            ) {
+                EditProfileScreen(
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onSaveSuccess = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+        }
+
+        // Pantallas de administración
+        composable("admin_incidents") {
+            AdminMainLayout(
+                navController = navController,
+                onProfileClick = { navController.navigate("admin_profile") }
+            ) {
+                AdminIncidentsScreen()
+            }
+        }
+
+        composable("admin_users") {
+            AdminMainLayout(
+                navController = navController,
+                onProfileClick = { navController.navigate("admin_profile") }
+            ) {
+                AdminUsersScreen()
+            }
+        }
+
+        composable("admin_analytics") {
+            AdminMainLayout(
+                navController = navController,
+                onProfileClick = { navController.navigate("admin_profile") }
+            ) {
+                AdminAnalyticsScreen()
+            }
+        }
+
+        composable("admin_settings") {
+            AdminMainLayout(
+                navController = navController,
+                onProfileClick = { navController.navigate("admin_profile") }
+            ) {
+                AdminSettingsScreen()
+            }
+        }
+
+        composable("admin_profile") {
+            AdminMainLayout(
+                navController = navController,
+                onProfileClick = { navController.navigate("admin_profile") }
+            ) {
+                ProfileScreen(
+                    onSignOut = {
+                        navController.navigate("login") {
+                            popUpTo("admin_profile") { inclusive = true }
+                        }
+                    },
+                    onEditProfile = {
+                        navController.navigate("admin_edit_profile")
+                    }
+                )
+            }
+        }
+
+        composable("admin_edit_profile") {
+            AdminMainLayout(
+                navController = navController,
+                onProfileClick = { navController.navigate("admin_profile") }
+            ) {
+                EditProfileScreen(
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onSaveSuccess = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+        }
+
+        // Pantallas específicas de cliente
+        composable("my_reports") {
+            MainLayout(
+                navController = navController,
+                onProfileClick = { navController.navigate("profile") }
+            ) {
+                MyReportsScreen()
+            }
+        }
+
+        composable("notifications") {
+            MainLayout(
+                navController = navController,
+                onProfileClick = { navController.navigate("profile") }
+            ) {
+                NotificationsScreen()
             }
         }
     }
@@ -243,6 +415,194 @@ fun AlertsScreen() {
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "Próximamente: Notificaciones en tiempo real sobre eventos cercanos",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+// Pantallas de administración (placeholders)
+@Composable
+fun AdminIncidentsScreen() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            Icons.Default.Assignment,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "🔧 Gestión de Incidentes",
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Próximamente: Panel de administración para gestionar incidentes",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+fun AdminUsersScreen() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            Icons.Default.People,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "👥 Gestión de Usuarios",
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Próximamente: Panel de administración para gestionar usuarios",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+fun AdminAnalyticsScreen() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            Icons.Default.Analytics,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "📊 Analíticas del Sistema",
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Próximamente: Dashboard con estadísticas y reportes del sistema",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+fun AdminSettingsScreen() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            Icons.Default.Settings,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "⚙️ Configuración del Sistema",
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Próximamente: Configuración avanzada del sistema",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+// Pantallas específicas de cliente (placeholders)
+@Composable
+fun MyReportsScreen() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            Icons.Default.History,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "📋 Mis Reportes",
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Próximamente: Historial de tus reportes y su estado",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+fun NotificationsScreen() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            Icons.Default.Notifications,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "🔔 Notificaciones",
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Próximamente: Centro de notificaciones y alertas",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
             textAlign = TextAlign.Center
