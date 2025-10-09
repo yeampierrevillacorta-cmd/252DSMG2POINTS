@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.google.gms.google.services)
 }
 
+
 android {
     namespace = "com.example.points"
     compileSdk = 36
@@ -63,6 +64,9 @@ dependencies {
     
     // Shimmer para efectos de carga
     implementation("com.valentinilk.shimmer:compose-shimmer:1.2.0")
+    
+    // Environment variables
+    implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
     
     // Accompanist para efectos adicionales
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")

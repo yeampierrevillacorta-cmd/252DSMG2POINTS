@@ -29,7 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.rememberAsyncImagePainter
+import com.example.points.components.OptimizedAsyncImage
 import com.example.points.models.TipoIncidente
 import com.example.points.models.Ubicacion
 import com.example.points.viewmodel.IncidentViewModel
@@ -251,14 +251,13 @@ fun CreateIncidentScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         
                         if (createState.selectedImageUri != null) {
-                            Image(
-                                painter = rememberAsyncImagePainter(createState.selectedImageUri),
+                            OptimizedAsyncImage(
+                                imageUrl = createState.selectedImageUri?.toString(),
                                 contentDescription = "Imagen seleccionada",
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(200.dp)
-                                    .clip(RoundedCornerShape(8.dp)),
-                                contentScale = ContentScale.Crop
+                                    .clip(RoundedCornerShape(8.dp))
                             )
                             
                             Spacer(modifier = Modifier.height(8.dp))

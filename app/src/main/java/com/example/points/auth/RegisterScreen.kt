@@ -13,7 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.rememberAsyncImagePainter
+import com.example.points.components.OptimizedRoundedImage
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 
 import androidx.compose.material.icons.filled.Person
@@ -43,17 +43,11 @@ fun RegisterScreen(
         Spacer(Modifier.height(12.dp))
 
         // Foto de perfil
-        Box(modifier = Modifier.size(100.dp), contentAlignment = Alignment.Center) {
-            if (uiState.photoUri != null) {
-                Image(
-                    painter = rememberAsyncImagePainter(uiState.photoUri),
-                    contentDescription = "Foto seleccionada",
-                    modifier = Modifier.size(100.dp)
-                )
-            } else {
-                Icon(Icons.Default.Person, contentDescription = "Seleccionar foto", modifier = Modifier.size(48.dp))
-            }
-        }
+        OptimizedRoundedImage(
+            imageUrl = uiState.photoUri?.toString(),
+            contentDescription = "Foto seleccionada",
+            size = 100.dp
+        )
 
         TextButton(onClick = { launcher.launch("image/*") }) {
             Text("Seleccionar foto de perfil (opcional)")

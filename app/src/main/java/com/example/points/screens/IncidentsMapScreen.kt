@@ -33,8 +33,7 @@ import kotlinx.coroutines.launch
 import android.util.Log
 import com.example.points.models.TipoIncidente
 import com.example.points.viewmodel.IncidentViewModel
-import com.example.points.utils.TestDataCreator
-import com.example.points.utils.TestUserCreator
+// Los imports de datos de prueba han sido eliminados
 import com.example.points.utils.MarkerUtils
 import com.example.points.utils.MapStyleUtils
 import com.example.points.utils.ShareUtils
@@ -83,7 +82,7 @@ fun IncidentsMapScreen(
         ) 
     }
     var cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(LatLng(-12.0464, -77.0428), 12f) // Lima, Perú
+        position = CameraPosition.fromLatLngZoom(LatLng(0.0, 0.0), 2f) // Posición neutral hasta obtener ubicación real
     }
     
     // Estado para permisos de ubicación
@@ -288,21 +287,8 @@ fun IncidentsMapScreen(
                 
                 if (uiState.incidents.isEmpty() && !uiState.isLoading) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Button(
-                        onClick = { 
-                            Log.d("IncidentsMap", "Creando datos de prueba...")
-                            TestDataCreator.createTestIncidents()
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondary
-                        )
-                    ) {
-                        Text(
-                            text = "🧪 Crear datos de prueba",
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                    }
+                    // Función de datos de prueba eliminada
+                    // Los datos ahora se obtienen de Firebase
                     
                     Spacer(modifier = Modifier.height(4.dp))
                     
@@ -342,53 +328,8 @@ fun IncidentsMapScreen(
                     
                     Spacer(modifier = Modifier.height(4.dp))
                     
-                    // Botones para cambiar tipo de usuario (solo para testing)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Button(
-                            onClick = { 
-                                coroutineScope.launch {
-                                    val success = TestUserCreator.makeCurrentUserAdmin()
-                                    if (success) {
-                                        viewModel.loadCurrentUser() // Recargar usuario
-                                        Log.d("IncidentsMap", "Usuario convertido a administrador")
-                                    }
-                                }
-                            },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
-                        ) {
-                            Text(
-                                text = "👑 Admin",
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        }
-                        
-                        Button(
-                            onClick = { 
-                                coroutineScope.launch {
-                                    val success = TestUserCreator.makeCurrentUserCitizen()
-                                    if (success) {
-                                        viewModel.loadCurrentUser() // Recargar usuario
-                                        Log.d("IncidentsMap", "Usuario convertido a ciudadano")
-                                    }
-                                }
-                            },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondary
-                            )
-                        ) {
-                            Text(
-                                text = "👤 Ciudadano",
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        }
-                    }
+                    // Botones de prueba de usuario eliminados
+                    // Los tipos de usuario ahora se manejan a través de Firebase Auth
                 }
                 
                 // Mostrar ubicación de incidentes si los hay

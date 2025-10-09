@@ -36,6 +36,12 @@ class LoginViewModel : ViewModel() {
             return
         }
 
+        // Validación adicional del formato del email
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            _uiState.value = _uiState.value.copy(errorMessage = "Por favor ingresa un correo electrónico válido")
+            return
+        }
+
         _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
 
         viewModelScope.launch {

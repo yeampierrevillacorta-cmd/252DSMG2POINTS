@@ -180,8 +180,50 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 navController = navController,
                 onProfileClick = { navController.navigate("profile") }
             ) {
-                PlacesScreen()
+                com.example.points.screens.POISearchScreen(
+                    navController = navController
+                )
             }
+        }
+        
+        composable("poi_map") {
+            MainLayout(
+                navController = navController,
+                onProfileClick = { navController.navigate("profile") }
+            ) {
+                com.example.points.screens.POIMapScreen(
+                    navController = navController
+                )
+            }
+        }
+        
+        composable("poi_map/{lat}/{lon}") { backStackEntry ->
+            val lat = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull() ?: 0.0
+            val lon = backStackEntry.arguments?.getString("lon")?.toDoubleOrNull() ?: 0.0
+            MainLayout(
+                navController = navController,
+                onProfileClick = { navController.navigate("profile") }
+            ) {
+                com.example.points.screens.POIMapScreen(
+                    navController = navController,
+                    targetLat = lat,
+                    targetLon = lon
+                )
+            }
+        }
+        
+        composable("poi_detail/{poiId}") { backStackEntry ->
+            val poiId = backStackEntry.arguments?.getString("poiId") ?: ""
+            com.example.points.screens.POIDetailScreen(
+                navController = navController,
+                poiId = poiId
+            )
+        }
+        
+        composable("submit_poi") {
+            com.example.points.screens.POISubmissionScreen(
+                navController = navController
+            )
         }
 
         composable("events") {
@@ -270,6 +312,18 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 onProfileClick = { navController.navigate("admin_profile") }
             ) {
                 AdminSettingsScreen()
+            }
+        }
+        
+        // Gestión de POIs para administradores
+        composable("admin_pois") {
+            AdminMainLayout(
+                navController = navController,
+                onProfileClick = { navController.navigate("admin_profile") }
+            ) {
+                com.example.points.screens.AdminPOIManagementScreen(
+                    navController = navController
+                )
             }
         }
 

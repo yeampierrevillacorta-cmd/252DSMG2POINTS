@@ -23,7 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.rememberAsyncImagePainter
+import com.example.points.components.OptimizedRoundedImage
 import com.google.firebase.auth.FirebaseAuth
 import com.example.points.repository.UserRepository
 import com.example.points.models.TipoUsuario
@@ -84,22 +84,11 @@ fun ProfileScreen(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (profile.photoUrl != null) {
-                        Image(
-                            painter = rememberAsyncImagePainter(profile.photoUrl),
-                            contentDescription = "Foto de perfil",
-                            modifier = Modifier
-                                .size(120.dp)
-                                .clip(CircleShape)
-                        )
-                    } else {
-                        Icon(
-                            Icons.Default.Person,
-                            contentDescription = "Sin foto",
-                            modifier = Modifier.size(60.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                    OptimizedRoundedImage(
+                        imageUrl = profile.photoUrl,
+                        contentDescription = "Foto de perfil",
+                        size = 120.dp
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -383,30 +372,11 @@ fun EditProfileScreen(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (photoUri != null) {
-                        Image(
-                            painter = rememberAsyncImagePainter(photoUri),
-                            contentDescription = "Foto de perfil",
-                            modifier = Modifier
-                                .size(120.dp)
-                                .clip(CircleShape)
-                        )
-                    } else if (profile.photoUrl != null) {
-                        Image(
-                            painter = rememberAsyncImagePainter(profile.photoUrl),
-                            contentDescription = "Foto de perfil",
-                            modifier = Modifier
-                                .size(120.dp)
-                                .clip(CircleShape)
-                        )
-                    } else {
-                        Icon(
-                            Icons.Default.Person,
-                            contentDescription = "Sin foto",
-                            modifier = Modifier.size(60.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                    OptimizedRoundedImage(
+                        imageUrl = photoUri?.toString() ?: profile.photoUrl,
+                        contentDescription = "Foto de perfil",
+                        size = 120.dp
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))

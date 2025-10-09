@@ -19,7 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.rememberAsyncImagePainter
+import com.example.points.components.OptimizedIncidentImage
 import com.example.points.components.ShareOptionsDialog
 import com.example.points.models.Incident
 import com.example.points.utils.MarkerUtils
@@ -299,14 +299,10 @@ private fun IncidentDetailContent(
                         
                         Spacer(modifier = Modifier.height(12.dp))
                         
-                        Image(
-                            painter = rememberAsyncImagePainter(imageUrl),
+                        OptimizedIncidentImage(
+                            imageUrl = imageUrl,
                             contentDescription = "Foto del incidente",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(200.dp)
-                                .clip(RoundedCornerShape(12.dp)),
-                            contentScale = ContentScale.Crop
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }

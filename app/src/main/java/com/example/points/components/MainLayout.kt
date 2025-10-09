@@ -44,6 +44,7 @@ sealed class BottomNavItem(
     // Elementos para administradores
     object AdminHome : BottomNavItem("admin_home", "INICIO", Icons.Filled.AdminPanelSettings)
     object AdminIncidents : BottomNavItem("admin_incidents", "INCIDENTES", Icons.Filled.Report)
+    object AdminPOIs : BottomNavItem("admin_pois", "LUGARES", Icons.Filled.LocationOn)
     object AdminUsers : BottomNavItem("admin_users", "USUARIOS", Icons.Filled.People)
     object AdminAnalytics : BottomNavItem("admin_analytics", "ANALÍTICAS", Icons.Filled.Analytics)
     object AdminSettings : BottomNavItem("admin_settings", "CONFIG", Icons.Filled.Settings)
@@ -91,6 +92,7 @@ fun AdminMainLayout(
     val items = listOf(
         BottomNavItem.AdminHome,
         BottomNavItem.AdminIncidents,
+        BottomNavItem.AdminPOIs,
         BottomNavItem.AdminUsers,
         BottomNavItem.AdminAnalytics,
         BottomNavItem.AdminSettings,

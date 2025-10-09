@@ -1,13 +1,16 @@
 package com.example.points.components
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -15,572 +18,664 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.example.points.ui.theme.*
 
 /**
- * Botón con efecto de neón
+ * Sistema de botones para POINTS
+ * Basado en Material 3 con estados interactivos y animaciones sutiles
+ */
+
+/**
+ * Botón primario - Acción principal
+ * Usa el color primario de la marca con ripple sutil
  */
 @Composable
-fun NeonButton(
+fun PrimaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     text: String,
     icon: ImageVector? = null,
-    neonColor: Color = Color.Cyan
+    iconPosition: IconPosition = IconPosition.Start,
+    size: ButtonSize = ButtonSize.Medium,
+    loading: Boolean = false,
+    contentDescription: String? = null
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "neon")
-    val glowAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.3f,
-        targetValue = 0.8f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = EaseInOutSine),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "glow_alpha"
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    val isFocused by interactionSource.collectIsFocusedAsState()
+    
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.98f else 1f,
+        animationSpec = tween(Duration.fast),
+        label = "button_scale"
     )
     
-    var isPressed by remember { mutableStateOf(false) }
+    val elevation by animateFloatAsState(
+        targetValue = when {
+            isPressed -> 0.dp.value
+            isHovered -> Elevation.sm.value
+            else -> Elevation.none.value
+        },
+        animationSpec = tween(Duration.fast),
+        label = "button_elevation"
+    )
+    
+    Button(
+        onClick = onClick,
+        enabled = enabled && !loading,
+        modifier = modifier
+            .scale(scale)
+            .height(size.height)
+            .clip(PointsCustomShapes.button),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        ),
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = elevation.dp,
+            pressedElevation = 0.dp,
+            hoveredElevation = Elevation.sm,
+            focusedElevation = Elevation.xs,
+            disabledElevation = 0.dp
+        ),
+        interactionSource = interactionSource,
+        contentPadding = PaddingValues(
+            horizontal = size.paddingHorizontal,
+            vertical = size.paddingVertical
+        )
+    ) {
+        if (loading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(IconSize.sm),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.onPrimary
+            )
+        } else {
+            ButtonContent(
+                text = text,
+                icon = icon,
+                iconPosition = iconPosition,
+                contentDescription = contentDescription
+            )
+        }
+    }
+}
+
+/**
+ * Botón secundario - Acción secundaria
+ * Usa el color secundario de la marca
+ */
+@Composable
+fun SecondaryButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    text: String,
+    icon: ImageVector? = null,
+    iconPosition: IconPosition = IconPosition.Start,
+    size: ButtonSize = ButtonSize.Medium,
+    loading: Boolean = false,
+    contentDescription: String? = null
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.98f else 1f,
+        animationSpec = tween(Duration.fast),
+        label = "button_scale"
+    )
+    
+    Button(
+        onClick = onClick,
+        enabled = enabled && !loading,
+        modifier = modifier
+            .scale(scale)
+            .height(size.height)
+            .clip(PointsCustomShapes.button),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.secondary,
+            contentColor = MaterialTheme.colorScheme.onSecondary,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        ),
+        interactionSource = interactionSource,
+        contentPadding = PaddingValues(
+            horizontal = size.paddingHorizontal,
+            vertical = size.paddingVertical
+        )
+    ) {
+        if (loading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(IconSize.sm),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.onSecondary
+            )
+        } else {
+            ButtonContent(
+                text = text,
+                icon = icon,
+                iconPosition = iconPosition,
+                contentDescription = contentDescription
+            )
+        }
+    }
+}
+
+/**
+ * Botón tonal - Acción con fondo tonal
+ * Usa el color primario con transparencia
+ */
+@Composable
+fun TonalButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    text: String,
+    icon: ImageVector? = null,
+    iconPosition: IconPosition = IconPosition.Start,
+    size: ButtonSize = ButtonSize.Medium,
+    loading: Boolean = false,
+    contentDescription: String? = null
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.98f else 1f,
+        animationSpec = tween(Duration.fast),
+        label = "button_scale"
+    )
+    
+    Button(
+        onClick = onClick,
+        enabled = enabled && !loading,
+        modifier = modifier
+            .scale(scale)
+            .height(size.height)
+            .clip(PointsCustomShapes.button),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        ),
+        interactionSource = interactionSource,
+        contentPadding = PaddingValues(
+            horizontal = size.paddingHorizontal,
+            vertical = size.paddingVertical
+        )
+    ) {
+        if (loading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(IconSize.sm),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        } else {
+            ButtonContent(
+                text = text,
+                icon = icon,
+                iconPosition = iconPosition,
+                contentDescription = contentDescription
+            )
+        }
+    }
+}
+
+/**
+ * Botón de texto - Acción sutil
+ * Solo texto con ripple sutil
+ */
+@Composable
+fun PointsTextButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    text: String,
+    icon: ImageVector? = null,
+    iconPosition: IconPosition = IconPosition.Start,
+    size: ButtonSize = ButtonSize.Medium,
+    loading: Boolean = false,
+    contentDescription: String? = null
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.98f else 1f,
+        animationSpec = tween(Duration.fast),
+        label = "button_scale"
+    )
+    
+    TextButton(
+        onClick = onClick,
+        enabled = enabled && !loading,
+        modifier = modifier
+            .scale(scale)
+            .height(size.height)
+            .clip(PointsCustomShapes.button),
+        colors = ButtonDefaults.textButtonColors(
+            contentColor = MaterialTheme.colorScheme.primary,
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        ),
+        interactionSource = interactionSource,
+        contentPadding = PaddingValues(
+            horizontal = size.paddingHorizontal,
+            vertical = size.paddingVertical
+        )
+    ) {
+        if (loading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(IconSize.sm),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.primary
+            )
+        } else {
+            ButtonContent(
+                text = text,
+                icon = icon,
+                iconPosition = iconPosition,
+                contentDescription = contentDescription
+            )
+        }
+    }
+}
+
+/**
+ * Botón con borde - Acción con borde
+ * Borde con color primario
+ */
+@Composable
+fun OutlinedButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    text: String,
+    icon: ImageVector? = null,
+    iconPosition: IconPosition = IconPosition.Start,
+    size: ButtonSize = ButtonSize.Medium,
+    loading: Boolean = false,
+    contentDescription: String? = null
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.98f else 1f,
+        animationSpec = tween(Duration.fast),
+        label = "button_scale"
+    )
+    
+    OutlinedButton(
+        onClick = onClick,
+        enabled = enabled && !loading,
+        modifier = modifier
+            .scale(scale)
+            .height(size.height)
+            .clip(PointsCustomShapes.button),
+        colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = MaterialTheme.colorScheme.primary,
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        ),
+        border = ButtonDefaults.outlinedButtonBorder.copy(
+            width = 1.dp
+        ),
+        interactionSource = interactionSource,
+        contentPadding = PaddingValues(
+            horizontal = size.paddingHorizontal,
+            vertical = size.paddingVertical
+        )
+    ) {
+        if (loading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(IconSize.sm),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.primary
+            )
+        } else {
+            ButtonContent(
+                text = text,
+                icon = icon,
+                iconPosition = iconPosition,
+                contentDescription = contentDescription
+            )
+        }
+    }
+}
+
+/**
+ * Botón de icono - Acción con solo icono
+ * Icono circular con ripple
+ */
+@Composable
+fun IconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    icon: ImageVector,
+    contentDescription: String? = null,
+    size: IconButtonSize = IconButtonSize.Medium,
+    loading: Boolean = false
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.95f else 1f,
+        animationSpec = tween(Duration.fast),
+        label = "icon_button_scale"
+    )
     
     Box(
         modifier = modifier
-            .shadow(
-                elevation = if (isPressed) 12.dp else 8.dp,
-                shape = RoundedCornerShape(12.dp),
-                ambientColor = neonColor.copy(alpha = glowAlpha),
-                spotColor = neonColor.copy(alpha = glowAlpha)
+            .size(size.size)
+            .scale(scale)
+            .clip(CircleShape)
+            .clickable(
+                enabled = enabled && !loading,
+                onClick = onClick,
+                role = Role.Button,
+                interactionSource = interactionSource,
+                indication = null
             )
-    ) {
-        Button(
-            onClick = {
-                onClick()
-                isPressed = !isPressed
-            },
-            enabled = enabled,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = neonColor.copy(alpha = 0.1f),
-                contentColor = neonColor
+            .background(
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shape = CircleShape
             ),
-            shape = RoundedCornerShape(12.dp),
-            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
-            modifier = Modifier
-                .border(
-                    width = 2.dp,
-                    color = neonColor.copy(alpha = glowAlpha),
-                    shape = RoundedCornerShape(12.dp)
+        contentAlignment = Alignment.Center
+    ) {
+        if (loading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(size.iconSize),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.primary
+            )
+        } else {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                modifier = Modifier.size(size.iconSize),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+/**
+ * Botón flotante de acción - FAB
+ * Botón circular flotante
+ */
+@Composable
+fun FloatingActionButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    icon: ImageVector,
+    contentDescription: String? = null,
+    size: FabSize = FabSize.Medium,
+    loading: Boolean = false
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.95f else 1f,
+        animationSpec = tween(Duration.fast),
+        label = "fab_scale"
+    )
+    
+    Box(
+        modifier = modifier
+            .size(size.size)
+            .scale(scale)
+            .clip(CircleShape)
+            .clickable(
+                enabled = enabled && !loading,
+                onClick = onClick,
+                role = Role.Button,
+                interactionSource = interactionSource,
+                indication = null
+            )
+            .background(
+                color = MaterialTheme.colorScheme.primary,
+                shape = CircleShape
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        if (loading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(size.iconSize),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.onPrimary
+            )
+        } else {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                modifier = Modifier.size(size.iconSize),
+                tint = MaterialTheme.colorScheme.onPrimary
+            )
+        }
+    }
+}
+
+/**
+ * Contenido del botón con icono y texto
+ */
+@Composable
+private fun ButtonContent(
+    text: String,
+    icon: ImageVector?,
+    iconPosition: IconPosition,
+    contentDescription: String?
+) {
+    when (iconPosition) {
+        IconPosition.Start -> {
+            if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = contentDescription,
+                    modifier = Modifier.size(IconSize.sm)
                 )
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Spacer(modifier = Modifier.width(Spacing.sm))
+            }
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
+        IconPosition.End -> {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge
+            )
+            if (icon != null) {
+                Spacer(modifier = Modifier.width(Spacing.sm))
+                Icon(
+                    imageVector = icon,
+                    contentDescription = contentDescription,
+                    modifier = Modifier.size(IconSize.sm)
+                )
+            }
+        }
+        IconPosition.Top -> {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                icon?.let {
+                if (icon != null) {
                     Icon(
-                        imageVector = it,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
+                        imageVector = icon,
+                        contentDescription = contentDescription,
+                        modifier = Modifier.size(IconSize.sm)
                     )
+                    Spacer(modifier = Modifier.height(Spacing.xs))
                 }
                 Text(
                     text = text,
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.Bold
-                    )
+                    style = MaterialTheme.typography.labelLarge
                 )
             }
         }
-    }
-}
-
-/**
- * Botón con efecto de gradiente animado
- */
-@Composable
-fun GradientButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    text: String,
-    icon: ImageVector? = null,
-    colors: List<Color> = listOf(
-        MaterialTheme.colorScheme.primary,
-        MaterialTheme.colorScheme.secondary
-    )
-) {
-    val infiniteTransition = rememberInfiniteTransition(label = "gradient")
-    val gradientOffset by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(3000, easing = EaseInOutSine),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "gradient_offset"
-    )
-    
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Transparent,
-            contentColor = Color.White
-        ),
-        shape = RoundedCornerShape(12.dp),
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
-        modifier = modifier
-            .background(
-                Brush.linearGradient(
-                    colors = colors,
-                    start = androidx.compose.ui.geometry.Offset(
-                        gradientOffset * 1000f,
-                        gradientOffset * 1000f
-                    ),
-                    end = androidx.compose.ui.geometry.Offset(
-                        (1f - gradientOffset) * 1000f,
-                        (1f - gradientOffset) * 1000f
-                    )
-                ),
-                RoundedCornerShape(12.dp)
-            )
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            icon?.let {
-                Icon(
-                    imageVector = it,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontWeight = FontWeight.Bold
-                )
-            )
-        }
-    }
-}
-
-/**
- * Botón con efecto de pulso
- */
-@Composable
-fun PulseButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    text: String,
-    icon: ImageVector? = null,
-    pulseColor: Color = MaterialTheme.colorScheme.primary
-) {
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.05f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = EaseInOutSine),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulse_scale"
-    )
-    
-    val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.3f,
-        targetValue = 0.8f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = EaseInOutSine),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulse_alpha"
-    )
-    
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = pulseColor.copy(alpha = pulseAlpha * 0.2f),
-            contentColor = pulseColor
-        ),
-        shape = RoundedCornerShape(12.dp),
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
-        modifier = modifier
-            .graphicsLayer {
-                scaleX = pulseScale
-                scaleY = pulseScale
-            }
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            icon?.let {
-                Icon(
-                    imageVector = it,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontWeight = FontWeight.Bold
-                )
-            )
-        }
-    }
-}
-
-/**
- * Botón con efecto de cristal esmerilado
- */
-@Composable
-fun FrostedButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    text: String,
-    icon: ImageVector? = null
-) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.White.copy(alpha = 0.1f),
-            contentColor = Color.White
-        ),
-        shape = RoundedCornerShape(16.dp),
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
-        modifier = modifier
-            .background(
-                Brush.radialGradient(
-                    colors = listOf(
-                        Color.White.copy(alpha = 0.2f),
-                        Color.White.copy(alpha = 0.1f),
-                        Color.White.copy(alpha = 0.05f)
-                    )
-                ),
-                RoundedCornerShape(16.dp)
-            )
-            .border(
-                width = 1.dp,
-                color = Color.White.copy(alpha = 0.3f),
-                shape = RoundedCornerShape(16.dp)
-            )
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            icon?.let {
-                Icon(
-                    imageVector = it,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontWeight = FontWeight.Bold
-                )
-            )
-        }
-    }
-}
-
-/**
- * Botón con efecto de metal
- */
-@Composable
-fun MetalButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    text: String,
-    icon: ImageVector? = null
-) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFF2C2C2C),
-            contentColor = Color.White
-        ),
-        shape = RoundedCornerShape(8.dp),
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
-        modifier = modifier
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF4A4A4A),
-                        Color(0xFF2C2C2C),
-                        Color(0xFF1A1A1A)
-                    )
-                ),
-                RoundedCornerShape(8.dp)
-            )
-            .border(
-                width = 1.dp,
-                color = Color(0xFF6A6A6A),
-                shape = RoundedCornerShape(8.dp)
-            )
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            icon?.let {
-                Icon(
-                    imageVector = it,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontWeight = FontWeight.Bold
-                )
-            )
-        }
-    }
-}
-
-/**
- * Botón con efecto de papel
- */
-@Composable
-fun PaperButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    text: String,
-    icon: ImageVector? = null
-) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFFF5F5F5),
-            contentColor = Color(0xFF333333)
-        ),
-        shape = RoundedCornerShape(6.dp),
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
-        modifier = modifier
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFFFFFFF),
-                        Color(0xFFF5F5F5)
-                    )
-                ),
-                RoundedCornerShape(6.dp)
-            )
-            .border(
-                width = 1.dp,
-                color = Color(0xFFE0E0E0),
-                shape = RoundedCornerShape(6.dp)
-            )
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            icon?.let {
-                Icon(
-                    imageVector = it,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontWeight = FontWeight.Bold
-                )
-            )
-        }
-    }
-}
-
-/**
- * Botón con efecto de holograma
- */
-@Composable
-fun HologramButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    text: String,
-    icon: ImageVector? = null
-) {
-    val infiniteTransition = rememberInfiniteTransition(label = "hologram")
-    val scanLine by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(3000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "scan_line"
-    )
-    
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFF0A0A0A),
-            contentColor = Color(0xFF00D4FF)
-        ),
-        shape = RoundedCornerShape(12.dp),
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
-        modifier = modifier
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF1A1A2E),
-                        Color(0xFF16213E),
-                        Color(0xFF0A0A0A)
-                    )
-                ),
-                RoundedCornerShape(12.dp)
-            )
-            .border(
-                width = 2.dp,
-                color = Color(0xFF00D4FF),
-                shape = RoundedCornerShape(12.dp)
-            )
-    ) {
-        Box {
-            // Línea de escaneo animada
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(2.dp)
-                    .offset(y = ((scanLine - 0.5f) * 40f).dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color(0xFF00D4FF),
-                                Color.Transparent
-                            )
-                        )
-                    )
-            )
-            
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+        IconPosition.Bottom -> {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                icon?.let {
-                    Icon(
-                        imageVector = it,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
                 Text(
                     text = text,
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.Bold
-                    )
+                    style = MaterialTheme.typography.labelLarge
                 )
+                if (icon != null) {
+                    Spacer(modifier = Modifier.height(Spacing.xs))
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = contentDescription,
+                        modifier = Modifier.size(IconSize.sm)
+                    )
+                }
             }
         }
     }
 }
 
 /**
- * Botón con efecto de ondas
+ * Enums para configuración de botones
  */
-@Composable
-fun WaveButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    text: String,
-    icon: ImageVector? = null,
-    waveColor: Color = Color.Blue
+enum class IconPosition {
+    Start, End, Top, Bottom
+}
+
+enum class ButtonSize(
+    val height: androidx.compose.ui.unit.Dp,
+    val paddingHorizontal: androidx.compose.ui.unit.Dp,
+    val paddingVertical: androidx.compose.ui.unit.Dp
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "waves")
-    val waveOffset by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "wave_offset"
-    )
-    
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = waveColor.copy(alpha = 0.1f),
-            contentColor = waveColor
-        ),
-        shape = RoundedCornerShape(12.dp),
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
-        modifier = modifier
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        waveColor.copy(alpha = 0.2f),
-                        waveColor.copy(alpha = 0.05f)
-                    )
-                ),
-                RoundedCornerShape(12.dp)
+    Small(32.dp, 12.dp, 4.dp),
+    Medium(40.dp, 16.dp, 8.dp),
+    Large(48.dp, 20.dp, 12.dp)
+}
+
+enum class IconButtonSize(
+    val size: androidx.compose.ui.unit.Dp,
+    val iconSize: androidx.compose.ui.unit.Dp
+) {
+    Small(32.dp, 16.dp),
+    Medium(40.dp, 20.dp),
+    Large(48.dp, 24.dp)
+}
+
+enum class FabSize(
+    val size: androidx.compose.ui.unit.Dp,
+    val iconSize: androidx.compose.ui.unit.Dp
+) {
+    Small(40.dp, 20.dp),
+    Medium(56.dp, 24.dp),
+    Large(64.dp, 28.dp)
+}
+
+/**
+ * Previews de los botones
+ */
+@Preview(showBackground = true, name = "Primary Button")
+@Composable
+private fun PrimaryButtonPreview() {
+    PointsTheme {
+        Column(
+            modifier = Modifier.padding(Spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md)
+        ) {
+            PrimaryButton(
+                onClick = { },
+                text = "Botón Primario",
+                icon = Icons.Default.Add
             )
-    ) {
-        Box {
-            // Ondas animadas
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(20.dp)
-                    .offset(y = ((waveOffset - 0.5f) * 40f).dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                waveColor.copy(alpha = 0.3f),
-                                Color.Transparent
-                            )
-                        )
-                    )
+            PrimaryButton(
+                onClick = { },
+                text = "Cargando...",
+                loading = true
             )
-            
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                icon?.let {
-                    Icon(
-                        imageVector = it,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                Text(
-                    text = text,
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.Bold
-                    )
-                )
-            }
+            PrimaryButton(
+                onClick = { },
+                text = "Deshabilitado",
+                enabled = false
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Secondary Button")
+@Composable
+private fun SecondaryButtonPreview() {
+    PointsTheme {
+        Column(
+            modifier = Modifier.padding(Spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md)
+        ) {
+            SecondaryButton(
+                onClick = { },
+                text = "Botón Secundario",
+                icon = Icons.Default.Edit
+            )
+            TonalButton(
+                onClick = { },
+                text = "Botón Tonal",
+                icon = Icons.Default.Info
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Text & Outlined Buttons")
+@Composable
+private fun TextOutlinedButtonPreview() {
+    PointsTheme {
+        Column(
+            modifier = Modifier.padding(Spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md)
+        ) {
+            PointsTextButton(
+                onClick = { },
+                text = "Botón de Texto",
+                icon = Icons.Default.Link
+            )
+            OutlinedButton(
+                onClick = { },
+                text = "Botón con Borde",
+                icon = Icons.Default.Download
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Icon Buttons")
+@Composable
+private fun IconButtonPreview() {
+    PointsTheme {
+        Row(
+            modifier = Modifier.padding(Spacing.lg),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+        ) {
+            IconButton(
+                onClick = { },
+                icon = Icons.Default.Favorite,
+                contentDescription = "Favorito"
+            )
+            FloatingActionButton(
+                onClick = { },
+                icon = Icons.Default.Add,
+                contentDescription = "Agregar"
+            )
         }
     }
 }
