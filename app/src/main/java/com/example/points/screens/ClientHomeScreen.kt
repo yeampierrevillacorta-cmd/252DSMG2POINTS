@@ -50,6 +50,18 @@ fun ClientHomeScreen(
             route = "incidents"
         ),
         ClientFeatureCard(
+            title = "Eventos",
+            description = "Descubre eventos en tu localidad",
+            icon = Icons.Default.Event,
+            route = "events"
+        ),
+        ClientFeatureCard(
+            title = "Lugares de Interés",
+            description = "Explora POIs cercanos",
+            icon = Icons.Default.LocationOn,
+            route = "places"
+        ),
+        ClientFeatureCard(
             title = "Mis Reportes",
             description = "Historial de mis reportes",
             icon = Icons.Default.History,
@@ -199,6 +211,8 @@ fun ClientHomeScreen(
                     when (feature.route) {
                         "create_incident" -> navController.navigate("create_incident")
                         "incidents" -> navController.navigate("incidents")
+                        "events" -> navController.navigate("events")
+                        "places" -> navController.navigate("places")
                         "my_reports" -> navController.navigate("my_reports")
                         "notifications" -> navController.navigate("notifications")
                     }

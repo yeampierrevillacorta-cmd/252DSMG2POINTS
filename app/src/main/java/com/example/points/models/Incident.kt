@@ -26,7 +26,20 @@ enum class EstadoIncidente(val displayName: String) {
     EN_REVISION("En Revisión"),
     CONFIRMADO("Confirmado"),
     RECHAZADO("Rechazado"),
-    RESUELTO("Resuelto")
+    RESUELTO("Resuelto");
+    
+    companion object {
+        fun fromString(value: String): EstadoIncidente {
+            return when (value.lowercase()) {
+                "pendiente" -> PENDIENTE
+                "en revisión", "en_revision" -> EN_REVISION
+                "confirmado" -> CONFIRMADO
+                "rechazado" -> RECHAZADO
+                "resuelto" -> RESUELTO
+                else -> PENDIENTE // Default fallback
+            }
+        }
+    }
 }
 
 enum class TipoIncidente(val displayName: String) {

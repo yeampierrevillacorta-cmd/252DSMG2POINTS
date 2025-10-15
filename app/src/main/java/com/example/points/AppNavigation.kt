@@ -231,7 +231,31 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 navController = navController,
                 onProfileClick = { navController.navigate("profile") }
             ) {
-                EventsScreen()
+                com.example.points.screens.EventsScreen(
+                    navController = navController
+                )
+            }
+        }
+        
+        composable("event_schedule") {
+            MainLayout(
+                navController = navController,
+                onProfileClick = { navController.navigate("profile") }
+            ) {
+                com.example.points.screens.EventScheduleScreen(
+                    navController = navController
+                )
+            }
+        }
+        
+        composable("admin_events") {
+            AdminMainLayout(
+                navController = navController,
+                onProfileClick = { navController.navigate("admin_profile") }
+            ) {
+                com.example.points.screens.AdminEventsScreen(
+                    navController = navController
+                )
             }
         }
 

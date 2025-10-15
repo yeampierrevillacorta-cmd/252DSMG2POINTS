@@ -3,6 +3,7 @@ package com.example.points.repository
 import com.example.points.models.Incident
 import com.example.points.models.EstadoIncidente
 import com.example.points.models.TipoIncidente
+import com.example.points.models.Ubicacion
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -39,8 +40,37 @@ class IncidentRepository {
                 
                 val incidents = snapshot?.documents?.mapNotNull { doc ->
                     try {
-                        val incident = doc.toObject(Incident::class.java)?.copy(id = doc.id)
-                        Log.d("IncidentRepository", "Documento parseado: ${doc.id} - ${incident?.tipo}")
+                        val data = doc.data
+                        val incident = Incident(
+                            id = doc.id,
+                            tipo = data?.get("tipo") as? String ?: "",
+                            descripcion = data?.get("descripcion") as? String ?: "",
+                            fotoUrl = data?.get("fotoUrl") as? String,
+                            videoUrl = data?.get("videoUrl") as? String,
+                            ubicacion = try {
+                                val ubicacionData = data?.get("ubicacion") as? Map<String, Any>
+                                Ubicacion(
+                                    lat = (ubicacionData?.get("lat") as? Number)?.toDouble() ?: 0.0,
+                                    lon = (ubicacionData?.get("lon") as? Number)?.toDouble() ?: 0.0,
+                                    direccion = ubicacionData?.get("direccion") as? String ?: ""
+                                )
+                            } catch (e: Exception) {
+                                Ubicacion()
+                            },
+                            fechaHora = data?.get("fechaHora") as? com.google.firebase.Timestamp ?: com.google.firebase.Timestamp.now(),
+                            estado = try {
+                                val estadoString = data?.get("estado") as? String
+                                if (estadoString != null) {
+                                    EstadoIncidente.fromString(estadoString)
+                                } else {
+                                    EstadoIncidente.PENDIENTE
+                                }
+                            } catch (e: Exception) {
+                                EstadoIncidente.PENDIENTE
+                            },
+                            usuarioId = data?.get("usuarioId") as? String ?: ""
+                        )
+                        Log.d("IncidentRepository", "Documento parseado: ${doc.id} - ${incident.tipo}")
                         incident
                     } catch (e: Exception) {
                         Log.e("IncidentRepository", "Error parseando documento ${doc.id}", e)

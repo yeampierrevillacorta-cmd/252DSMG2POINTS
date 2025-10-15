@@ -44,6 +44,18 @@ fun AdminHomeScreen(
             route = "admin_incidents"
         ),
         AdminFeatureCard(
+            title = "Moderar Eventos",
+            description = "Gestiona eventos pendientes",
+            icon = Icons.Default.Event,
+            route = "admin_events"
+        ),
+        AdminFeatureCard(
+            title = "Gestionar POIs",
+            description = "Administra puntos de interés",
+            icon = Icons.Default.LocationOn,
+            route = "admin_pois"
+        ),
+        AdminFeatureCard(
             title = "Usuarios",
             description = "Gestiona usuarios del sistema",
             icon = Icons.Default.People,
@@ -238,6 +250,8 @@ fun AdminHomeScreen(
                 onClick = {
                     when (feature.route) {
                         "admin_incidents" -> navController.navigate("admin_incidents")
+                        "admin_events" -> navController.navigate("admin_events")
+                        "admin_pois" -> navController.navigate("admin_pois")
                         "admin_users" -> navController.navigate("admin_users")
                         "admin_analytics" -> navController.navigate("admin_analytics")
                         "admin_settings" -> navController.navigate("admin_settings")
