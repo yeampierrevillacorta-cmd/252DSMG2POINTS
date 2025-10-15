@@ -39,17 +39,9 @@ fun ProfileScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val context = LocalContext.current
     
-    // Estado para el tipo de usuario
-    var userType by remember { mutableStateOf(TipoUsuario.CIUDADANO) }
-    
-    // Obtener el tipo de usuario desde Firestore
-    LaunchedEffect(Unit) {
-        val userRepository = UserRepository(
-            com.google.firebase.firestore.FirebaseFirestore.getInstance(),
-            FirebaseAuth.getInstance()
-        )
-        userType = userRepository.getCurrentUserType()
-    }
+    // Estados para diálogos de confirmación
+    var showSignOutDialog by remember { mutableStateOf(false) }
+    var showDeleteAccountDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -105,9 +97,9 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Email del usuario (desde Firebase Auth)
+                // Email del usuario (desde Firestore)
                 Text(
-                    text = FirebaseAuth.getInstance().currentUser?.email ?: "No disponible",
+                    text = profile.email.ifEmpty { "No disponible" },
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     textAlign = TextAlign.Center
@@ -157,6 +149,49 @@ fun ProfileScreen(
 
                         Spacer(modifier = Modifier.height(12.dp))
 
+                        // Estado de notificaciones
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Notifications,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Notificaciones",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (profile.notificaciones) {
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                } else {
+                                    MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+                                }
+                            ) {
+                                Text(
+                                    text = if (profile.notificaciones) "Activadas" else "Desactivadas",
+                                    style = MaterialTheme.typography.labelMedium.copy(
+                                        fontWeight = FontWeight.Bold
+                                    ),
+                                    color = if (profile.notificaciones) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.outline
+                                    },
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
                         // Tipo de usuario
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -177,18 +212,18 @@ fun ProfileScreen(
                             Spacer(modifier = Modifier.weight(1f))
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
-                                color = when (userType) {
+                                color = when (profile.tipo) {
                                     TipoUsuario.ADMINISTRADOR -> MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
                                     TipoUsuario.MODERADOR -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
                                     else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                                 }
                             ) {
                                 Text(
-                                    text = userType.displayName,
+                                    text = profile.tipo.displayName,
                                     style = MaterialTheme.typography.labelMedium.copy(
                                         fontWeight = FontWeight.Bold
                                     ),
-                                    color = when (userType) {
+                                    color = when (profile.tipo) {
                                         TipoUsuario.ADMINISTRADOR -> MaterialTheme.colorScheme.error
                                         TipoUsuario.MODERADOR -> MaterialTheme.colorScheme.secondary
                                         else -> MaterialTheme.colorScheme.primary
@@ -232,8 +267,7 @@ fun ProfileScreen(
         // Botón de cerrar sesión
         OutlinedButton(
             onClick = {
-                viewModel.signOut()
-                onSignOut()
+                showSignOutDialog = true
             },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.outlinedButtonColors(
@@ -260,15 +294,7 @@ fun ProfileScreen(
         // Botón de eliminar cuenta
         TextButton(
             onClick = {
-                viewModel.deleteAccount(
-                    onSuccess = {
-                        Toast.makeText(context, "Cuenta eliminada", Toast.LENGTH_SHORT).show()
-                        onSignOut()
-                    },
-                    onError = { msg ->
-                        Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-                    }
-                )
+                showDeleteAccountDialog = true
             },
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -288,6 +314,112 @@ fun ProfileScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
     }
+    
+    // Diálogo de confirmación para cerrar sesión
+    if (showSignOutDialog) {
+        AlertDialog(
+            onDismissRequest = { showSignOutDialog = false },
+            title = {
+                Text(
+                    text = "Cerrar Sesión",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "¿Estás seguro de que quieres cerrar sesión? Tendrás que iniciar sesión nuevamente para acceder a tu cuenta.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showSignOutDialog = false
+                        viewModel.signOut()
+                        onSignOut()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Text("Cerrar Sesión")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showSignOutDialog = false }
+                ) {
+                    Text("Cancelar")
+                }
+            },
+            icon = {
+                Icon(
+                    Icons.Default.ExitToApp,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+        )
+    }
+    
+    // Diálogo de confirmación para eliminar cuenta
+    if (showDeleteAccountDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAccountDialog = false },
+            title = {
+                Text(
+                    text = "Eliminar Cuenta",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.error
+                )
+            },
+            text = {
+                Text(
+                    text = "¿Estás seguro de que quieres eliminar tu cuenta? Esta acción es irreversible y se perderán todos tus datos, reportes e historial.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteAccountDialog = false
+                        viewModel.deleteAccount(
+                            onSuccess = {
+                                Toast.makeText(context, "Cuenta eliminada", Toast.LENGTH_SHORT).show()
+                                onSignOut()
+                            },
+                            onError = { msg ->
+                                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                            }
+                        )
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Eliminar Cuenta")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showDeleteAccountDialog = false }
+                ) {
+                    Text("Cancelar")
+                }
+            },
+            icon = {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+        )
+    }
 }
 
 @Composable
@@ -303,6 +435,7 @@ fun EditProfileScreen(
     var name by remember { mutableStateOf(profile.name) }
     var phone by remember { mutableStateOf(profile.phone) }
     var photoUri by remember { mutableStateOf<Uri?>(null) }
+    var showSuccessDialog by remember { mutableStateOf(false) }
 
     // launcher para seleccionar imagen desde galería
     val launcher = rememberLauncherForActivityResult(GetContent()) { uri: Uri? ->
@@ -432,8 +565,7 @@ fun EditProfileScreen(
                 Button(
                     onClick = {
                         viewModel.updateProfile(name, phone, photoUri) {
-                            Toast.makeText(context, "Perfil actualizado ✅", Toast.LENGTH_SHORT).show()
-                            onSaveSuccess()
+                            showSuccessDialog = true
                         }
                     },
                     enabled = !isLoading,
@@ -492,5 +624,46 @@ fun EditProfileScreen(
         }
 
         Spacer(modifier = Modifier.height(32.dp))
+    }
+    
+    // Diálogo de confirmación de éxito
+    if (showSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = { showSuccessDialog = false },
+            title = {
+                Text(
+                    text = "¡Perfil Actualizado!",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "Tus datos han sido guardados exitosamente. Los cambios se han aplicado a tu perfil.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showSuccessDialog = false
+                        onSaveSuccess()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Text("Aceptar")
+                }
+            },
+            icon = {
+                Icon(
+                    Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+        )
     }
 }

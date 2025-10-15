@@ -2,6 +2,7 @@ package com.example.points.auth
 
 import android.net.Uri
 import androidx.lifecycle.ViewModel
+import com.example.points.models.TipoUsuario
 import com.example.points.utils.PasswordUtils
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -51,9 +52,11 @@ class RegisterViewModel : ViewModel() {
                     }
 
                     val userMap = hashMapOf<String, Any>(
-                        "name" to state.name,
-                        "phone" to state.phone,
-                        "email" to state.email.trim()
+                        "nombre" to state.name,
+                        "telefono" to state.phone,
+                        "email" to state.email.trim(),
+                        "tipo" to TipoUsuario.CIUDADANO.name,
+                        "notificaciones" to true
                     )
 
                     // Si hay foto -> subir primero

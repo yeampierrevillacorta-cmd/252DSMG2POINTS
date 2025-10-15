@@ -95,15 +95,14 @@ fun AdminMainLayout(
         BottomNavItem.AdminPOIs,
         BottomNavItem.AdminUsers,
         BottomNavItem.AdminAnalytics,
-        BottomNavItem.AdminSettings,
-        BottomNavItem.AdminProfile
+        BottomNavItem.AdminSettings
     )
 
     BackToAdminHomeOnBack(navController = navController)
 
     Scaffold(
         topBar = {
-            AdminAppHeader()
+            AdminAppHeader(onProfileClick = onProfileClick)
         },
         bottomBar = {
             BottomBar(navController = navController, items = items)

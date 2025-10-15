@@ -34,12 +34,12 @@ class UserRepository @Inject constructor(
                     val data = userDoc.data
                     val user = User(
                         id = userDoc.id,
-                        nombre = data?.get("Nombre") as? String ?: "Usuario",
+                        nombre = data?.get("nombre") as? String ?: "Usuario",
                         email = data?.get("email") as? String ?: currentUser.email ?: "",
-                        telefono = data?.get("Telefono") as? String ?: "",
+                        telefono = data?.get("telefono") as? String ?: "",
                         notificaciones = data?.get("notificaciones") as? Boolean ?: true,
                         tipo = parseTipoUsuario(data?.get("tipo") as? String),
-                        photoUrl = currentUser.photoUrl?.toString()
+                        photoUrl = data?.get("photoUrl") as? String ?: currentUser.photoUrl?.toString()
                     )
                     Result.success(user)
                 } else {
