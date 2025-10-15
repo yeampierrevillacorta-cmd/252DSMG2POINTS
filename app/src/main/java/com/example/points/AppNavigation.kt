@@ -88,7 +88,7 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             )
         }
 
-        composable("forgot_password") {
+        composable("forgot_passworAdminIncidentsScreend") {
             ForgotPasswordScreen(
                 onPasswordReset = {
                     Toast.makeText(navController.context, "Correo de recuperación enviado 📧", Toast.LENGTH_SHORT).show()
@@ -284,7 +284,12 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 navController = navController,
                 onProfileClick = { navController.navigate("admin_profile") }
             ) {
-                AdminIncidentsScreen()
+                AdminIncidentsScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onIncidentDetailClick = { incidentId ->
+                        navController.navigate("incident_detail/$incidentId")
+                    }
+                )
             }
         }
 
@@ -476,36 +481,16 @@ fun AlertsScreen() {
     }
 }
 
-// Pantallas de administración (placeholders)
+// Pantallas de administración
 @Composable
-fun AdminIncidentsScreen() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            Icons.Default.Assignment,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "🔧 Gestión de Incidentes",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Próximamente: Panel de administración para gestionar incidentes",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-            textAlign = TextAlign.Center
-        )
-    }
+fun AdminIncidentsScreen(
+    onBackClick: () -> Unit,
+    onIncidentDetailClick: (String) -> Unit
+) {
+    com.example.points.screens.AdminIncidentsScreen(
+        onBackClick = onBackClick,
+        onIncidentDetailClick = onIncidentDetailClick
+    )
 }
 
 @Composable

@@ -264,4 +264,65 @@ class IncidentViewModel(
             }
         }
     }
+    
+    // Funciones para administradores
+    fun updateIncidentStatus(incidentId: String, newStatus: EstadoIncidente) {
+        viewModelScope.launch {
+            try {
+                Log.d("IncidentViewModel", "Actualizando estado del incidente $incidentId a ${newStatus.displayName}")
+                
+                val result = repository.updateIncidentStatus(incidentId, newStatus)
+                if (result.isSuccess) {
+                    Log.d("IncidentViewModel", "Estado del incidente actualizado exitosamente")
+                    // El estado se actualizará automáticamente a través del listener de Firebase
+                } else {
+                    Log.e("IncidentViewModel", "Error al actualizar estado del incidente", result.exceptionOrNull())
+                    _uiState.value = _uiState.value.copy(
+                        errorMessage = result.exceptionOrNull()?.message ?: "Error al actualizar el estado del incidente"
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("IncidentViewModel", "Error al actualizar estado del incidente", e)
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = e.message ?: "Error desconocido al actualizar el incidente"
+                )
+            }
+        }
+    }
+    
+    fun getIncidentsByStatus(estado: EstadoIncidente) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                filterStatus = estado
+            )
+            
+            try {
+                repository.getIncidentsByStatus(estado).collect { incidents ->
+                    _uiState.value = _uiState.value.copy(
+                        incidents = incidents,
+                        isLoading = false,
+                        errorMessage = null
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = e.message ?: "Error al filtrar por estado"
+                )
+            }
+        }
+    }
+    
+    fun getPendingIncidents() {
+        getIncidentsByStatus(EstadoIncidente.PENDIENTE)
+    }
+    
+    fun getConfirmedIncidents() {
+        getIncidentsByStatus(EstadoIncidente.CONFIRMADO)
+    }
+    
+    fun getResolvedIncidents() {
+        getIncidentsByStatus(EstadoIncidente.RESUELTO)
+    }
 }

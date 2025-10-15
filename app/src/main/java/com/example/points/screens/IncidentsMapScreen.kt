@@ -55,14 +55,29 @@ fun IncidentsMapScreen(
     val coroutineScope = rememberCoroutineScope()
     val uiState by viewModel.uiState.collectAsState()
     
+    // Filtrar incidentes según el tipo de usuario
+    val visibleIncidents = remember(uiState.incidents, uiState.isUserAdmin) {
+        if (uiState.isUserAdmin) {
+            // Los administradores ven todos los incidentes
+            uiState.incidents
+        } else {
+            // Los usuarios normales solo ven incidentes confirmados
+            uiState.incidents.filter { incident ->
+                incident.estado == com.example.points.models.EstadoIncidente.CONFIRMADO
+            }
+        }
+    }
+    
     // Log para debug
-    LaunchedEffect(uiState.incidents) {
+    LaunchedEffect(visibleIncidents) {
         Log.d("IncidentsMap", "=== DEBUG INCIDENTES ===")
-        Log.d("IncidentsMap", "Incidentes cargados: ${uiState.incidents.size}")
+        Log.d("IncidentsMap", "Incidentes totales: ${uiState.incidents.size}")
+        Log.d("IncidentsMap", "Incidentes visibles: ${visibleIncidents.size}")
+        Log.d("IncidentsMap", "Es admin: ${uiState.isUserAdmin}")
         Log.d("IncidentsMap", "Estado de carga: ${uiState.isLoading}")
         Log.d("IncidentsMap", "Error: ${uiState.errorMessage}")
-        uiState.incidents.forEach { incident ->
-            Log.d("IncidentsMap", "Incidente: ${incident.tipo} en (${incident.ubicacion.lat}, ${incident.ubicacion.lon})")
+        visibleIncidents.forEach { incident ->
+            Log.d("IncidentsMap", "Incidente visible: ${incident.tipo} (${incident.estado.displayName}) en (${incident.ubicacion.lat}, ${incident.ubicacion.lon})")
         }
         Log.d("IncidentsMap", "========================")
     }
@@ -135,9 +150,8 @@ fun IncidentsMapScreen(
     
     // Funciones de navegación
     fun navigateToIncident(index: Int) {
-        val incidents = uiState.incidents
-        if (incidents.isNotEmpty() && index in incidents.indices) {
-            val incident = incidents[index]
+        if (visibleIncidents.isNotEmpty() && index in visibleIncidents.indices) {
+            val incident = visibleIncidents[index]
             if (incident.ubicacion.lat != 0.0 && incident.ubicacion.lon != 0.0) {
                 val position = LatLng(incident.ubicacion.lat, incident.ubicacion.lon)
                 coroutineScope.launch {
@@ -148,23 +162,21 @@ fun IncidentsMapScreen(
                 }
                 viewModel.selectIncident(incident)
                 currentIncidentIndex = index
-                Log.d("IncidentsMap", "Navegando a incidente ${index + 1}/${incidents.size}: ${incident.tipo}")
+                Log.d("IncidentsMap", "Navegando a incidente ${index + 1}/${visibleIncidents.size}: ${incident.tipo}")
             }
         }
     }
     
     fun navigateToNext() {
-        val incidents = uiState.incidents
-        if (incidents.isNotEmpty()) {
-            val nextIndex = if (currentIncidentIndex >= incidents.size - 1) 0 else currentIncidentIndex + 1
+        if (visibleIncidents.isNotEmpty()) {
+            val nextIndex = if (currentIncidentIndex >= visibleIncidents.size - 1) 0 else currentIncidentIndex + 1
             navigateToIncident(nextIndex)
         }
     }
     
     fun navigateToPrevious() {
-        val incidents = uiState.incidents
-        if (incidents.isNotEmpty()) {
-            val prevIndex = if (currentIncidentIndex <= 0) incidents.size - 1 else currentIncidentIndex - 1
+        if (visibleIncidents.isNotEmpty()) {
+            val prevIndex = if (currentIncidentIndex <= 0) visibleIncidents.size - 1 else currentIncidentIndex - 1
             navigateToIncident(prevIndex)
         }
     }
@@ -190,8 +202,8 @@ fun IncidentsMapScreen(
             }
         ) {
             // Marcadores de incidentes con iconos personalizados
-            Log.d("IncidentsMap", "Renderizando ${uiState.incidents.size} marcadores")
-            uiState.incidents.forEach { incident ->
+            Log.d("IncidentsMap", "Renderizando ${visibleIncidents.size} marcadores visibles")
+            visibleIncidents.forEach { incident ->
                 if (incident.ubicacion.lat != 0.0 && incident.ubicacion.lon != 0.0) {
                     Marker(
                         state = MarkerState(
@@ -206,7 +218,7 @@ fun IncidentsMapScreen(
                         ),
                         onClick = {
                             viewModel.selectIncident(incident)
-                            Log.d("IncidentsMap", "Marcador seleccionado: ${incident.tipo}")
+                            Log.d("IncidentsMap", "Marcador seleccionado: ${incident.tipo} (${incident.estado.displayName})")
                             true
                         }
                     )
@@ -236,7 +248,7 @@ fun IncidentsMapScreen(
                 Spacer(modifier = Modifier.height(4.dp))
                 
                 Text(
-                    text = "📍 Incidentes: ${uiState.incidents.size}",
+                    text = "📍 Total: ${uiState.incidents.size} | Visibles: ${visibleIncidents.size}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
@@ -285,7 +297,7 @@ fun IncidentsMapScreen(
                     )
                 }
                 
-                if (uiState.incidents.isEmpty() && !uiState.isLoading) {
+                if (visibleIncidents.isEmpty() && !uiState.isLoading) {
                     Spacer(modifier = Modifier.height(8.dp))
                     // Función de datos de prueba eliminada
                     // Los datos ahora se obtienen de Firebase
@@ -333,24 +345,24 @@ fun IncidentsMapScreen(
                 }
                 
                 // Mostrar ubicación de incidentes si los hay
-                if (uiState.incidents.isNotEmpty()) {
+                if (visibleIncidents.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "📍 Ubicaciones:",
+                        text = "📍 Incidentes visibles:",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
-                    uiState.incidents.take(3).forEach { incident ->
+                    visibleIncidents.take(3).forEach { incident ->
                         Text(
-                            text = "• ${incident.tipo} (${String.format("%.3f", incident.ubicacion.lat)}, ${String.format("%.3f", incident.ubicacion.lon)})",
+                            text = "• ${incident.tipo} (${incident.estado.displayName}) (${String.format("%.3f", incident.ubicacion.lat)}, ${String.format("%.3f", incident.ubicacion.lon)})",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
-                    if (uiState.incidents.size > 3) {
+                    if (visibleIncidents.size > 3) {
                         Text(
-                            text = "... y ${uiState.incidents.size - 3} más",
+                            text = "... y ${visibleIncidents.size - 3} más",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
@@ -360,7 +372,7 @@ fun IncidentsMapScreen(
         }
         
         // Panel de navegación entre incidentes
-        if (showNavigationPanel && uiState.incidents.isNotEmpty()) {
+        if (showNavigationPanel && visibleIncidents.isNotEmpty()) {
             Card(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
@@ -397,14 +409,14 @@ fun IncidentsMapScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     
                     Text(
-                        text = "Incidente ${currentIncidentIndex + 1} de ${uiState.incidents.size}",
+                        text = "Incidente ${currentIncidentIndex + 1} de ${visibleIncidents.size}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     
                     // Mostrar información del incidente actual
-                    if (uiState.incidents.isNotEmpty() && currentIncidentIndex in uiState.incidents.indices) {
-                        val currentIncident = uiState.incidents[currentIncidentIndex]
+                    if (visibleIncidents.isNotEmpty() && currentIncidentIndex in visibleIncidents.indices) {
+                        val currentIncident = visibleIncidents[currentIncidentIndex]
                         
                         Spacer(modifier = Modifier.height(8.dp))
                         
@@ -557,7 +569,7 @@ fun IncidentsMapScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Botón de navegación entre incidentes
-            if (uiState.incidents.isNotEmpty()) {
+            if (visibleIncidents.isNotEmpty()) {
                 FloatingActionButton(
                     onClick = { showNavigationPanel = !showNavigationPanel },
                     containerColor = if (showNavigationPanel) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.secondary,

@@ -171,4 +171,104 @@ class IncidentRepository {
             Result.failure(e)
         }
     }
+    
+    // Obtener incidentes pendientes (para administradores)
+    fun getPendingIncidents(): Flow<List<Incident>> = callbackFlow {
+        val listener = incidentsCollection
+            .whereEqualTo("estado", EstadoIncidente.PENDIENTE.displayName)
+            .orderBy("fechaHora", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                
+                val incidents = snapshot?.documents?.mapNotNull { doc ->
+                    try {
+                        doc.toObject(Incident::class.java)?.copy(id = doc.id)
+                    } catch (e: Exception) {
+                        null
+                    }
+                } ?: emptyList()
+                
+                trySend(incidents)
+            }
+        
+        awaitClose { listener.remove() }
+    }
+    
+    // Obtener incidentes confirmados (para mostrar en mapa público)
+    fun getConfirmedIncidents(): Flow<List<Incident>> = callbackFlow {
+        val listener = incidentsCollection
+            .whereEqualTo("estado", EstadoIncidente.CONFIRMADO.displayName)
+            .orderBy("fechaHora", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                
+                val incidents = snapshot?.documents?.mapNotNull { doc ->
+                    try {
+                        doc.toObject(Incident::class.java)?.copy(id = doc.id)
+                    } catch (e: Exception) {
+                        null
+                    }
+                } ?: emptyList()
+                
+                trySend(incidents)
+            }
+        
+        awaitClose { listener.remove() }
+    }
+    
+    // Obtener estadísticas de incidentes
+    suspend fun getIncidentStats(): Result<Map<String, Int>> {
+        return try {
+            val allIncidents = incidentsCollection.get().await()
+            val incidents = allIncidents.documents.mapNotNull { doc ->
+                try {
+                    doc.toObject(Incident::class.java)
+                } catch (e: Exception) {
+                    null
+                }
+            }
+            
+            val stats = mapOf(
+                "total" to incidents.size,
+                "pendientes" to incidents.count { it.estado == EstadoIncidente.PENDIENTE },
+                "en_revision" to incidents.count { it.estado == EstadoIncidente.EN_REVISION },
+                "confirmados" to incidents.count { it.estado == EstadoIncidente.CONFIRMADO },
+                "rechazados" to incidents.count { it.estado == EstadoIncidente.RECHAZADO },
+                "resueltos" to incidents.count { it.estado == EstadoIncidente.RESUELTO }
+            )
+            
+            Result.success(stats)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    // Obtener incidentes por usuario
+    suspend fun getIncidentsByUser(userId: String): Result<List<Incident>> {
+        return try {
+            val snapshot = incidentsCollection
+                .whereEqualTo("usuarioId", userId)
+                .orderBy("fechaHora", Query.Direction.DESCENDING)
+                .get()
+                .await()
+            
+            val incidents = snapshot.documents.mapNotNull { doc ->
+                try {
+                    doc.toObject(Incident::class.java)?.copy(id = doc.id)
+                } catch (e: Exception) {
+                    null
+                }
+            }
+            
+            Result.success(incidents)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
