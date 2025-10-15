@@ -29,11 +29,12 @@ import com.example.points.ui.theme.*
 
 /**
  * Sistema de botones para POINTS
+ * Inspirado en Airbnb - Limpio, moderno y minimalista
  * Basado en Material 3 con estados interactivos y animaciones sutiles
  */
 
 /**
- * Botón primario - Acción principal
+ * Botón primario - Acción principal (Estilo Airbnb)
  * Usa el color primario de la marca con ripple sutil
  */
 @Composable
@@ -113,8 +114,8 @@ fun PrimaryButton(
 }
 
 /**
- * Botón secundario - Acción secundaria
- * Usa el color secundario de la marca
+ * Botón secundario - Acción secundaria (Estilo Airbnb)
+ * Usa el color secundario de la marca con fondo blanco y borde
  */
 @Composable
 fun SecondaryButton(
@@ -174,8 +175,8 @@ fun SecondaryButton(
 }
 
 /**
- * Botón tonal - Acción con fondo tonal
- * Usa el color primario con transparencia
+ * Botón tonal - Acción con fondo tonal (Estilo Airbnb)
+ * Usa el color primario con transparencia sutil
  */
 @Composable
 fun TonalButton(

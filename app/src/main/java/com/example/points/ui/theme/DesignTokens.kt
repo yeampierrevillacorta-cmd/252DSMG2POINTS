@@ -12,11 +12,12 @@ import androidx.compose.ui.graphics.StrokeJoin
 
 /**
  * Design Tokens para la aplicación POINTS
- * Sistema de tokens basado en Material 3 y la identidad de marca
+ * Inspirado en Airbnb - Espaciado generoso y limpio
+ * Sistema de tokens optimizado para estética moderna
  */
 
 /**
- * Sistema de espaciado basado en 8pt grid
+ * Sistema de espaciado basado en 8pt grid (Estilo Airbnb)
  */
 object Spacing {
     val xs = 4.dp
@@ -27,6 +28,8 @@ object Spacing {
     val xxl = 24.dp
     val xxxl = 32.dp
     val xxxxl = 40.dp
+    val xxxxxl = 48.dp
+    val xxxxxxl = 64.dp
 }
 
 /**
@@ -44,15 +47,16 @@ object Radius {
 }
 
 /**
- * Sistema de elevación y sombras
+ * Sistema de elevación y sombras (Estilo Airbnb)
  */
 object Elevation {
     val none = 0.dp
     val xs = 1.dp
-    val sm = 3.dp
-    val md = 6.dp
-    val lg = 12.dp
-    val xl = 16.dp
+    val sm = 2.dp
+    val md = 4.dp
+    val lg = 8.dp
+    val xl = 12.dp
+    val xxl = 16.dp
 }
 
 /**
@@ -129,15 +133,15 @@ object AvatarSize {
 }
 
 /**
- * Sistema de tamaños de botones
+ * Sistema de tamaños de botones (Estilo Airbnb)
  */
 object ButtonSize {
-    val height = 40.dp
-    val heightLarge = 48.dp
-    val heightSmall = 32.dp
-    val minWidth = 64.dp
-    val paddingHorizontal = Spacing.lg
-    val paddingVertical = Spacing.sm
+    val height = 44.dp
+    val heightLarge = 52.dp
+    val heightSmall = 36.dp
+    val minWidth = 80.dp
+    val paddingHorizontal = Spacing.xl
+    val paddingVertical = Spacing.md
 }
 
 /**
@@ -161,13 +165,13 @@ object TextFieldSize {
 }
 
 /**
- * Sistema de tamaños de tarjetas
+ * Sistema de tamaños de tarjetas (Estilo Airbnb)
  */
 object CardSize {
-    val padding = Spacing.lg
-    val paddingSmall = Spacing.md
-    val paddingLarge = Spacing.xl
-    val minHeight = 80.dp
+    val padding = Spacing.xl
+    val paddingSmall = Spacing.lg
+    val paddingLarge = Spacing.xxl
+    val minHeight = 100.dp
 }
 
 /**

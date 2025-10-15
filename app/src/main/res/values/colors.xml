@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Colores inspirados en Airbnb -->
+    <color name="airbnb_primary">#FFE31C5F</color>
+    <color name="airbnb_secondary">#FF00A699</color>
+    <color name="airbnb_tertiary">#FF767676</color>
+    <color name="airbnb_accent">#FFE31C5F</color>
+    <color name="airbnb_error">#FFE31C5F</color>
+    <color name="airbnb_success">#FF00A699</color>
+    
+    <!-- Colores neutros estilo Airbnb -->
+    <color name="airbnb_ink">#FF222222</color>
+    <color name="airbnb_subtle">#FF717171</color>
+    <color name="airbnb_surface">#FFFFFFFF</color>
+    <color name="airbnb_outline">#FFDDDDDD</color>
+    
+    <!-- Colores legacy (mantener para compatibilidad) -->
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
     <color name="purple_700">#FF3700B3</color>

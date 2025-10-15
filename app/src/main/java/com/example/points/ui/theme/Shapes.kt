@@ -6,125 +6,125 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Sistema de formas para la aplicación POINTS
- * Basado en Material 3 con esquinas redondeadas consistentes
- * Utiliza el sistema de tokens de radio definido en DesignTokens
+ * Inspirado en Airbnb - Bordes redondeados suaves y modernos
+ * Utiliza el sistema de tokens de radio optimizado para estética limpia
  */
 
 val PointsShapes = Shapes(
-    // Formas extra pequeñas - Para chips y badges
-    extraSmall = RoundedCornerShape(4.dp),
+    // Formas extra pequeñas - Para chips y badges (Estilo Airbnb)
+    extraSmall = RoundedCornerShape(6.dp),
     
     // Formas pequeñas - Para botones pequeños y elementos compactos
-    small = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
     
     // Formas medianas - Para botones estándar y tarjetas pequeñas
     medium = RoundedCornerShape(16.dp),
     
     // Formas grandes - Para tarjetas principales y contenedores
-    large = RoundedCornerShape(24.dp),
+    large = RoundedCornerShape(20.dp),
     
     // Formas extra grandes - Para modales y sheets
-    extraLarge = RoundedCornerShape(28.dp),
+    extraLarge = RoundedCornerShape(24.dp),
 )
 
 /**
- * Formas personalizadas para casos específicos de POINTS
+ * Formas personalizadas para casos específicos de POINTS (Estilo Airbnb)
  */
 object PointsCustomShapes {
     
-    // Formas para botones
-    val button = RoundedCornerShape(16.dp)
+    // Formas para botones (Estilo Airbnb)
+    val button = RoundedCornerShape(12.dp)
     val buttonSmall = RoundedCornerShape(8.dp)
-    val buttonLarge = RoundedCornerShape(20.dp)
+    val buttonLarge = RoundedCornerShape(16.dp)
     
-    // Formas para tarjetas
-    val card = RoundedCornerShape(24.dp)
-    val cardSmall = RoundedCornerShape(16.dp)
-    val cardLarge = RoundedCornerShape(28.dp)
+    // Formas para tarjetas (Estilo Airbnb)
+    val card = RoundedCornerShape(16.dp)
+    val cardSmall = RoundedCornerShape(12.dp)
+    val cardLarge = RoundedCornerShape(20.dp)
     
-    // Formas para chips
-    val chip = RoundedCornerShape(8.dp)
-    val chipLarge = RoundedCornerShape(12.dp)
+    // Formas para chips (Estilo Airbnb)
+    val chip = RoundedCornerShape(20.dp)
+    val chipLarge = RoundedCornerShape(24.dp)
     
-    // Formas para campos de texto
+    // Formas para campos de texto (Estilo Airbnb)
     val textField = RoundedCornerShape(12.dp)
     val textFieldSmall = RoundedCornerShape(8.dp)
     
-    // Formas para diálogos
-    val dialog = RoundedCornerShape(28.dp)
-    val dialogSmall = RoundedCornerShape(24.dp)
+    // Formas para diálogos (Estilo Airbnb)
+    val dialog = RoundedCornerShape(20.dp)
+    val dialogSmall = RoundedCornerShape(16.dp)
     
-    // Formas para modales
-    val modal = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-    val sideSheet = RoundedCornerShape(topStart = 28.dp, bottomStart = 28.dp)
+    // Formas para modales (Estilo Airbnb)
+    val modal = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+    val sideSheet = RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp)
     
     // Formas para avatares
     val avatar = RoundedCornerShape(50.dp)
     val avatarSmall = RoundedCornerShape(50.dp)
     
-    // Formas para imágenes
-    val image = RoundedCornerShape(16.dp)
+    // Formas para imágenes (Estilo Airbnb)
+    val image = RoundedCornerShape(12.dp)
     val imageSmall = RoundedCornerShape(8.dp)
-    val imageLarge = RoundedCornerShape(24.dp)
+    val imageLarge = RoundedCornerShape(16.dp)
     
-    // Formas para badges
+    // Formas para badges (Estilo Airbnb)
     val badge = RoundedCornerShape(50.dp)
-    val badgeSquare = RoundedCornerShape(4.dp)
+    val badgeSquare = RoundedCornerShape(6.dp)
     
-    // Formas para indicadores
+    // Formas para indicadores (Estilo Airbnb)
     val indicator = RoundedCornerShape(50.dp)
-    val indicatorSquare = RoundedCornerShape(4.dp)
+    val indicatorSquare = RoundedCornerShape(6.dp)
     
-    // Formas para tabs
-    val tab = RoundedCornerShape(8.dp)
-    val tabIndicator = RoundedCornerShape(4.dp)
+    // Formas para tabs (Estilo Airbnb)
+    val tab = RoundedCornerShape(12.dp)
+    val tabIndicator = RoundedCornerShape(6.dp)
     
-    // Formas para listas
-    val listItem = RoundedCornerShape(16.dp)
+    // Formas para listas (Estilo Airbnb)
+    val listItem = RoundedCornerShape(12.dp)
     val listItemFirst = RoundedCornerShape(
-        topStart = 16.dp,
-        topEnd = 16.dp,
+        topStart = 12.dp,
+        topEnd = 12.dp,
         bottomStart = 4.dp,
         bottomEnd = 4.dp
     )
     val listItemLast = RoundedCornerShape(
         topStart = 4.dp,
         topEnd = 4.dp,
-        bottomStart = 16.dp,
-        bottomEnd = 16.dp
+        bottomStart = 12.dp,
+        bottomEnd = 12.dp
     )
     val listItemMiddle = RoundedCornerShape(4.dp)
-    val listItemSingle = RoundedCornerShape(16.dp)
+    val listItemSingle = RoundedCornerShape(12.dp)
     
-    // Formas para mapas
-    val mapMarker = RoundedCornerShape(8.dp)
+    // Formas para mapas (Estilo Airbnb)
+    val mapMarker = RoundedCornerShape(12.dp)
     val mapCluster = RoundedCornerShape(50.dp)
-    val mapInfoWindow = RoundedCornerShape(16.dp)
+    val mapInfoWindow = RoundedCornerShape(12.dp)
     
-    // Formas para carruseles
-    val carousel = RoundedCornerShape(16.dp)
+    // Formas para carruseles (Estilo Airbnb)
+    val carousel = RoundedCornerShape(12.dp)
     val carouselIndicator = RoundedCornerShape(50.dp)
     
-    // Formas para shimmer
+    // Formas para shimmer (Estilo Airbnb)
     val shimmer = RoundedCornerShape(8.dp)
-    val shimmerLarge = RoundedCornerShape(16.dp)
+    val shimmerLarge = RoundedCornerShape(12.dp)
     
-    // Formas para skeleton
-    val skeleton = RoundedCornerShape(12.dp)
-    val skeletonCard = RoundedCornerShape(24.dp)
+    // Formas para skeleton (Estilo Airbnb)
+    val skeleton = RoundedCornerShape(8.dp)
+    val skeletonCard = RoundedCornerShape(16.dp)
     
-    // Formas para feedback
-    val snackbar = RoundedCornerShape(16.dp)
+    // Formas para feedback (Estilo Airbnb)
+    val snackbar = RoundedCornerShape(12.dp)
     val banner = RoundedCornerShape(8.dp)
     
-    // Formas para navegación
+    // Formas para navegación (Estilo Airbnb)
     val bottomNav = RoundedCornerShape(
-        topStart = 24.dp,
-        topEnd = 24.dp
+        topStart = 20.dp,
+        topEnd = 20.dp
     )
     val topAppBar = RoundedCornerShape(
-        bottomStart = 24.dp,
-        bottomEnd = 24.dp
+        bottomStart = 20.dp,
+        bottomEnd = 20.dp
     )
     
     // Formas para floating action button

@@ -29,11 +29,12 @@ import com.example.points.ui.theme.*
 
 /**
  * Sistema de tarjetas para POINTS
+ * Inspirado en Airbnb - Limpio, moderno y minimalista
  * Basado en Material 3 con estados interactivos y variantes específicas
  */
 
 /**
- * Tarjeta de superficie - Tarjeta básica con elevación
+ * Tarjeta de superficie - Tarjeta básica con elevación (Estilo Airbnb)
  * Para contenido general con sombra sutil
  */
 @Composable
@@ -93,7 +94,7 @@ fun SurfaceCard(
 }
 
 /**
- * Tarjeta de información - Para mostrar información importante
+ * Tarjeta de información - Para mostrar información importante (Estilo Airbnb)
  * Con borde sutil y fondo tonal
  */
 @Composable

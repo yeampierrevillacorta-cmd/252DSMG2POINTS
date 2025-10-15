@@ -9,66 +9,66 @@ import androidx.compose.ui.unit.sp
 
 /**
  * Tipografía para la aplicación POINTS
- * Basada en Material 3 con la familia Inter/Manrope
+ * Inspirada en Airbnb - Limpia, moderna y minimalista
  * Escala tipográfica optimizada para legibilidad y jerarquía visual
  */
 
-// Nota: En un proyecto real, se incluirían las fuentes Inter/Manrope en res/font/
-// Por ahora usamos las fuentes del sistema con pesos específicos
+// Nota: En un proyecto real, se incluirían las fuentes Circular Std o Avenir Next
+// Por ahora usamos las fuentes del sistema con pesos específicos optimizados
 val PointsFontFamily = FontFamily.Default
 
 val PointsTypography = Typography(
-    // Display styles - Para títulos principales y hero sections
+    // Display styles - Para títulos principales y hero sections (Estilo Airbnb)
     displayLarge = TextStyle(
         fontFamily = PointsFontFamily,
-        fontWeight = FontWeight.Normal,
-        fontSize = 57.sp,
-        lineHeight = 64.sp,
-        letterSpacing = (-0.25).sp,
+        fontWeight = FontWeight.Bold,
+        fontSize = 48.sp,
+        lineHeight = 56.sp,
+        letterSpacing = (-0.5).sp,
     ),
     displayMedium = TextStyle(
         fontFamily = PointsFontFamily,
-        fontWeight = FontWeight.Normal,
-        fontSize = 45.sp,
-        lineHeight = 52.sp,
-        letterSpacing = 0.sp,
+        fontWeight = FontWeight.Bold,
+        fontSize = 40.sp,
+        lineHeight = 48.sp,
+        letterSpacing = (-0.25).sp,
     ),
     displaySmall = TextStyle(
         fontFamily = PointsFontFamily,
-        fontWeight = FontWeight.Normal,
-        fontSize = 36.sp,
-        lineHeight = 44.sp,
-        letterSpacing = 0.sp,
-    ),
-    
-    // Headline styles - Para títulos de sección
-    headlineLarge = TextStyle(
-        fontFamily = PointsFontFamily,
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.Bold,
         fontSize = 32.sp,
         lineHeight = 40.sp,
         letterSpacing = 0.sp,
     ),
-    headlineMedium = TextStyle(
+    
+    // Headline styles - Para títulos de sección (Estilo Airbnb)
+    headlineLarge = TextStyle(
         fontFamily = PointsFontFamily,
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 28.sp,
         lineHeight = 36.sp,
         letterSpacing = 0.sp,
     ),
-    headlineSmall = TextStyle(
+    headlineMedium = TextStyle(
         fontFamily = PointsFontFamily,
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 24.sp,
         lineHeight = 32.sp,
         letterSpacing = 0.sp,
     ),
-    
-    // Title styles - Para títulos de tarjetas y componentes
-    titleLarge = TextStyle(
+    headlineSmall = TextStyle(
         fontFamily = PointsFontFamily,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 22.sp,
+        fontSize = 20.sp,
+        lineHeight = 28.sp,
+        letterSpacing = 0.sp,
+    ),
+    
+    // Title styles - Para títulos de tarjetas y componentes (Estilo Airbnb)
+    titleLarge = TextStyle(
+        fontFamily = PointsFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 20.sp,
         lineHeight = 28.sp,
         letterSpacing = 0.sp,
     ),
@@ -77,60 +77,60 @@ val PointsTypography = Typography(
         fontWeight = FontWeight.SemiBold,
         fontSize = 16.sp,
         lineHeight = 24.sp,
-        letterSpacing = 0.15.sp,
+        letterSpacing = 0.sp,
     ),
     titleSmall = TextStyle(
         fontFamily = PointsFontFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 14.sp,
         lineHeight = 20.sp,
-        letterSpacing = 0.1.sp,
+        letterSpacing = 0.sp,
     ),
     
-    // Body styles - Para texto principal
+    // Body styles - Para texto principal (Estilo Airbnb)
     bodyLarge = TextStyle(
         fontFamily = PointsFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp,
-        letterSpacing = 0.5.sp,
+        letterSpacing = 0.sp,
     ),
     bodyMedium = TextStyle(
         fontFamily = PointsFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
         lineHeight = 20.sp,
-        letterSpacing = 0.25.sp,
+        letterSpacing = 0.sp,
     ),
     bodySmall = TextStyle(
         fontFamily = PointsFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
         lineHeight = 16.sp,
-        letterSpacing = 0.4.sp,
+        letterSpacing = 0.sp,
     ),
     
-    // Label styles - Para etiquetas y botones
+    // Label styles - Para etiquetas y botones (Estilo Airbnb)
     labelLarge = TextStyle(
         fontFamily = PointsFontFamily,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 14.sp,
         lineHeight = 20.sp,
-        letterSpacing = 0.1.sp,
+        letterSpacing = 0.sp,
     ),
     labelMedium = TextStyle(
         fontFamily = PointsFontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 16.sp,
-        letterSpacing = 0.5.sp,
+        letterSpacing = 0.sp,
     ),
     labelSmall = TextStyle(
         fontFamily = PointsFontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 11.sp,
         lineHeight = 16.sp,
-        letterSpacing = 0.5.sp,
+        letterSpacing = 0.sp,
     ),
 )
 
