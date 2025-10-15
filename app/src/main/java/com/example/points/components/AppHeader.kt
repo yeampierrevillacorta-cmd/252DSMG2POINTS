@@ -48,6 +48,7 @@ fun AppHeader(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminAppHeader(
+    onProfileClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     TopAppBar(
@@ -61,6 +62,15 @@ fun AdminAppHeader(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
+                
+                Spacer(modifier = Modifier.weight(1f))
+                
+                IconButton(onClick = onProfileClick) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Perfil"
+                    )
+                }
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(

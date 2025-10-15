@@ -2,6 +2,7 @@ package com.example.points.profile
 
 import android.net.Uri
 import androidx.lifecycle.ViewModel
+import com.example.points.models.TipoUsuario
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
@@ -30,21 +31,57 @@ class ProfileViewModel : ViewModel() {
 
     fun loadProfile() {
         val id = uid ?: return
+        _isLoading.value = true
+        
         firestore.collection("users").document(id).get()
             .addOnSuccessListener { doc ->
+                _isLoading.value = false
                 if (doc.exists()) {
-                    val name = doc.getString("Nombre") ?: ""
-                    val phone = doc.getString("Telefono") ?: ""
+                    val name = doc.getString("nombre") ?: ""
+                    val phone = doc.getString("telefono") ?: ""
+                    val email = doc.getString("email") ?: auth.currentUser?.email ?: ""
+                    val tipoString = doc.getString("tipo") ?: "CIUDADANO"
+                    val notificaciones = doc.getBoolean("notificaciones") ?: true
                     val photo = doc.getString("photoUrl")
-                    _profile.value = UserProfile(name, phone, photo)
+                    
+                    val tipo = when (tipoString) {
+                        "ADMINISTRADOR" -> TipoUsuario.ADMINISTRADOR
+                        "MODERADOR" -> TipoUsuario.MODERADOR
+                        "CIUDADANO" -> TipoUsuario.CIUDADANO
+                        else -> TipoUsuario.CIUDADANO
+                    }
+                    
+                    _profile.value = UserProfile(
+                        name = name,
+                        phone = phone,
+                        email = email,
+                        tipo = tipo,
+                        notificaciones = notificaciones,
+                        photoUrl = photo
+                    )
+                } else {
+                    _errorMessage.value = "No se encontró el perfil del usuario"
                 }
+            }
+            .addOnFailureListener { e ->
+                _isLoading.value = false
+                _errorMessage.value = "Error al cargar perfil: ${e.message}"
             }
     }
 
     fun updateProfile(name: String, phone: String, photoUri: Uri?, onSuccess: () -> Unit) {
         val id = uid ?: return
         _isLoading.value = true
-        val updates = hashMapOf<String, Any>("Nombre" to name, "Telefono" to phone)
+        
+        // Mantener todos los campos existentes y solo actualizar los que se modifican
+        val currentProfile = _profile.value
+        val updates = hashMapOf<String, Any>(
+            "nombre" to name,
+            "telefono" to phone,
+            "email" to currentProfile.email,
+            "tipo" to currentProfile.tipo.name,
+            "notificaciones" to currentProfile.notificaciones
+        )
 
         if (photoUri != null) {
             val ref = storage.reference.child("profile_images/$id.jpg")
@@ -54,7 +91,8 @@ class ProfileViewModel : ViewModel() {
                     firestore.collection("users").document(id).set(updates)
                         .addOnSuccessListener {
                             _isLoading.value = false
-                            _profile.value = UserProfile(name, phone, updates["photoUrl"] as? String)
+                            // Recargar el perfil completo desde Firestore
+                            loadProfile()
                             onSuccess()
                         }
                         .addOnFailureListener {
@@ -73,7 +111,8 @@ class ProfileViewModel : ViewModel() {
             firestore.collection("users").document(id).set(updates)
                 .addOnSuccessListener {
                     _isLoading.value = false
-                    _profile.value = UserProfile(name, phone, updates["photoUrl"] as? String)
+                    // Recargar el perfil completo desde Firestore
+                    loadProfile()
                     onSuccess()
                 }
                 .addOnFailureListener {
