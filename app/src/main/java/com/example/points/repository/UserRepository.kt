@@ -172,4 +172,148 @@ class UserRepository @Inject constructor(
             Result.failure(e)
         }
     }
+    
+    /**
+     * Obtiene todos los usuarios del sistema (solo para administradores)
+     */
+    suspend fun getAllUsers(): Result<List<User>> {
+        return try {
+            val snapshot = firestore.collection("users")
+                .orderBy("nombre")
+                .get()
+                .await()
+            
+            val users = snapshot.documents.mapNotNull { doc ->
+                try {
+                    val data = doc.data
+                    User(
+                        id = doc.id,
+                        nombre = data?.get("nombre") as? String ?: "Usuario",
+                        email = data?.get("email") as? String ?: "",
+                        telefono = data?.get("telefono") as? String ?: "",
+                        notificaciones = data?.get("notificaciones") as? Boolean ?: true,
+                        tipo = parseTipoUsuario(data?.get("tipo") as? String),
+                        photoUrl = data?.get("photoUrl") as? String
+                    )
+                } catch (e: Exception) {
+                    null
+                }
+            }
+            Result.success(users)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Obtiene todos los usuarios en tiempo real (Flow)
+     */
+    fun getAllUsersFlow(): Flow<List<User>> = flow {
+        val snapshot = firestore.collection("users")
+            .orderBy("nombre")
+            .get()
+            .await()
+        
+        val users = snapshot.documents.mapNotNull { doc ->
+            try {
+                val data = doc.data
+                User(
+                    id = doc.id,
+                    nombre = data?.get("nombre") as? String ?: "Usuario",
+                    email = data?.get("email") as? String ?: "",
+                    telefono = data?.get("telefono") as? String ?: "",
+                    notificaciones = data?.get("notificaciones") as? Boolean ?: true,
+                    tipo = parseTipoUsuario(data?.get("tipo") as? String),
+                    photoUrl = data?.get("photoUrl") as? String
+                )
+            } catch (e: Exception) {
+                null
+            }
+        }
+        emit(users)
+    }
+    
+    /**
+     * Actualiza los datos de un usuario
+     */
+    suspend fun updateUser(userId: String, updates: Map<String, Any>): Result<Unit> {
+        return try {
+            firestore.collection("users")
+                .document(userId)
+                .update(updates)
+                .await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Desactiva/activa un usuario (cambia el estado de notificaciones)
+     */
+    suspend fun toggleUserStatus(userId: String, isActive: Boolean): Result<Unit> {
+        return try {
+            firestore.collection("users")
+                .document(userId)
+                .update("notificaciones", isActive)
+                .await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Obtiene estadísticas de usuarios
+     */
+    suspend fun getUserStats(): Result<Map<String, Int>> {
+        return try {
+            val snapshot = firestore.collection("users").get().await()
+            val stats = mutableMapOf<String, Int>()
+            
+            snapshot.documents.forEach { doc ->
+                val tipo = doc.data?.get("tipo") as? String ?: "CIUDADANO"
+                stats[tipo] = (stats[tipo] ?: 0) + 1
+            }
+            
+            Result.success(stats)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Elimina un usuario del sistema (solo para administradores)
+     */
+    suspend fun deleteUser(userId: String): Result<Unit> {
+        return try {
+            // Verificar que no sea el usuario actual
+            val currentUser = auth.currentUser
+            if (currentUser?.uid == userId) {
+                return Result.failure(Exception("No puedes eliminar tu propia cuenta"))
+            }
+            
+            // Eliminar el documento del usuario
+            firestore.collection("users")
+                .document(userId)
+                .delete()
+                .await()
+            
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Verifica si un usuario puede ser eliminado (no es el usuario actual)
+     */
+    suspend fun canDeleteUser(userId: String): Boolean {
+        return try {
+            val currentUser = auth.currentUser
+            currentUser?.uid != userId
+        } catch (e: Exception) {
+            false
+        }
+    }
 }

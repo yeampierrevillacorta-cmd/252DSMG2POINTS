@@ -10,6 +10,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import kotlinx.coroutines.tasks.await
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -133,13 +135,43 @@ fun AdminHomeScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Admin: ${user.nombre}",
+                                text = "Hola, ${user.nombre}",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
                                 text = user.email,
                                 style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                text = "Tipo: ${user.tipo.displayName}",
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                        // Badge del rol
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = when (user.tipo) {
+                                    TipoUsuario.ADMINISTRADOR -> Color(0xFF4CAF50).copy(alpha = 0.1f)
+                                    TipoUsuario.MODERADOR -> Color(0xFF2196F3).copy(alpha = 0.1f)
+                                    TipoUsuario.CIUDADANO -> Color(0xFFFF9800).copy(alpha = 0.1f)
+                                }
+                            )
+                        ) {
+                            Text(
+                                text = when (user.tipo) {
+                                    TipoUsuario.ADMINISTRADOR -> "ADMIN"
+                                    TipoUsuario.MODERADOR -> "MOD"
+                                    TipoUsuario.CIUDADANO -> "USER"
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = when (user.tipo) {
+                                    TipoUsuario.ADMINISTRADOR -> Color(0xFF4CAF50)
+                                    TipoUsuario.MODERADOR -> Color(0xFF2196F3)
+                                    TipoUsuario.CIUDADANO -> Color(0xFFFF9800)
+                                },
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
                     }
@@ -305,22 +337,67 @@ fun AdminHomeScreen(
         }
         
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            // Verificar rol del usuario para mostrar botones apropiados
+            val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
+            val currentUser = auth.currentUser
+            var userRole by remember { mutableStateOf<com.example.points.models.TipoUsuario?>(null) }
+            var isLoading by remember { mutableStateOf(true) }
+            
+            LaunchedEffect(currentUser?.uid) {
+                if (currentUser?.uid != null) {
+                    try {
+                        val userDoc = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                            .collection("users")
+                            .document(currentUser.uid)
+                            .get()
+                            .await()
+                        
+                        if (userDoc.exists()) {
+                            val tipo = userDoc.getString("tipo")
+                            userRole = when (tipo) {
+                                "ADMINISTRADOR" -> com.example.points.models.TipoUsuario.ADMINISTRADOR
+                                "MODERADOR" -> com.example.points.models.TipoUsuario.MODERADOR
+                                "CIUDADANO" -> com.example.points.models.TipoUsuario.CIUDADANO
+                                else -> null
+                            }
+                        }
+                    } catch (e: Exception) {
+                        // Error al obtener el rol
+                    }
+                }
+                isLoading = false
+            }
+            
+            if (isLoading) {
+                // Mostrar solo incidentes mientras carga
                 PrimaryButton(
                     onClick = { navController.navigate("admin_incidents") },
                     text = "Incidentes",
                     icon = Icons.Default.Report,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.fillMaxWidth()
                 )
-                PrimaryButton(
-                    onClick = { navController.navigate("admin_users") },
-                    text = "Usuarios",
-                    icon = Icons.Default.People,
-                    modifier = Modifier.weight(1f)
-                )
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    PrimaryButton(
+                        onClick = { navController.navigate("admin_incidents") },
+                        text = "Incidentes",
+                        icon = Icons.Default.Report,
+                        modifier = Modifier.weight(1f)
+                    )
+                    
+                    // Solo mostrar botón de usuarios a administradores
+                    if (userRole == com.example.points.models.TipoUsuario.ADMINISTRADOR) {
+                        PrimaryButton(
+                            onClick = { navController.navigate("admin_users") },
+                            text = "Usuarios",
+                            icon = Icons.Default.People,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
             }
         }
     }

@@ -20,8 +20,13 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.tasks.await
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -89,14 +94,78 @@ fun AdminMainLayout(
     onProfileClick: () -> Unit,
     content: @Composable () -> Unit
 ) {
-    val items = listOf(
-        BottomNavItem.AdminHome,
-        BottomNavItem.AdminIncidents,
-        BottomNavItem.AdminPOIs,
-        BottomNavItem.AdminUsers,
-        BottomNavItem.AdminAnalytics,
-        BottomNavItem.AdminSettings
-    )
+    val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
+    val currentUser = auth.currentUser
+    var userRole by remember { mutableStateOf<com.example.points.models.TipoUsuario?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    
+    // Verificar el rol del usuario actual
+    LaunchedEffect(currentUser?.uid) {
+        if (currentUser?.uid != null) {
+            try {
+                val userDoc = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                    .collection("users")
+                    .document(currentUser.uid)
+                    .get()
+                    .await()
+                
+                if (userDoc.exists()) {
+                    val tipo = userDoc.getString("tipo")
+                    userRole = when (tipo) {
+                        "ADMINISTRADOR" -> com.example.points.models.TipoUsuario.ADMINISTRADOR
+                        "MODERADOR" -> com.example.points.models.TipoUsuario.MODERADOR
+                        "CIUDADANO" -> com.example.points.models.TipoUsuario.CIUDADANO
+                        else -> null
+                    }
+                }
+            } catch (e: Exception) {
+                // Error al obtener el rol
+            }
+        }
+        isLoading = false
+    }
+    
+    // Determinar qué elementos mostrar según el rol
+    val items = if (isLoading) {
+        // Mostrar elementos básicos mientras carga
+        listOf(
+            BottomNavItem.AdminHome,
+            BottomNavItem.AdminIncidents,
+            BottomNavItem.AdminPOIs
+        )
+    } else {
+        when (userRole) {
+            com.example.points.models.TipoUsuario.ADMINISTRADOR -> {
+                // Administradores ven todas las opciones
+                listOf(
+                    BottomNavItem.AdminHome,
+                    BottomNavItem.AdminIncidents,
+                    BottomNavItem.AdminPOIs,
+                    BottomNavItem.AdminUsers,
+                    BottomNavItem.AdminAnalytics,
+                    BottomNavItem.AdminSettings
+                )
+            }
+            com.example.points.models.TipoUsuario.MODERADOR -> {
+                // Moderadores no ven gestión de usuarios
+                listOf(
+                    BottomNavItem.AdminHome,
+                    BottomNavItem.AdminIncidents,
+                    BottomNavItem.AdminPOIs,
+                    BottomNavItem.AdminAnalytics,
+                    BottomNavItem.AdminSettings
+                )
+            }
+            else -> {
+                // Fallback para otros roles
+                listOf(
+                    BottomNavItem.AdminHome,
+                    BottomNavItem.AdminIncidents,
+                    BottomNavItem.AdminPOIs
+                )
+            }
+        }
+    }
 
     BackToAdminHomeOnBack(navController = navController)
 

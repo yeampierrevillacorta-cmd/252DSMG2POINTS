@@ -18,16 +18,34 @@ import androidx.compose.material.icons.filled.NotificationImportant
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.tasks.await
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.font.FontWeight
+import com.example.points.viewmodel.UserManagementViewModel
+import com.example.points.viewmodel.UserManagementUiState
+import com.example.points.models.User
+import com.example.points.models.TipoUsuario
+import com.example.points.screens.AdminUsersContent
+import com.example.points.screens.EditUserDialog
+import com.example.points.screens.DeleteUserDialog
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import androidx.navigation.compose.NavHost  
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -36,7 +54,6 @@ import com.example.points.auth.LoginScreen
 import com.example.points.auth.RegisterScreen
 import com.example.points.components.MainLayout
 import com.example.points.components.AdminMainLayout
-import com.example.points.models.TipoUsuario
 import com.example.points.profile.ProfileScreen
 import com.example.points.profile.EditProfileScreen
 import com.example.points.screens.AdminHomeScreen
@@ -519,32 +536,118 @@ fun AdminIncidentsScreen(
 
 @Composable
 fun AdminUsersScreen() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            Icons.Default.People,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "👥 Gestión de Usuarios",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Próximamente: Panel de administración para gestionar usuarios",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-            textAlign = TextAlign.Center
-        )
+    val auth = FirebaseAuth.getInstance()
+    val currentUser = auth.currentUser
+    var userRole by remember { mutableStateOf<TipoUsuario?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    
+    // Verificar el rol del usuario actual
+    LaunchedEffect(currentUser?.uid) {
+        if (currentUser?.uid != null) {
+            try {
+                val userDoc = FirebaseFirestore.getInstance()
+                    .collection("users")
+                    .document(currentUser.uid)
+                    .get()
+                    .await()
+                
+                if (userDoc.exists()) {
+                    val tipo = userDoc.getString("tipo")
+                    userRole = when (tipo) {
+                        "ADMINISTRADOR" -> TipoUsuario.ADMINISTRADOR
+                        "MODERADOR" -> TipoUsuario.MODERADOR
+                        "CIUDADANO" -> TipoUsuario.CIUDADANO
+                        else -> null
+                    }
+                }
+            } catch (e: Exception) {
+                // Error al obtener el rol
+            }
+        }
+        isLoading = false
+    }
+    
+    when {
+        isLoading -> {
+            // Mostrar loading
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                CircularProgressIndicator()
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Verificando permisos...")
+            }
+        }
+        userRole == TipoUsuario.ADMINISTRADOR -> {
+            // Solo administradores pueden ver la gestión de usuarios
+            val viewModel: UserManagementViewModel = viewModel()
+            val uiState by viewModel.uiState.collectAsState()
+            
+            AdminUsersContent(
+                uiState = uiState,
+                onUpdateUserRole = viewModel::updateUserRole,
+                onToggleUserStatus = viewModel::toggleUserStatus,
+                onShowEditDialog = viewModel::showEditDialog,
+                onShowDeleteDialog = viewModel::showDeleteDialog,
+                onClearError = viewModel::clearError,
+                onUpdateSearchQuery = viewModel::updateSearchQuery,
+                onUpdateRoleFilter = viewModel::updateRoleFilter,
+                onToggleActiveFilter = viewModel::toggleActiveFilter,
+                onClearFilters = viewModel::clearFilters
+            )
+            
+            // Diálogos
+            if (uiState.showEditDialog && uiState.selectedUser != null) {
+                EditUserDialog(
+                    user = uiState.selectedUser!!,
+                    onDismiss = viewModel::hideEditDialog,
+                    onUpdateUser = viewModel::updateUserInfo
+                )
+            }
+            
+            if (uiState.showDeleteDialog && uiState.selectedUser != null) {
+                DeleteUserDialog(
+                    user = uiState.selectedUser!!,
+                    onDismiss = viewModel::hideDeleteDialog,
+                    onConfirmDelete = viewModel::deleteUser
+                )
+            }
+        }
+        else -> {
+            // Usuarios no autorizados (moderadores, ciudadanos, etc.)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.People,
+                    contentDescription = null,
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Acceso Denegado",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Solo los administradores pueden acceder a la gestión de usuarios",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
     }
 }
 

@@ -19,6 +19,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 
 @Composable
 fun RegisterScreen(
@@ -80,22 +82,66 @@ fun RegisterScreen(
 
         Spacer(Modifier.height(8.dp))
 
+        var passwordVisible by remember { mutableStateOf(false) }
+        
         OutlinedTextField(
             value = uiState.password,
             onValueChange = { viewModel.onPasswordChange(it) },
             label = { Text("Contraseña") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
+            visualTransformation = if (passwordVisible) {
+                androidx.compose.ui.text.input.VisualTransformation.None
+            } else {
+                PasswordVisualTransformation()
+            },
+            modifier = Modifier.fillMaxWidth(),
+            trailingIcon = {
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(
+                        imageVector = if (passwordVisible) {
+                            Icons.Default.VisibilityOff
+                        } else {
+                            Icons.Default.Visibility
+                        },
+                        contentDescription = if (passwordVisible) {
+                            "Ocultar contraseña"
+                        } else {
+                            "Mostrar contraseña"
+                        }
+                    )
+                }
+            }
         )
 
         Spacer(Modifier.height(8.dp))
 
+        var confirmPasswordVisible by remember { mutableStateOf(false) }
+        
         OutlinedTextField(
             value = uiState.confirmPassword,
             onValueChange = { viewModel.onConfirmPasswordChange(it) },
             label = { Text("Confirmar Contraseña") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
+            visualTransformation = if (confirmPasswordVisible) {
+                androidx.compose.ui.text.input.VisualTransformation.None
+            } else {
+                PasswordVisualTransformation()
+            },
+            modifier = Modifier.fillMaxWidth(),
+            trailingIcon = {
+                IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                    Icon(
+                        imageVector = if (confirmPasswordVisible) {
+                            Icons.Default.VisibilityOff
+                        } else {
+                            Icons.Default.Visibility
+                        },
+                        contentDescription = if (confirmPasswordVisible) {
+                            "Ocultar confirmación de contraseña"
+                        } else {
+                            "Mostrar confirmación de contraseña"
+                        }
+                    )
+                }
+            }
         )
 
         Spacer(Modifier.height(12.dp))
