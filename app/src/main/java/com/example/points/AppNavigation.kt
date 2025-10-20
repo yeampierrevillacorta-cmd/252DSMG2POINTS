@@ -105,7 +105,7 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             )
         }
 
-        composable("forgot_passworAdminIncidentsScreend") {
+        composable("forgot_password") {
             ForgotPasswordScreen(
                 onPasswordReset = {
                     Toast.makeText(navController.context, "Correo de recuperación enviado 📧", Toast.LENGTH_SHORT).show()
@@ -158,6 +158,17 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
         }
 
         composable("incidents") {
+            MainLayout(
+                navController = navController,
+                onProfileClick = { navController.navigate("profile") }
+            ) {
+                com.example.points.screens.IncidentsScreen(
+                    navController = navController
+                )
+            }
+        }
+        
+        composable("incidents_map") {
             MainLayout(
                 navController = navController,
                 onProfileClick = { navController.navigate("profile") }

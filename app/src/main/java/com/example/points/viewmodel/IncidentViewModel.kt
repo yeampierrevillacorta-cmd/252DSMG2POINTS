@@ -20,11 +20,12 @@ import kotlinx.coroutines.launch
 
 data class IncidentUiState(
     val incidents: List<Incident> = emptyList(),
+    val filteredIncidents: List<Incident> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val selectedIncident: Incident? = null,
-    val filterType: TipoIncidente? = null,
-    val filterStatus: EstadoIncidente? = null,
+    val selectedType: TipoIncidente? = null,
+    val selectedStatus: EstadoIncidente? = null,
     val currentUser: User? = null,
     val isUserAdmin: Boolean = false
 )
@@ -54,6 +55,12 @@ class IncidentViewModel(
     val createIncidentState: StateFlow<CreateIncidentUiState> = _createIncidentState.asStateFlow()
     
     init {
+        // Inicializar el estado con una lista vacía para evitar crashes
+        _uiState.value = _uiState.value.copy(
+            incidents = emptyList(),
+            filteredIncidents = emptyList(),
+            isLoading = false
+        )
         loadAllIncidents()
         loadCurrentUser()
     }
@@ -71,6 +78,7 @@ class IncidentViewModel(
                     }
                     _uiState.value = _uiState.value.copy(
                         incidents = incidents,
+                        filteredIncidents = incidents,
                         isLoading = false,
                         errorMessage = null
                     )
@@ -87,57 +95,41 @@ class IncidentViewModel(
     
     fun filterByType(tipo: TipoIncidente?) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                filterType = tipo
-            )
-            
-            try {
-                if (tipo == null) {
-                    loadAllIncidents()
-                } else {
-                    repository.getIncidentsByType(tipo).collect { incidents ->
-                        _uiState.value = _uiState.value.copy(
-                            incidents = incidents,
-                            isLoading = false,
-                            errorMessage = null
-                        )
-                    }
+            val currentState = _uiState.value
+            val filteredIncidents = if (tipo == null) {
+                currentState.incidents
+            } else {
+                currentState.incidents.filter { incident ->
+                    incident.tipo == tipo.displayName
                 }
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = e.message ?: "Error al filtrar"
-                )
             }
+            
+            _uiState.value = currentState.copy(
+                selectedType = tipo,
+                filteredIncidents = filteredIncidents,
+                isLoading = false,
+                errorMessage = null
+            )
         }
     }
     
     fun filterByStatus(estado: EstadoIncidente?) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                filterStatus = estado
-            )
-            
-            try {
-                if (estado == null) {
-                    loadAllIncidents()
-                } else {
-                    repository.getIncidentsByStatus(estado).collect { incidents ->
-                        _uiState.value = _uiState.value.copy(
-                            incidents = incidents,
-                            isLoading = false,
-                            errorMessage = null
-                        )
-                    }
+            val currentState = _uiState.value
+            val filteredIncidents = if (estado == null) {
+                currentState.incidents
+            } else {
+                currentState.incidents.filter { incident ->
+                    incident.estado == estado
                 }
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = e.message ?: "Error al filtrar"
-                )
             }
+            
+            _uiState.value = currentState.copy(
+                selectedStatus = estado,
+                filteredIncidents = filteredIncidents,
+                isLoading = false,
+                errorMessage = null
+            )
         }
     }
     
@@ -294,13 +286,14 @@ class IncidentViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
                 isLoading = true,
-                filterStatus = estado
+                selectedStatus = estado
             )
             
             try {
                 repository.getIncidentsByStatus(estado).collect { incidents ->
                     _uiState.value = _uiState.value.copy(
                         incidents = incidents,
+                        filteredIncidents = incidents,
                         isLoading = false,
                         errorMessage = null
                     )

@@ -101,7 +101,37 @@ class IncidentRepository {
                 
                 val incidents = snapshot?.documents?.mapNotNull { doc ->
                     try {
-                        doc.toObject(Incident::class.java)?.copy(id = doc.id)
+                        val data = doc.data
+                        val incident = Incident(
+                            id = doc.id,
+                            tipo = data?.get("tipo") as? String ?: "",
+                            descripcion = data?.get("descripcion") as? String ?: "",
+                            fotoUrl = data?.get("fotoUrl") as? String,
+                            videoUrl = data?.get("videoUrl") as? String,
+                            ubicacion = try {
+                                val ubicacionData = data?.get("ubicacion") as? Map<String, Any>
+                                Ubicacion(
+                                    lat = (ubicacionData?.get("lat") as? Number)?.toDouble() ?: 0.0,
+                                    lon = (ubicacionData?.get("lon") as? Number)?.toDouble() ?: 0.0,
+                                    direccion = ubicacionData?.get("direccion") as? String ?: ""
+                                )
+                            } catch (e: Exception) {
+                                Ubicacion()
+                            },
+                            fechaHora = data?.get("fechaHora") as? com.google.firebase.Timestamp ?: com.google.firebase.Timestamp.now(),
+                            estado = try {
+                                val estadoString = data?.get("estado") as? String
+                                if (estadoString != null) {
+                                    EstadoIncidente.fromString(estadoString)
+                                } else {
+                                    EstadoIncidente.PENDIENTE
+                                }
+                            } catch (e: Exception) {
+                                EstadoIncidente.PENDIENTE
+                            },
+                            usuarioId = data?.get("usuarioId") as? String ?: ""
+                        )
+                        incident
                     } catch (e: Exception) {
                         null
                     }
@@ -126,7 +156,37 @@ class IncidentRepository {
                 
                 val incidents = snapshot?.documents?.mapNotNull { doc ->
                     try {
-                        doc.toObject(Incident::class.java)?.copy(id = doc.id)
+                        val data = doc.data
+                        val incident = Incident(
+                            id = doc.id,
+                            tipo = data?.get("tipo") as? String ?: "",
+                            descripcion = data?.get("descripcion") as? String ?: "",
+                            fotoUrl = data?.get("fotoUrl") as? String,
+                            videoUrl = data?.get("videoUrl") as? String,
+                            ubicacion = try {
+                                val ubicacionData = data?.get("ubicacion") as? Map<String, Any>
+                                Ubicacion(
+                                    lat = (ubicacionData?.get("lat") as? Number)?.toDouble() ?: 0.0,
+                                    lon = (ubicacionData?.get("lon") as? Number)?.toDouble() ?: 0.0,
+                                    direccion = ubicacionData?.get("direccion") as? String ?: ""
+                                )
+                            } catch (e: Exception) {
+                                Ubicacion()
+                            },
+                            fechaHora = data?.get("fechaHora") as? com.google.firebase.Timestamp ?: com.google.firebase.Timestamp.now(),
+                            estado = try {
+                                val estadoString = data?.get("estado") as? String
+                                if (estadoString != null) {
+                                    EstadoIncidente.fromString(estadoString)
+                                } else {
+                                    EstadoIncidente.PENDIENTE
+                                }
+                            } catch (e: Exception) {
+                                EstadoIncidente.PENDIENTE
+                            },
+                            usuarioId = data?.get("usuarioId") as? String ?: ""
+                        )
+                        incident
                     } catch (e: Exception) {
                         null
                     }
@@ -185,9 +245,14 @@ class IncidentRepository {
     suspend fun getIncidentById(incidentId: String): Result<Incident?> {
         return try {
             val document = incidentsCollection.document(incidentId).get().await()
-            val incident = document.toObject(Incident::class.java)?.copy(id = document.id)
+            if (!document.exists()) {
+                return Result.success(null)
+            }
+            
+            val incident = parseDocumentToIncident(document)
             Result.success(incident)
         } catch (e: Exception) {
+            Log.e("IncidentRepository", "Error obteniendo incidente por ID: $incidentId", e)
             Result.failure(e)
         }
     }
@@ -299,6 +364,45 @@ class IncidentRepository {
             Result.success(incidents)
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+    
+    // Función auxiliar para parsear un documento de Firebase a Incident
+    private fun parseDocumentToIncident(doc: com.google.firebase.firestore.DocumentSnapshot): Incident? {
+        return try {
+            val data = doc.data
+            Incident(
+                id = doc.id,
+                tipo = data?.get("tipo") as? String ?: "",
+                descripcion = data?.get("descripcion") as? String ?: "",
+                fotoUrl = data?.get("fotoUrl") as? String,
+                videoUrl = data?.get("videoUrl") as? String,
+                ubicacion = try {
+                    val ubicacionData = data?.get("ubicacion") as? Map<String, Any>
+                    Ubicacion(
+                        lat = (ubicacionData?.get("lat") as? Number)?.toDouble() ?: 0.0,
+                        lon = (ubicacionData?.get("lon") as? Number)?.toDouble() ?: 0.0,
+                        direccion = ubicacionData?.get("direccion") as? String ?: ""
+                    )
+                } catch (e: Exception) {
+                    Ubicacion()
+                },
+                fechaHora = data?.get("fechaHora") as? com.google.firebase.Timestamp ?: com.google.firebase.Timestamp.now(),
+                estado = try {
+                    val estadoString = data?.get("estado") as? String
+                    if (estadoString != null) {
+                        EstadoIncidente.fromString(estadoString)
+                    } else {
+                        EstadoIncidente.PENDIENTE
+                    }
+                } catch (e: Exception) {
+                    EstadoIncidente.PENDIENTE
+                },
+                usuarioId = data?.get("usuarioId") as? String ?: ""
+            )
+        } catch (e: Exception) {
+            Log.e("IncidentRepository", "Error parseando documento ${doc.id}", e)
+            null
         }
     }
 }
