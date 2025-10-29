@@ -20,6 +20,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.points.models.EstadoPOI
 import com.example.points.models.PointOfInterest
+import com.example.points.constants.ButtonText
+import com.example.points.constants.LoadingMessage
+import com.example.points.constants.ErrorMessage
 import com.example.points.viewmodel.PointOfInterestViewModel
 import com.example.points.components.PointsLoading
 import com.example.points.components.PointsFeedback
@@ -118,13 +121,13 @@ fun PendingPOIsList(viewModel: PointOfInterestViewModel) {
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                PointsLoading(message = "Cargando POIs pendientes...")
+                PointsLoading(message = LoadingMessage.CARGANDO_POI.value)
             }
         }
         
         errorMessage != null -> {
             PointsFeedback(
-                message = errorMessage ?: "Error desconocido",
+                message = errorMessage ?: ErrorMessage.ERROR_DESCONOCIDO.value,
                 type = "error",
                 onRetry = { /* Retry logic */ }
             )
@@ -132,7 +135,7 @@ fun PendingPOIsList(viewModel: PointOfInterestViewModel) {
         
         pendingPOIs.isEmpty() -> {
             PointsFeedback(
-                message = "No hay puntos de interés pendientes de revisión",
+                message = ErrorMessage.NO_HAY_POI.value,
                 type = "empty"
             )
         }
@@ -173,13 +176,13 @@ fun InReviewPOIsList(viewModel: PointOfInterestViewModel) {
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                PointsLoading(message = "Cargando POIs en revisión...")
+                PointsLoading(message = LoadingMessage.CARGANDO_POI.value)
             }
         }
         
         inReviewPOIs.isEmpty() -> {
             PointsFeedback(
-                message = "No hay puntos de interés en revisión",
+                message = ErrorMessage.NO_HAY_POI.value,
                 type = "empty"
             )
         }
@@ -220,13 +223,13 @@ fun ApprovedPOIsList(viewModel: PointOfInterestViewModel) {
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                PointsLoading(message = "Cargando POIs aprobados...")
+                PointsLoading(message = LoadingMessage.CARGANDO_POI.value)
             }
         }
         
         approvedPOIs.isEmpty() -> {
             PointsFeedback(
-                message = "No hay puntos de interés aprobados",
+                message = ErrorMessage.NO_HAY_POI.value,
                 type = "empty"
             )
         }
@@ -267,13 +270,13 @@ fun RejectedPOIsList(viewModel: PointOfInterestViewModel) {
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                PointsLoading(message = "Cargando POIs rechazados...")
+                PointsLoading(message = LoadingMessage.CARGANDO_POI.value)
             }
         }
         
         rejectedPOIs.isEmpty() -> {
             PointsFeedback(
-                message = "No hay puntos de interés rechazados",
+                message = ErrorMessage.NO_HAY_POI.value,
                 type = "empty"
             )
         }
@@ -424,7 +427,7 @@ fun POIManagementCard(
                 ) {
                     Icon(Icons.Filled.Visibility, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Ver detalles")
+                    Text(ButtonText.VER_DETALLES.value)
                 }
                 
                 onApprove?.let { approveAction ->

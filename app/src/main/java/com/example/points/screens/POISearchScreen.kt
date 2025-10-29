@@ -29,6 +29,7 @@ import com.example.points.R
 import com.example.points.models.CategoriaPOI
 import com.example.points.models.PointOfInterest
 import com.example.points.models.Ubicacion
+import com.example.points.constants.AppRoutes
 import com.example.points.viewmodel.PointOfInterestViewModel
 import com.example.points.components.PointsLoading
 import com.example.points.components.PointsFeedback
@@ -267,7 +268,7 @@ fun POISearchScreen(
                             poi = poi,
                             userLocation = uiState.userLocation,
                             onClick = {
-                                navController.navigate("poi_detail/${poi.id}")
+                                navController.navigate("${AppRoutes.POI_DETAIL}/${poi.id}")
                             }
                         )
                     }

@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.points.components.OptimizedIncidentImage
 import com.example.points.components.ShareOptionsDialog
+import com.example.points.constants.ButtonText
 import com.example.points.models.Incident
 import com.example.points.utils.MarkerUtils
 import com.example.points.utils.ShareUtils
@@ -142,7 +143,7 @@ fun IncidentDetailScreen(
                                     containerColor = MaterialTheme.colorScheme.error
                                 )
                             ) {
-                                Text("Volver")
+                                Text(ButtonText.VOLVER.value)
                             }
                         }
                     }

@@ -18,6 +18,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.points.constants.ButtonText
 import com.example.points.models.*
 import com.example.points.utils.getCategoryIcon
 import java.util.*
@@ -602,7 +603,7 @@ fun CreateScheduleDialog(
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Cancelar")
+                        Text(ButtonText.CANCELAR.value)
                     }
                     
                     Button(

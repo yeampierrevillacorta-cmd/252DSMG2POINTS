@@ -32,6 +32,7 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.points.constants.AppRoutes
 
 sealed class BottomNavItem(
     val route: String,
@@ -39,21 +40,21 @@ sealed class BottomNavItem(
     val icon: androidx.compose.ui.graphics.vector.ImageVector
 ) {
     // Elementos para ciudadanos
-    object Home : BottomNavItem("home", "INICIO", Icons.Filled.Home)
-    object Incidents : BottomNavItem("incidents", "INCIDENTES", Icons.Filled.Report)
-    object Places : BottomNavItem("places", "LUGARES", Icons.Filled.LocationOn)
-    object Events : BottomNavItem("events", "EVENTOS", Icons.Filled.Event)
+    object Home : BottomNavItem(AppRoutes.HOME, "INICIO", Icons.Filled.Home)
+    object Incidents : BottomNavItem(AppRoutes.INCIDENTS, "INCIDENTES", Icons.Filled.Report)
+    object Places : BottomNavItem(AppRoutes.POI_MAP, "LUGARES", Icons.Filled.LocationOn)
+    object Events : BottomNavItem(AppRoutes.EVENTS, "EVENTOS", Icons.Filled.Event)
     object Alerts : BottomNavItem("alerts", "ALERTAS", Icons.Filled.NotificationImportant)
-    object Profile : BottomNavItem("profile", "PERFIL", Icons.Filled.NotificationImportant)
+    object Profile : BottomNavItem(AppRoutes.PROFILE, "PERFIL", Icons.Filled.NotificationImportant)
     
     // Elementos para administradores
-    object AdminHome : BottomNavItem("admin_home", "INICIO", Icons.Filled.AdminPanelSettings)
-    object AdminIncidents : BottomNavItem("admin_incidents", "INCIDENTES", Icons.Filled.Report)
-    object AdminPOIs : BottomNavItem("admin_pois", "LUGARES", Icons.Filled.LocationOn)
-    object AdminUsers : BottomNavItem("admin_users", "USUARIOS", Icons.Filled.People)
+    object AdminHome : BottomNavItem(AppRoutes.ADMIN_HOME, "INICIO", Icons.Filled.AdminPanelSettings)
+    object AdminIncidents : BottomNavItem(AppRoutes.ADMIN_INCIDENTS, "INCIDENTES", Icons.Filled.Report)
+    object AdminPOIs : BottomNavItem(AppRoutes.ADMIN_POI_MANAGEMENT, "LUGARES", Icons.Filled.LocationOn)
+    object AdminUsers : BottomNavItem(AppRoutes.ADMIN_USER_MANAGEMENT, "USUARIOS", Icons.Filled.People)
     object AdminAnalytics : BottomNavItem("admin_analytics", "ANALÍTICAS", Icons.Filled.Analytics)
     object AdminSettings : BottomNavItem("admin_settings", "CONFIG", Icons.Filled.Settings)
-    object AdminProfile : BottomNavItem("admin_profile", "PERFIL", Icons.Filled.Person)
+    object AdminProfile : BottomNavItem(AppRoutes.ADMIN_PROFILE, "PERFIL", Icons.Filled.Person)
 }
 
 @Composable

@@ -29,6 +29,7 @@ import com.example.points.R
 import com.example.points.models.PointOfInterest
 import com.example.points.models.CaracteristicaPOI
 import com.example.points.models.DiaSemana
+import com.example.points.constants.ButtonText
 import com.example.points.models.CategoriaPOI
 import com.example.points.models.Ubicacion
 import com.example.points.viewmodel.PointOfInterestViewModel
@@ -147,7 +148,7 @@ fun POIDetailScreen(
                         Button(
                             onClick = { navController.popBackStack() }
                         ) {
-                            Text("Volver")
+                            Text(ButtonText.VOLVER.value)
                         }
                     }
                 }
@@ -595,7 +596,7 @@ fun LocationCard(poi: PointOfInterest, navController: NavController) {
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Compartir")
+                    Text(ButtonText.COMPARTIR.value)
                 }
             }
         }

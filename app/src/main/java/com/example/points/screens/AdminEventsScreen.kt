@@ -23,6 +23,8 @@ import com.example.points.models.EstadoEvento
 import com.example.points.viewmodel.EventViewModel
 import com.example.points.components.PointsLoading
 import com.example.points.components.PointsFeedback
+import com.example.points.constants.LoadingMessage
+import com.example.points.constants.ErrorMessage
 import com.example.points.utils.getCategoryIcon
 import java.text.SimpleDateFormat
 import java.util.*
@@ -123,7 +125,7 @@ fun AdminEventsScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    PointsLoading(message = "Cargando eventos...")
+                    PointsLoading(message = LoadingMessage.CARGANDO_EVENTOS.value)
                 }
             }
             
@@ -133,7 +135,7 @@ fun AdminEventsScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     PointsFeedback(
-                        message = uiState.errorMessage ?: "Error desconocido",
+                        message = uiState.errorMessage ?: ErrorMessage.ERROR_DESCONOCIDO.value,
                         type = "error",
                         onRetry = { 
                             if (selectedTab == 0) {

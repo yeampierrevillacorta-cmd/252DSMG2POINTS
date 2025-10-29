@@ -1,5 +1,10 @@
 package com.example.points.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,6 +30,13 @@ import com.example.points.models.EstadoEvento
 import com.example.points.viewmodel.EventViewModel
 import com.example.points.components.PointsLoading
 import com.example.points.components.PointsFeedback
+import com.example.points.constants.ReviewStatus
+import com.example.points.constants.ButtonText
+import com.example.points.constants.LoadingMessage
+import com.example.points.constants.ErrorMessage
+import com.example.points.constants.SectionTitle
+import com.example.points.constants.ContentDescription
+import com.example.points.constants.AppSpacing
 import com.example.points.utils.getCategoryIcon
 import java.text.SimpleDateFormat
 import java.util.*
@@ -91,7 +103,7 @@ fun EventsScreen(
                 ) {
                     Icon(
                         imageVector = if (showFilters) Icons.Default.Close else Icons.Default.FilterList,
-                        contentDescription = "Filtros",
+                        contentDescription = ContentDescription.FILTROS.value,
                         tint = if (showFilters) MaterialTheme.colorScheme.onPrimary 
                                else MaterialTheme.colorScheme.onSurface
                     )
@@ -110,102 +122,108 @@ fun EventsScreen(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Crear")
+                    Text(ButtonText.CREAR.value)
                 }
             }
         }
         
-        // Panel de filtros
-        if (showFilters) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
+        // Panel de filtros con animación de expansión
+        AnimatedVisibility(
+            visible = showFilters,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()
+        ) {
+            Column {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Text(
-                        text = "Filtros",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Filtro de categoría
-                    Text(
-                        text = "Categoría",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Medium
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        item {
-                            FilterChip(
-                                onClick = { viewModel.clearSearch() },
-                                label = { Text("Todas") },
-                                selected = uiState.selectedCategory == null,
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.Clear,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            )
-                        }
-                        
-                        items(CategoriaEvento.values()) { category ->
-                            FilterChip(
-                                onClick = { 
-                                    if (uiState.selectedCategory == category) {
-                                        viewModel.clearSearch()
-                                    } else {
-                                        viewModel.loadEventsByCategory(category)
-                                    }
-                                },
-                                label = { Text(category.displayName) },
-                                selected = uiState.selectedCategory == category,
-                                leadingIcon = {
-                                    Icon(
-                                        getCategoryIcon(category.icon),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            )
-                        }
-                    }
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Filtro de mostrar solo próximos
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Column(
+                        modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
-                            text = "Solo eventos próximos",
+                            text = SectionTitle.FILTROS.value,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        
+                        Spacer(modifier = Modifier.height(AppSpacing.STANDARD))
+                        
+                        // Filtro de categoría
+                        Text(
+                            text = SectionTitle.CATEGORIA.value,
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Medium
                         )
                         
-                        Switch(
-                            checked = uiState.showOnlyUpcoming,
-                            onCheckedChange = { viewModel.toggleShowOnlyUpcoming() }
-                        )
+                        Spacer(modifier = Modifier.height(AppSpacing.MEDIUM))
+                        
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            item {
+                                FilterChip(
+                                    onClick = { viewModel.clearSearch() },
+                                    label = { Text(ButtonText.TODAS.value) },
+                                    selected = uiState.selectedCategory == null,
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Default.Clear,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                )
+                            }
+                            
+                            items(CategoriaEvento.values()) { category ->
+                                FilterChip(
+                                    onClick = { 
+                                        if (uiState.selectedCategory == category) {
+                                            viewModel.clearSearch()
+                                        } else {
+                                            viewModel.loadEventsByCategory(category)
+                                        }
+                                    },
+                                    label = { Text(category.displayName) },
+                                    selected = uiState.selectedCategory == category,
+                                    leadingIcon = {
+                                        Icon(
+                                            getCategoryIcon(category.icon),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        // Filtro de mostrar solo próximos
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = SectionTitle.SOLO_PROXIMOS.value,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            
+                            Switch(
+                                checked = uiState.showOnlyUpcoming,
+                                onCheckedChange = { viewModel.toggleShowOnlyUpcoming() }
+                            )
+                        }
                     }
                 }
+                
+                Spacer(modifier = Modifier.height(16.dp))
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
         }
         
         // Contenido principal
@@ -215,7 +233,7 @@ fun EventsScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    PointsLoading(message = "Cargando eventos...")
+                    PointsLoading(message = LoadingMessage.CARGANDO_EVENTOS.value)
                 }
             }
             
@@ -225,7 +243,7 @@ fun EventsScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     PointsFeedback(
-                        message = uiState.errorMessage ?: "Error desconocido",
+                        message = uiState.errorMessage ?: ErrorMessage.ERROR_DESCONOCIDO.value,
                         type = "error",
                         onRetry = { viewModel.loadAllEvents() }
                     )
@@ -242,7 +260,7 @@ fun EventsScreen(
                     if (uiState.upcomingEvents.isNotEmpty() && uiState.showOnlyUpcoming) {
                         item {
                             Text(
-                                text = "📅 Próximos Eventos",
+                                text = SectionTitle.PROXIMOS_EVENTOS.value,
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onBackground
@@ -270,7 +288,7 @@ fun EventsScreen(
                                 text = if (uiState.selectedCategory != null) {
                                     "📋 ${uiState.selectedCategory!!.displayName}"
                                 } else {
-                                    "🎪 Todos los Eventos"
+                                    SectionTitle.TODOS_LOS_EVENTOS.value
                                 },
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
@@ -297,12 +315,12 @@ fun EventsScreen(
                                         )
                                         Spacer(modifier = Modifier.height(16.dp))
                                         Text(
-                                            text = "No hay eventos disponibles",
+                                            text = ErrorMessage.NO_HAY_EVENTOS.value,
                                             style = MaterialTheme.typography.titleMedium,
                                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                                         )
                                         Text(
-                                            text = "Intenta cambiar los filtros o crear un nuevo evento",
+                                            text = "${ErrorMessage.INTENTA_CAMBIAR_FILTROS.value} evento",
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                                         )
@@ -429,14 +447,7 @@ fun EventCard(
                     )
                 ) {
                     Text(
-                        text = when (event.estado) {
-                            EstadoEvento.PENDIENTE -> "⏳ ${event.estado.displayName}"
-                            EstadoEvento.EN_REVISION -> "🔍 ${event.estado.displayName}"
-                            EstadoEvento.APROBADO -> if (event.cancelado) "❌ Cancelado" else "✅ ${event.estado.displayName}"
-                            EstadoEvento.RECHAZADO -> "❌ ${event.estado.displayName}"
-                            EstadoEvento.CANCELADO -> "❌ ${event.estado.displayName}"
-                            EstadoEvento.FINALIZADO -> "🏁 ${event.estado.displayName}"
-                        },
+                        text = getEventReviewStatusText(event),
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         color = when (event.estado) {
@@ -581,7 +592,7 @@ fun EventCard(
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Inscribirse")
+                            Text(ButtonText.INSCRIBIRSE.value)
                         }
                     }
                     
@@ -589,7 +600,7 @@ fun EventCard(
                         onClick = onClick,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Ver detalles")
+                        Text(ButtonText.VER_DETALLES.value)
                     }
                 }
             } else {
@@ -597,7 +608,7 @@ fun EventCard(
                     onClick = onClick,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Ver detalles")
+                    Text(ButtonText.VER_DETALLES.value)
                 }
             }
         }
@@ -619,4 +630,17 @@ private fun formatEventDateTime(event: Event): String {
         // Diferentes días
         "${dateFormat.format(startDate)} ${timeFormat.format(startDate)} - ${dateFormat.format(endDate)} ${timeFormat.format(endDate)}"
     }
+}
+
+// Texto de estado usando ReviewStatus para consistencia visual
+private fun getEventReviewStatusText(event: Event): String {
+    val status = when (event.estado) {
+        EstadoEvento.PENDIENTE -> ReviewStatus.PENDIENTE
+        EstadoEvento.EN_REVISION -> ReviewStatus.EN_REVISION
+        EstadoEvento.APROBADO -> if (event.cancelado) ReviewStatus.CANCELADO else ReviewStatus.APROBADO
+        EstadoEvento.RECHAZADO -> ReviewStatus.RECHAZADO
+        EstadoEvento.CANCELADO -> ReviewStatus.CANCELADO
+        EstadoEvento.FINALIZADO -> ReviewStatus.FINALIZADO
+    }
+    return status.getFormattedText()
 }

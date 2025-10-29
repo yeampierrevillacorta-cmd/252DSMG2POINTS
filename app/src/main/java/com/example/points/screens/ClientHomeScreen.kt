@@ -15,6 +15,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.example.points.constants.AppRoutes
 import com.example.points.R
 import com.example.points.models.TipoUsuario
 import com.example.points.viewmodel.IncidentViewModel
@@ -59,7 +60,7 @@ fun ClientHomeScreen(
             title = "Lugares de Interés",
             description = "Explora POIs cercanos",
             icon = Icons.Default.LocationOn,
-            route = "places"
+            route = AppRoutes.POI_MAP
         ),
         ClientFeatureCard(
             title = "Mis Reportes",
@@ -209,10 +210,10 @@ fun ClientHomeScreen(
             SurfaceCard(
                 onClick = {
                     when (feature.route) {
-                        "create_incident" -> navController.navigate("create_incident")
-                        "incidents" -> navController.navigate("incidents")
-                        "events" -> navController.navigate("events")
-                        "places" -> navController.navigate("places")
+                        "create_incident" -> navController.navigate(AppRoutes.CREATE_INCIDENT)
+                        "incidents" -> navController.navigate(AppRoutes.INCIDENTS)
+                        "events" -> navController.navigate(AppRoutes.EVENTS)
+                        AppRoutes.POI_MAP -> navController.navigate(AppRoutes.POI_MAP)
                         "my_reports" -> navController.navigate("my_reports")
                         "notifications" -> navController.navigate("notifications")
                     }

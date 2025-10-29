@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.points.models.Event
+import com.example.points.constants.ButtonText
 import com.example.points.utils.getCategoryIcon
 import java.text.SimpleDateFormat
 import java.util.*
@@ -435,7 +436,7 @@ fun EventDetailsDialog(
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Inscribirse")
+                                Text(ButtonText.INSCRIBIRSE.value)
                             }
                         }
                         
@@ -449,7 +450,7 @@ fun EventDetailsDialog(
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Compartir")
+                            Text(ButtonText.COMPARTIR.value)
                         }
                     }
                 }

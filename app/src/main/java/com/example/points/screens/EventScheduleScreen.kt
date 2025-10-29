@@ -24,6 +24,7 @@ import com.example.points.models.FrecuenciaRecurrencia
 import com.example.points.viewmodel.EventViewModel
 import com.example.points.components.PointsLoading
 import com.example.points.components.PointsFeedback
+import com.example.points.constants.ButtonText
 import com.example.points.utils.getCategoryIcon
 import java.text.SimpleDateFormat
 import java.util.*
@@ -124,7 +125,7 @@ fun EventScheduleScreen(
                 item {
                     FilterChip(
                         onClick = { selectedFrequency = null },
-                        label = { Text("Todos") },
+                        label = { Text(ButtonText.TODOS.value) },
                         selected = selectedFrequency == null,
                         leadingIcon = {
                             Icon(
@@ -443,7 +444,7 @@ fun ScheduledEventCard(
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Editar")
+                    Text(ButtonText.EDITAR.value)
                 }
                 
                 OutlinedButton(
@@ -459,7 +460,7 @@ fun ScheduledEventCard(
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Eliminar")
+                    Text(ButtonText.ELIMINAR.value)
                 }
             }
         }

@@ -10,10 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
-import androidx.compose.material.icons.filled.Assignment
-import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.NotificationImportant
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
@@ -60,55 +57,57 @@ import com.example.points.screens.AdminHomeScreen
 import com.example.points.screens.ClientHomeScreen
 import com.example.points.screens.HomeScreen
 import com.example.points.viewmodel.IncidentViewModel
+import com.example.points.constants.AppRoutes
+import com.example.points.constants.SuccessMessage
 
 @Composable
 fun AppNavigation(navController: NavHostController = rememberNavController()) {
-    NavHost(navController = navController, startDestination = "login") {
+    NavHost(navController = navController, startDestination = AppRoutes.LOGIN) {
 
         // Pantallas de autenticación (sin header ni bottom bar)
-        composable("login") {
+        composable(AppRoutes.LOGIN) {
             LoginScreen(
                 onLoginSuccess = { userType ->
-                    Toast.makeText(navController.context, "Login exitoso ✅", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(navController.context, SuccessMessage.LOGIN_EXITOSO.value, Toast.LENGTH_SHORT).show()
                     when (userType) {
                         TipoUsuario.ADMINISTRADOR -> {
-                            navController.navigate("admin_home") {
-                                popUpTo("login") { inclusive = true }
+                            navController.navigate(AppRoutes.ADMIN_HOME) {
+                                popUpTo(AppRoutes.LOGIN) { inclusive = true }
                             }
                         }
                         TipoUsuario.MODERADOR -> {
-                            navController.navigate("admin_home") {
-                                popUpTo("login") { inclusive = true }
+                            navController.navigate(AppRoutes.ADMIN_HOME) {
+                                popUpTo(AppRoutes.LOGIN) { inclusive = true }
                             }
                         }
                         else -> {
-                            navController.navigate("client_home") {
-                                popUpTo("login") { inclusive = true }
+                            navController.navigate(AppRoutes.CLIENT_HOME) {
+                                popUpTo(AppRoutes.LOGIN) { inclusive = true }
                             }
                         }
                     }
                 },
-                onRegisterClick = { navController.navigate("register") },
-                onForgotPasswordClick = { navController.navigate("forgot_password") }
+                onRegisterClick = { navController.navigate(AppRoutes.REGISTER) },
+                onForgotPasswordClick = { navController.navigate(AppRoutes.FORGOT_PASSWORD) }
             )
         }
 
-        composable("register") {
+        composable(AppRoutes.REGISTER) {
             RegisterScreen(
                 onRegisterSuccess = {
-                    Toast.makeText(navController.context, "Registro exitoso ✅", Toast.LENGTH_SHORT).show()
-                    navController.navigate("client_home") {
-                        popUpTo("login") { inclusive = true }
+                    Toast.makeText(navController.context, SuccessMessage.USUARIO_REGISTRADO.value, Toast.LENGTH_SHORT).show()
+                    navController.navigate(AppRoutes.CLIENT_HOME) {
+                        popUpTo(AppRoutes.LOGIN) { inclusive = true }
                     }
                 },
                 onBackToLogin = { navController.popBackStack() }
             )
         }
 
-        composable("forgot_password") {
+        composable(AppRoutes.FORGOT_PASSWORD) {
             ForgotPasswordScreen(
                 onPasswordReset = {
-                    Toast.makeText(navController.context, "Correo de recuperación enviado 📧", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(navController.context, SuccessMessage.PASSWORD_RESET_ENVIADO.value, Toast.LENGTH_SHORT).show()
                     navController.popBackStack()
                 },
                 onBackToLogin = { navController.popBackStack() }
@@ -116,10 +115,10 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
         }
 
         // Pantalla de administrador
-        composable("admin_home") {
+        composable(AppRoutes.ADMIN_HOME) {
             AdminMainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("admin_profile") }
+                onProfileClick = { navController.navigate(AppRoutes.ADMIN_PROFILE) }
             ) {
                 val viewModel: IncidentViewModel = viewModel()
                 AdminHomeScreen(
@@ -130,10 +129,10 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
         }
 
         // Pantalla de cliente/ciudadano
-        composable("client_home") {
+        composable(AppRoutes.CLIENT_HOME) {
             MainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("profile") }
+                onProfileClick = { navController.navigate(AppRoutes.PROFILE) }
             ) {
                 val viewModel: IncidentViewModel = viewModel()
                 ClientHomeScreen(
@@ -144,10 +143,10 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
         }
 
         // Pantalla principal (legacy - mantener para compatibilidad)
-        composable("home") {
+        composable(AppRoutes.HOME) {
             MainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("profile") }
+                onProfileClick = { navController.navigate(AppRoutes.PROFILE) }
                 ) {
                     val viewModel: IncidentViewModel = viewModel()
                     HomeScreen(
@@ -157,10 +156,10 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 }
         }
 
-        composable("incidents") {
+        composable(AppRoutes.INCIDENTS) {
             MainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("profile") }
+                onProfileClick = { navController.navigate(AppRoutes.PROFILE) }
             ) {
                 com.example.points.screens.IncidentsScreen(
                     navController = navController
@@ -168,21 +167,21 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             }
         }
         
-        composable("incidents_map") {
+        composable(AppRoutes.INCIDENTS_MAP) {
             MainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("profile") }
+                onProfileClick = { navController.navigate(AppRoutes.PROFILE) }
             ) {
                 com.example.points.screens.IncidentsMapScreen(
-                    onCreateIncidentClick = { navController.navigate("create_incident") },
+                    onCreateIncidentClick = { navController.navigate(AppRoutes.CREATE_INCIDENT) },
                     onIncidentDetailClick = { incidentId -> 
-                        navController.navigate("incident_detail/$incidentId")
+                        navController.navigate("${AppRoutes.INCIDENT_DETAIL}/$incidentId")
                     }
                 )
             }
         }
         
-        composable("create_incident") {
+        composable(AppRoutes.CREATE_INCIDENT) {
             com.example.points.screens.CreateIncidentScreen(
                 onBackClick = { navController.popBackStack() },
                 onIncidentCreated = { 
@@ -191,7 +190,7 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             )
         }
         
-        composable("incident_detail/{incidentId}") { backStackEntry ->
+        composable("${AppRoutes.INCIDENT_DETAIL}/{incidentId}") { backStackEntry ->
             val incidentId = backStackEntry.arguments?.getString("incidentId") ?: ""
             com.example.points.screens.IncidentDetailScreen(
                 incidentId = incidentId,
@@ -203,10 +202,10 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             )
         }
 
-        composable("places") {
+        composable(AppRoutes.POI_SEARCH) {
             MainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("profile") }
+                onProfileClick = { navController.navigate(AppRoutes.PROFILE) }
             ) {
                 com.example.points.screens.POISearchScreen(
                     navController = navController
@@ -214,23 +213,23 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             }
         }
         
-        composable("poi_map") {
+        composable(AppRoutes.POI_MAP) {
             MainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("profile") }
+                onProfileClick = { navController.navigate(AppRoutes.PROFILE) }
             ) {
-                com.example.points.screens.POIMapScreen(
+                com.example.points.screens.POIScreen(
                     navController = navController
                 )
             }
         }
         
-        composable("poi_map/{lat}/{lon}") { backStackEntry ->
+        composable("${AppRoutes.POI_MAP}/{lat}/{lon}") { backStackEntry ->
             val lat = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull() ?: 0.0
             val lon = backStackEntry.arguments?.getString("lon")?.toDoubleOrNull() ?: 0.0
             MainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("profile") }
+                onProfileClick = { navController.navigate(AppRoutes.PROFILE) }
             ) {
                 com.example.points.screens.POIMapScreen(
                     navController = navController,
@@ -240,7 +239,7 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             }
         }
         
-        composable("poi_detail/{poiId}") { backStackEntry ->
+        composable("${AppRoutes.POI_DETAIL}/{poiId}") { backStackEntry ->
             val poiId = backStackEntry.arguments?.getString("poiId") ?: ""
             com.example.points.screens.POIDetailScreen(
                 navController = navController,
@@ -248,16 +247,16 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             )
         }
         
-        composable("submit_poi") {
+        composable(AppRoutes.POI_SUBMISSION) {
             com.example.points.screens.POISubmissionScreen(
                 navController = navController
             )
         }
 
-        composable("events") {
+        composable(AppRoutes.EVENTS) {
             MainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("profile") }
+                onProfileClick = { navController.navigate(AppRoutes.PROFILE) }
             ) {
                 com.example.points.screens.EventsScreen(
                     navController = navController
@@ -265,10 +264,10 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             }
         }
         
-        composable("event_schedule") {
+        composable(AppRoutes.EVENT_SCHEDULE) {
             MainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("profile") }
+                onProfileClick = { navController.navigate(AppRoutes.PROFILE) }
             ) {
                 com.example.points.screens.EventScheduleScreen(
                     navController = navController
@@ -276,10 +275,10 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             }
         }
         
-        composable("admin_events") {
+        composable(AppRoutes.ADMIN_EVENTS) {
             AdminMainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("admin_profile") }
+                onProfileClick = { navController.navigate(AppRoutes.ADMIN_PROFILE) }
             ) {
                 com.example.points.screens.AdminEventsScreen(
                     navController = navController
@@ -290,34 +289,34 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
         composable("alerts") {
             MainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("profile") }
+                onProfileClick = { navController.navigate(AppRoutes.PROFILE) }
             ) {
                 AlertsScreen()
             }
         }
 
-        composable("profile") {
+        composable(AppRoutes.PROFILE) {
             MainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("profile") }
+                onProfileClick = { navController.navigate(AppRoutes.PROFILE) }
             ) {
                 ProfileScreen(
                     onSignOut = {
-                        navController.navigate("login") {
-                            popUpTo("profile") { inclusive = true }
+                        navController.navigate(AppRoutes.LOGIN) {
+                            popUpTo(AppRoutes.PROFILE) { inclusive = true }
                         }
                     },
                     onEditProfile = {
-                        navController.navigate("edit_profile")
+                        navController.navigate(AppRoutes.EDIT_PROFILE)
                     }
                 )
             }
         }
 
-        composable("edit_profile") {
+        composable(AppRoutes.EDIT_PROFILE) {
             MainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("profile") }
+                onProfileClick = { navController.navigate(AppRoutes.PROFILE) }
             ) {
                 EditProfileScreen(
                     onBack = {
@@ -331,24 +330,24 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
         }
 
         // Pantallas de administración
-        composable("admin_incidents") {
+        composable(AppRoutes.ADMIN_INCIDENTS) {
             AdminMainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("admin_profile") }
+                onProfileClick = { navController.navigate(AppRoutes.ADMIN_PROFILE) }
             ) {
                 AdminIncidentsScreen(
                     onBackClick = { navController.popBackStack() },
                     onIncidentDetailClick = { incidentId ->
-                        navController.navigate("incident_detail/$incidentId")
+                        navController.navigate("${AppRoutes.INCIDENT_DETAIL}/$incidentId")
                     }
                 )
             }
         }
 
-        composable("admin_users") {
+        composable(AppRoutes.ADMIN_USER_MANAGEMENT) {
             AdminMainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("admin_profile") }
+                onProfileClick = { navController.navigate(AppRoutes.ADMIN_PROFILE) }
             ) {
                 AdminUsersScreen()
             }
@@ -357,7 +356,7 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
         composable("admin_analytics") {
             AdminMainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("admin_profile") }
+                onProfileClick = { navController.navigate(AppRoutes.ADMIN_PROFILE) }
             ) {
                 AdminAnalyticsScreen()
             }
@@ -366,17 +365,17 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
         composable("admin_settings") {
             AdminMainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("admin_profile") }
+                onProfileClick = { navController.navigate(AppRoutes.ADMIN_PROFILE) }
             ) {
                 AdminSettingsScreen()
             }
         }
         
         // Gestión de POIs para administradores
-        composable("admin_pois") {
+        composable(AppRoutes.ADMIN_POI_MANAGEMENT) {
             AdminMainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("admin_profile") }
+                onProfileClick = { navController.navigate(AppRoutes.ADMIN_PROFILE) }
             ) {
                 com.example.points.screens.AdminPOIManagementScreen(
                     navController = navController
@@ -384,15 +383,15 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             }
         }
 
-        composable("admin_profile") {
+        composable(AppRoutes.ADMIN_PROFILE) {
             AdminMainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("admin_profile") }
+                onProfileClick = { navController.navigate(AppRoutes.ADMIN_PROFILE) }
             ) {
                 ProfileScreen(
                     onSignOut = {
-                        navController.navigate("login") {
-                            popUpTo("admin_profile") { inclusive = true }
+                        navController.navigate(AppRoutes.LOGIN) {
+                            popUpTo(AppRoutes.ADMIN_PROFILE) { inclusive = true }
                         }
                     },
                     onEditProfile = {
@@ -405,7 +404,7 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
         composable("admin_edit_profile") {
             AdminMainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("admin_profile") }
+                onProfileClick = { navController.navigate(AppRoutes.ADMIN_PROFILE) }
             ) {
                 EditProfileScreen(
                     onBack = {
@@ -422,7 +421,7 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
         composable("my_reports") {
             MainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("profile") }
+                onProfileClick = { navController.navigate(AppRoutes.PROFILE) }
             ) {
                 MyReportsScreen()
             }
@@ -431,7 +430,7 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
         composable("notifications") {
             MainLayout(
                 navController = navController,
-                onProfileClick = { navController.navigate("profile") }
+                onProfileClick = { navController.navigate(AppRoutes.PROFILE) }
             ) {
                 NotificationsScreen()
             }
@@ -439,69 +438,7 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
     }
 }
 
-// Pantallas temporales (placeholders)
-@Composable
-fun PlacesScreen() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            Icons.Default.LocationOn,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "🏢 Lugares de Interés",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Próximamente: Restaurantes, cultura, entretenimiento y áreas verdes",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
-@Composable
-fun EventsScreen() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            Icons.Default.Event,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "🎉 Eventos Urbanos",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Próximamente: Actividades, festivales y eventos comunitarios",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
+// Pantalla temporal (placeholder)
 @Composable
 fun AlertsScreen() {
     Column(

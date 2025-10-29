@@ -35,6 +35,8 @@ import com.example.points.components.PointsLoading
 import com.example.points.components.PointsFeedback
 import com.example.points.components.POIShareOptionsDialog
 import com.example.points.services.LocationService
+import com.example.points.constants.ButtonText
+import com.example.points.constants.AppRoutes
 import com.example.points.utils.getCategoryIcon
 import com.example.points.utils.MapStyleUtils
 import com.example.points.utils.POIIconUtils
@@ -1008,13 +1010,13 @@ fun POIMapScreen(
                             onClick = {
                                 addLogMessage("Botón ver detalles presionado para: ${selectedPOI!!.nombre}")
                                 // Navegar a la pantalla de detalles del POI
-                                navController.navigate("poi_detail/${selectedPOI!!.id}")
+                                navController.navigate("${AppRoutes.POI_DETAIL}/${selectedPOI!!.id}")
                                 showPOIDetails = false
                                 selectedPOI = null
                             },
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("Ver detalles")
+                            Text(ButtonText.VER_DETALLES.value)
                         }
                         OutlinedButton(
                             onClick = {
@@ -1046,7 +1048,7 @@ fun POIMapScreen(
                         selectedPOI = null
                     }
                 ) {
-                    Text("Cerrar")
+                    Text(ButtonText.CERRAR.value)
                 }
             }
         )
@@ -1361,11 +1363,11 @@ fun POIDetailsDialog(
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Compartir")
+                    Text(ButtonText.COMPARTIR.value)
                 }
                 
                 TextButton(onClick = onDismiss) {
-                    Text("Cerrar")
+                    Text(ButtonText.CERRAR.value)
                 }
             }
         }

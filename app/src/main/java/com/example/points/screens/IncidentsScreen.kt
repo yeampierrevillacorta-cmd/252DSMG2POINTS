@@ -1,8 +1,13 @@
 package com.example.points.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -30,6 +35,15 @@ import com.example.points.viewmodel.IncidentViewModel
 import com.example.points.components.PointsLoading
 import com.example.points.components.PointsFeedback
 import com.example.points.components.OptimizedRoundedImage
+import com.example.points.constants.ReviewStatus
+import com.example.points.constants.ButtonText
+import com.example.points.constants.LoadingMessage
+import com.example.points.constants.ErrorMessage
+import com.example.points.constants.SectionTitle
+import com.example.points.constants.ContentDescription
+import com.example.points.constants.AppSpacing
+import com.example.points.constants.AppRoutes
+import com.example.points.constants.IconSize
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -101,7 +115,7 @@ fun IncidentsScreen(
                 ) {
                     Icon(
                         imageVector = if (showFilters) Icons.Default.Close else Icons.Default.FilterList,
-                        contentDescription = "Filtros",
+                        contentDescription = ContentDescription.FILTROS.value,
                         tint = if (showFilters) MaterialTheme.colorScheme.onPrimary 
                                else MaterialTheme.colorScheme.onSurface
                     )
@@ -109,7 +123,7 @@ fun IncidentsScreen(
                 
                 // Botón de crear incidente
                 Button(
-                    onClick = { navController.navigate("incidents_map") },
+                    onClick = { navController.navigate(AppRoutes.INCIDENTS_MAP) },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary
                     )
@@ -117,136 +131,142 @@ fun IncidentsScreen(
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(IconSize.STANDARD)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Crear")
+                    Spacer(modifier = Modifier.width(AppSpacing.SMALL))
+                    Text(ButtonText.CREAR.value)
                 }
             }
         }
         
-        // Panel de filtros
-        if (showFilters) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
+        // Panel de filtros con animación de expansión
+        AnimatedVisibility(
+            visible = showFilters,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()
+        ) {
+            Column {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Text(
-                        text = "Filtros",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Filtro de tipo de incidente
-                    Text(
-                        text = "Tipo de Incidente",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Medium
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Column(
+                        modifier = Modifier.padding(16.dp)
                     ) {
-                        item {
-                            FilterChip(
-                                onClick = { viewModel.filterByType(null) },
-                                label = { Text("Todos") },
-                                selected = safeUiState.selectedType == null,
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.Clear,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            )
+                        Text(
+                            text = SectionTitle.FILTROS.value,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        
+                        Spacer(modifier = Modifier.height(AppSpacing.STANDARD))
+                        
+                        // Filtro de tipo de incidente
+                        Text(
+                            text = SectionTitle.TIPO_INCIDENTE.value,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                        
+                        Spacer(modifier = Modifier.height(AppSpacing.MEDIUM))
+                        
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            item {
+                                FilterChip(
+                                    onClick = { viewModel.filterByType(null) },
+                                    label = { Text(ButtonText.TODOS.value) },
+                                    selected = safeUiState.selectedType == null,
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Default.Clear,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                )
+                            }
+                            
+                            items(TipoIncidente.values()) { tipo ->
+                                FilterChip(
+                                    onClick = { 
+                                        if (uiState.selectedType == tipo) {
+                                            viewModel.filterByType(null)
+                                        } else {
+                                            viewModel.filterByType(tipo)
+                                        }
+                                    },
+                                    label = { Text(tipo.displayName) },
+                                    selected = safeUiState.selectedType == tipo,
+                                    leadingIcon = {
+                                        Icon(
+                                            getIncidentTypeIcon(tipo),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                )
+                            }
                         }
                         
-                        items(TipoIncidente.values()) { tipo ->
-                            FilterChip(
-                                onClick = { 
-                                    if (uiState.selectedType == tipo) {
-                                        viewModel.filterByType(null)
-                                    } else {
-                                        viewModel.filterByType(tipo)
-                                    }
-                                },
-                                label = { Text(tipo.displayName) },
-                                selected = safeUiState.selectedType == tipo,
-                                leadingIcon = {
-                                    Icon(
-                                        getIncidentTypeIcon(tipo),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            )
-                        }
-                    }
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Filtro de estado
-                    Text(
-                        text = "Estado",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Medium
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        item {
-                            FilterChip(
-                                onClick = { viewModel.filterByStatus(null) },
-                                label = { Text("Todos") },
-                                selected = safeUiState.selectedStatus == null,
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.Clear,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            )
-                        }
+                        Spacer(modifier = Modifier.height(16.dp))
                         
-                        items(EstadoIncidente.values()) { estado ->
-                            FilterChip(
-                                onClick = { 
-                                    if (uiState.selectedStatus == estado) {
-                                        viewModel.filterByStatus(null)
-                                    } else {
-                                        viewModel.filterByStatus(estado)
+                        // Filtro de estado
+                        Text(
+                            text = SectionTitle.ESTADO.value,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                        
+                        Spacer(modifier = Modifier.height(AppSpacing.MEDIUM))
+                        
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            item {
+                                FilterChip(
+                                    onClick = { viewModel.filterByStatus(null) },
+                                    label = { Text(ButtonText.TODOS.value) },
+                                    selected = safeUiState.selectedStatus == null,
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Default.Clear,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
                                     }
-                                },
-                                label = { Text(estado.displayName) },
-                                selected = safeUiState.selectedStatus == estado,
-                                leadingIcon = {
-                                    Icon(
-                                        getIncidentStatusIcon(estado),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            )
+                                )
+                            }
+                            
+                            items(EstadoIncidente.values()) { estado ->
+                                FilterChip(
+                                    onClick = { 
+                                        if (uiState.selectedStatus == estado) {
+                                            viewModel.filterByStatus(null)
+                                        } else {
+                                            viewModel.filterByStatus(estado)
+                                        }
+                                    },
+                                    label = { Text(estado.displayName) },
+                                    selected = safeUiState.selectedStatus == estado,
+                                    leadingIcon = {
+                                        Icon(
+                                            getIncidentStatusIcon(estado),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                )
+                            }
                         }
                     }
                 }
+                
+                Spacer(modifier = Modifier.height(16.dp))
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
         }
         
         // Contenido principal
@@ -256,7 +276,7 @@ fun IncidentsScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    PointsLoading(message = "Cargando incidentes...")
+                    PointsLoading(message = LoadingMessage.CARGANDO_INCIDENTES.value)
                 }
             }
             
@@ -266,7 +286,7 @@ fun IncidentsScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     PointsFeedback(
-                        message = safeUiState.errorMessage ?: "Error desconocido",
+                        message = safeUiState.errorMessage ?: ErrorMessage.ERROR_DESCONOCIDO.value,
                         type = "error",
                         onRetry = { viewModel.loadAllIncidents() }
                     )
@@ -280,18 +300,18 @@ fun IncidentsScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Sección de todos los incidentes
-                    item {
-                        Text(
-                            text = if (safeUiState.selectedType != null || safeUiState.selectedStatus != null) {
-                                "📋 Incidentes Filtrados"
-                            } else {
-                                "🚨 Todos los Incidentes"
-                            },
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
+                        item {
+                            Text(
+                                text = if (safeUiState.selectedType != null || safeUiState.selectedStatus != null) {
+                                    SectionTitle.INCIDENTES_FILTRADOS.value
+                                } else {
+                                    SectionTitle.TODOS_LOS_INCIDENTES.value
+                                },
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
                     
                     if (safeUiState.filteredIncidents.isEmpty()) {
                         item {
@@ -312,12 +332,12 @@ fun IncidentsScreen(
                                     )
                                     Spacer(modifier = Modifier.height(16.dp))
                                     Text(
-                                        text = "No hay incidentes disponibles",
+                                        text = ErrorMessage.NO_HAY_INCIDENTES.value,
                                         style = MaterialTheme.typography.titleMedium,
                                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                                     )
                                     Text(
-                                        text = "Intenta cambiar los filtros o crear un nuevo incidente",
+                                        text = "${ErrorMessage.INTENTA_CAMBIAR_FILTROS.value} incidente",
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                                     )
@@ -333,7 +353,7 @@ fun IncidentsScreen(
                                     showIncidentDetails = true
                                 },
                                 onViewDetailsClick = {
-                                    navController.navigate("incident_detail/${incident.id}")
+                                    navController.navigate("${AppRoutes.INCIDENT_DETAIL}/${incident.id}")
                                 }
                             )
                         }
@@ -352,7 +372,7 @@ fun IncidentsScreen(
                 selectedIncident = null
             },
             onViewDetailsClick = {
-                navController.navigate("incident_detail/${selectedIncident!!.id}")
+                navController.navigate("${AppRoutes.INCIDENT_DETAIL}/${selectedIncident!!.id}")
                 showIncidentDetails = false
                 selectedIncident = null
             }
@@ -440,7 +460,7 @@ fun IncidentCard(
                 ) {
                     Icon(
                         imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (expanded) "Colapsar" else "Expandir",
+                        contentDescription = if (expanded) ContentDescription.COLAPSAR.value else ContentDescription.EXPANDIR.value,
                         tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 }
@@ -486,13 +506,7 @@ fun IncidentCard(
                         )
                     ) {
                         Text(
-                            text = when (incident.estado) {
-                                EstadoIncidente.PENDIENTE -> "⏳ ${incident.estado.displayName}"
-                                EstadoIncidente.EN_REVISION -> "🔍 ${incident.estado.displayName}"
-                                EstadoIncidente.CONFIRMADO -> "✅ ${incident.estado.displayName}"
-                                EstadoIncidente.RESUELTO -> "✅ ${incident.estado.displayName}"
-                                EstadoIncidente.RECHAZADO -> "❌ ${incident.estado.displayName}"
-                            },
+                            text = getIncidentReviewStatusText(incident),
                             style = MaterialTheme.typography.labelSmall,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                             color = when (incident.estado) {
@@ -558,7 +572,7 @@ fun IncidentCard(
                         onClick = onClick,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Ver detalles")
+                        Text(ButtonText.VER_DETALLES.value)
                     }
                     
                     Button(
@@ -568,7 +582,7 @@ fun IncidentCard(
                             containerColor = MaterialTheme.colorScheme.primary
                         )
                     ) {
-                        Text("Ir a mapa")
+                        Text(ButtonText.IR_A_MAPA.value)
                     }
                 }
             }
@@ -622,6 +636,18 @@ private fun getIncidentStatusIcon(estado: EstadoIncidente): androidx.compose.ui.
     }
 }
 
+// Texto de estado usando ReviewStatus para consistencia visual
+private fun getIncidentReviewStatusText(incident: Incident): String {
+    val status = when (incident.estado) {
+        EstadoIncidente.PENDIENTE -> ReviewStatus.PENDIENTE
+        EstadoIncidente.EN_REVISION -> ReviewStatus.EN_REVISION
+        EstadoIncidente.CONFIRMADO -> ReviewStatus.CONFIRMADO
+        EstadoIncidente.RESUELTO -> ReviewStatus.RESUELTO
+        EstadoIncidente.RECHAZADO -> ReviewStatus.RECHAZADO
+    }
+    return status.getFormattedText()
+}
+
 // Función para obtener el color del tipo de incidente
 private fun getIncidentTypeColor(tipo: String): Color {
     return when (tipo) {
@@ -648,12 +674,12 @@ fun IncidentDetailsDialog(
         text = { Text(incident.descripcion) },
         confirmButton = {
             TextButton(onClick = onViewDetailsClick) {
-                Text("Ver detalles")
+                Text(ButtonText.VER_DETALLES.value)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cerrar")
+                Text(ButtonText.CERRAR.value)
             }
         }
     )

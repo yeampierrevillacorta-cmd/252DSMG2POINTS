@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.points.constants.ButtonText
 import com.example.points.models.User
 import com.example.points.models.TipoUsuario
 import com.example.points.viewmodel.UserManagementUiState
@@ -540,12 +541,12 @@ fun EditUserDialog(
                     onUpdateUser(user.id, updates)
                 }
             ) {
-                Text("Guardar")
+                Text(ButtonText.GUARDAR.value)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(ButtonText.CANCELAR.value)
             }
         }
     )

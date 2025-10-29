@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.points.components.OptimizedAsyncImage
+import com.example.points.constants.ButtonText
 import com.example.points.models.EstadoIncidente
 import com.example.points.models.TipoIncidente
 import com.example.points.utils.MarkerUtils
@@ -157,7 +158,7 @@ fun AdminIncidentsScreen(
                             item {
                                 FilterChip(
                                     onClick = { selectedStatusFilter = null },
-                                    label = { Text("Todos") },
+                                    label = { Text(ButtonText.TODOS.value) },
                                     selected = selectedStatusFilter == null
                                 )
                             }
@@ -185,7 +186,7 @@ fun AdminIncidentsScreen(
                             item {
                                 FilterChip(
                                     onClick = { selectedTypeFilter = null },
-                                    label = { Text("Todos") },
+                                    label = { Text(ButtonText.TODOS.value) },
                                     selected = selectedTypeFilter == null
                                 )
                             }
@@ -459,7 +460,7 @@ private fun IncidentAdminCard(
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Ver detalles")
+                    Text(ButtonText.VER_DETALLES.value)
                 }
                 
                 if (incident.estado == EstadoIncidente.PENDIENTE || incident.estado == EstadoIncidente.EN_REVISION) {
@@ -532,13 +533,13 @@ private fun IncidentEvaluationDialog(
                 Button(
                     onClick = { onStatusChange(EstadoIncidente.CONFIRMADO) }
                 ) {
-                    Text("Confirmar")
+                    Text(ButtonText.CONFIRMAR.value)
                 }
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(ButtonText.CANCELAR.value)
             }
         }
     )
