@@ -1,6 +1,10 @@
 package com.example.points.screens
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -25,6 +29,7 @@ import com.example.points.models.TipoIncidente
 import com.example.points.viewmodel.IncidentViewModel
 import com.example.points.components.PointsLoading
 import com.example.points.components.PointsFeedback
+import com.example.points.components.OptimizedRoundedImage
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -361,22 +366,41 @@ fun IncidentCard(
     onClick: () -> Unit,
     onViewDetailsClick: () -> Unit
 ) {
+    var expanded by remember { mutableStateOf(false) }
+    
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        onClick = onClick
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier
+                .padding(16.dp)
+                .animateContentSize(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessMedium
+                    )
+                )
         ) {
-            // Header del incidente
+            // Header del incidente - siempre visible
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                // Imagen del incidente en círculo
+                OptimizedRoundedImage(
+                    imageUrl = incident.fotoUrl,
+                    size = 56.dp,
+                    contentDescription = "Foto del incidente",
+                    placeholder = getIncidentTypeIconFromString(incident.tipo),
+                    modifier = Modifier
+                )
+                
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                // Título y fecha
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
@@ -385,11 +409,53 @@ fun IncidentCard(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     
                     Spacer(modifier = Modifier.height(4.dp))
                     
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = formatIncidentDateTime(incident),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+                
+                // Chevron de expandir/colapsar
+                IconButton(
+                    onClick = { expanded = !expanded },
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (expanded) "Colapsar" else "Expandir",
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+            }
+            
+            // Contenido expandido - solo se muestra cuando expanded = true
+            if (expanded) {
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Estado del incidente
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -406,108 +472,105 @@ fun IncidentCard(
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
                     }
-                }
-                
-                // Estado del incidente
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = when (incident.estado) {
-                            EstadoIncidente.CONFIRMADO -> MaterialTheme.colorScheme.primaryContainer
-                            EstadoIncidente.PENDIENTE -> MaterialTheme.colorScheme.secondaryContainer
-                            EstadoIncidente.EN_REVISION -> MaterialTheme.colorScheme.tertiaryContainer
-                            EstadoIncidente.RESUELTO -> MaterialTheme.colorScheme.surfaceVariant
-                            EstadoIncidente.RECHAZADO -> MaterialTheme.colorScheme.errorContainer
-                        }
-                    )
-                ) {
-                    Text(
-                        text = when (incident.estado) {
-                            EstadoIncidente.PENDIENTE -> "⏳ ${incident.estado.displayName}"
-                            EstadoIncidente.EN_REVISION -> "🔍 ${incident.estado.displayName}"
-                            EstadoIncidente.CONFIRMADO -> "✅ ${incident.estado.displayName}"
-                            EstadoIncidente.RESUELTO -> "✅ ${incident.estado.displayName}"
-                            EstadoIncidente.RECHAZADO -> "❌ ${incident.estado.displayName}"
-                        },
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        color = when (incident.estado) {
-                            EstadoIncidente.CONFIRMADO -> MaterialTheme.colorScheme.onPrimaryContainer
-                            EstadoIncidente.PENDIENTE -> MaterialTheme.colorScheme.onSecondaryContainer
-                            EstadoIncidente.EN_REVISION -> MaterialTheme.colorScheme.onTertiaryContainer
-                            EstadoIncidente.RESUELTO -> MaterialTheme.colorScheme.onSurfaceVariant
-                            EstadoIncidente.RECHAZADO -> MaterialTheme.colorScheme.onErrorContainer
-                        }
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            // Descripción
-            if (incident.descripcion.isNotEmpty()) {
-                Text(
-                    text = incident.descripcion,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-            
-            // Información del incidente
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Fecha y hora
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Schedule,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = formatIncidentDateTime(incident),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    )
-                }
-                
-                // Ubicación
-                if (incident.ubicacion.direccion.isNotEmpty()) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.LocationOn,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    
+                    // Estado del incidente
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = when (incident.estado) {
+                                EstadoIncidente.CONFIRMADO -> MaterialTheme.colorScheme.primaryContainer
+                                EstadoIncidente.PENDIENTE -> MaterialTheme.colorScheme.secondaryContainer
+                                EstadoIncidente.EN_REVISION -> MaterialTheme.colorScheme.tertiaryContainer
+                                EstadoIncidente.RESUELTO -> MaterialTheme.colorScheme.surfaceVariant
+                                EstadoIncidente.RECHAZADO -> MaterialTheme.colorScheme.errorContainer
+                            }
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                    ) {
                         Text(
-                            text = incident.ubicacion.direccion,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            text = when (incident.estado) {
+                                EstadoIncidente.PENDIENTE -> "⏳ ${incident.estado.displayName}"
+                                EstadoIncidente.EN_REVISION -> "🔍 ${incident.estado.displayName}"
+                                EstadoIncidente.CONFIRMADO -> "✅ ${incident.estado.displayName}"
+                                EstadoIncidente.RESUELTO -> "✅ ${incident.estado.displayName}"
+                                EstadoIncidente.RECHAZADO -> "❌ ${incident.estado.displayName}"
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            color = when (incident.estado) {
+                                EstadoIncidente.CONFIRMADO -> MaterialTheme.colorScheme.onPrimaryContainer
+                                EstadoIncidente.PENDIENTE -> MaterialTheme.colorScheme.onSecondaryContainer
+                                EstadoIncidente.EN_REVISION -> MaterialTheme.colorScheme.onTertiaryContainer
+                                EstadoIncidente.RESUELTO -> MaterialTheme.colorScheme.onSurfaceVariant
+                                EstadoIncidente.RECHAZADO -> MaterialTheme.colorScheme.onErrorContainer
+                            }
                         )
                     }
                 }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Botón de acción
-            OutlinedButton(
-                onClick = onViewDetailsClick,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Ver detalles")
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Descripción
+                if (incident.descripcion.isNotEmpty()) {
+                    Text(
+                        text = incident.descripcion,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+                
+                // Información del incidente
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Ubicación
+                    if (incident.ubicacion.direccion.isNotEmpty()) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = incident.ubicacion.direccion,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Botones de acción
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onClick,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Ver detalles")
+                    }
+                    
+                    Button(
+                        onClick = onViewDetailsClick,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text("Ir a mapa")
+                    }
+                }
             }
         }
     }
