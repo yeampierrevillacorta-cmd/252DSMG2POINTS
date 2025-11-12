@@ -60,7 +60,7 @@ import kotlin.math.pow
 @Composable
 fun POIMapScreen(
     navController: NavController,
-    viewModel: PointOfInterestViewModel = viewModel(),
+    viewModel: PointOfInterestViewModel = viewModel(factory = PointOfInterestViewModel.Factory),
     targetLat: Double? = null,
     targetLon: Double? = null
 ) {

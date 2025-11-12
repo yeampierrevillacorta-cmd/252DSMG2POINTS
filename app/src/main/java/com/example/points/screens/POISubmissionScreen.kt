@@ -48,7 +48,7 @@ import com.google.firebase.Timestamp
 @Composable
 fun POISubmissionScreen(
     navController: NavController,
-    viewModel: PointOfInterestViewModel = viewModel()
+    viewModel: PointOfInterestViewModel = viewModel(factory = PointOfInterestViewModel.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsState()
     

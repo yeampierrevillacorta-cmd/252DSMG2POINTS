@@ -38,6 +38,21 @@ cd 252DSMG2POINTS
 ```
 
 ### 2. Configurar Variables de Entorno
+
+**Opción A: Usar el script automático (Recomendado)**
+
+En Windows (PowerShell):
+```powershell
+.\setup-env.ps1
+```
+
+En Linux/Mac:
+```bash
+chmod +x setup-env.sh
+./setup-env.sh
+```
+
+**Opción B: Copiar manualmente**
 ```bash
 # Copiar archivo de ejemplo
 cp .env.example .env
@@ -46,11 +61,14 @@ cp .env.example .env
 nano .env
 ```
 
+Después de crear el archivo `.env`, edítalo y reemplaza todos los valores `tu_clave_...` con tus claves reales.
+
 **Variables requeridas:**
 - `GOOGLE_MAPS_API_KEY`: Clave de API de Google Maps
 - `FIREBASE_PROJECT_ID`: ID del proyecto Firebase
 - `FIREBASE_API_KEY`: Clave de API de Firebase
 - `FIREBASE_APP_ID`: ID de la aplicación Firebase
+- `OPENWEATHER_API_KEY`: Clave de API de OpenWeatherMap (para funcionalidad de clima)
 
 ### 3. Configurar Google Maps
 1. Crear proyecto en [Google Cloud Console](https://console.cloud.google.com/)

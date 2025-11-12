@@ -44,7 +44,7 @@ import com.example.points.utils.getCategoryIcon
 @Composable
 fun POIScreen(
     navController: NavController,
-    viewModel: PointOfInterestViewModel = viewModel()
+    viewModel: PointOfInterestViewModel = viewModel(factory = PointOfInterestViewModel.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsState()
     

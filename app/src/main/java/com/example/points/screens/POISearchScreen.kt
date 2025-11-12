@@ -41,7 +41,7 @@ import kotlin.math.roundToInt
 @Composable
 fun POISearchScreen(
     navController: NavController,
-    viewModel: PointOfInterestViewModel = viewModel()
+    viewModel: PointOfInterestViewModel = viewModel(factory = PointOfInterestViewModel.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = navController.context

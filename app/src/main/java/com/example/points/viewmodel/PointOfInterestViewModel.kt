@@ -1,11 +1,18 @@
 package com.example.points.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.points.PointsApplication
 import com.example.points.models.PointOfInterest
 import com.example.points.models.CategoriaPOI
 import com.example.points.models.EstadoPOI
+import com.example.points.models.Ubicacion
+import com.example.points.models.weather.WeatherResponse
 import com.example.points.repository.PointOfInterestRepository
+import com.example.points.repository.WeatherRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,6 +20,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.CancellationException
 import android.util.Log
+import retrofit2.HttpException
+import java.io.IOException
 
 data class POIUIState(
     val isLoading: Boolean = false,
@@ -24,11 +33,17 @@ data class POIUIState(
     val userLocation: Pair<Double, Double>? = null,
     val errorMessage: String? = null,
     val isSubmitting: Boolean = false,
-    val submitSuccess: Boolean = false
+    val submitSuccess: Boolean = false,
+    val isLoadingWeather: Boolean = false,
+    val weatherResponse: WeatherResponse? = null,
+    val weatherError: String? = null,
+    val selectedPOI: PointOfInterest? = null
 )
 
-class PointOfInterestViewModel : ViewModel() {
-    private val repository = PointOfInterestRepository()
+class PointOfInterestViewModel(
+    private val poiRepository: PointOfInterestRepository,
+    private val weatherRepository: WeatherRepository
+) : ViewModel() {
     
     private val _uiState = MutableStateFlow(POIUIState())
     val uiState: StateFlow<POIUIState> = _uiState.asStateFlow()
@@ -110,7 +125,7 @@ class PointOfInterestViewModel : ViewModel() {
             
             try {
                 Log.d("POIViewModel", "Iniciando carga de POIs...")
-                repository.getAllApprovedPOIs().collect { pois ->
+                poiRepository.getAllApprovedPOIs().collect { pois ->
                     Log.d("POIViewModel", "POIs recibidos: ${pois.size}")
                     pois.forEach { poi ->
                         Log.d("POIViewModel", "POI: ${poi.nombre} - Estado: ${poi.estado.displayName} - Coord: (${poi.ubicacion.lat}, ${poi.ubicacion.lon})")
@@ -142,7 +157,7 @@ class PointOfInterestViewModel : ViewModel() {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             
             try {
-                repository.getPOIsByCategory(categoria).collect { pois ->
+                poiRepository.getPOIsByCategory(categoria).collect { pois ->
                     _uiState.value = _uiState.value.copy(
                         pois = pois,
                         filteredPOIs = applyFilters(pois),
@@ -175,7 +190,7 @@ class PointOfInterestViewModel : ViewModel() {
                 _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
                 
                 try {
-                    repository.searchPOIs(query).collect { pois ->
+                    poiRepository.searchPOIs(query).collect { pois ->
                         _uiState.value = _uiState.value.copy(
                             pois = pois,
                             filteredPOIs = applyFilters(pois),
@@ -208,7 +223,7 @@ class PointOfInterestViewModel : ViewModel() {
             )
             
             try {
-                repository.getNearbyPOIs(lat, lon, radiusKm).collect { pois ->
+                poiRepository.getNearbyPOIs(lat, lon, radiusKm).collect { pois ->
                     _uiState.value = _uiState.value.copy(
                         pois = pois,
                         filteredPOIs = applyFilters(pois),
@@ -286,7 +301,7 @@ class PointOfInterestViewModel : ViewModel() {
             _uiState.value = _uiState.value.copy(isSubmitting = true, errorMessage = null)
             
             try {
-                val result = repository.createPOI(poi)
+                val result = poiRepository.createPOI(poi)
                 result.fold(
                     onSuccess = { poiId ->
                         Log.d("POIViewModel", "POI submitted successfully: $poiId")
@@ -331,11 +346,63 @@ class PointOfInterestViewModel : ViewModel() {
     // Obtener POI por ID
     suspend fun getPOIById(poiId: String): Result<PointOfInterest?> {
         return try {
-            repository.getPOIById(poiId)
+            val result = poiRepository.getPOIById(poiId)
+            result.fold(
+                onSuccess = { poi ->
+                    _uiState.value = _uiState.value.copy(selectedPOI = poi)
+                },
+                onFailure = {}
+            )
+            result
         } catch (e: Exception) {
             Log.e("POIViewModel", "Error getting POI by ID", e)
             Result.failure(e)
         }
+    }
+    
+    // Cargar clima para un POI
+    fun loadWeatherForPOI(ubicacion: Ubicacion) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isLoadingWeather = true,
+                weatherError = null
+            )
+            
+            try {
+                val weather = weatherRepository.getWeather(ubicacion.lat, ubicacion.lon)
+                _uiState.value = _uiState.value.copy(
+                    weatherResponse = weather,
+                    isLoadingWeather = false
+                )
+            } catch (e: IOException) {
+                Log.e("POIViewModel", "Error de red al cargar clima", e)
+                _uiState.value = _uiState.value.copy(
+                    weatherError = "Error de red",
+                    isLoadingWeather = false
+                )
+            } catch (e: HttpException) {
+                Log.e("POIViewModel", "Error del servidor al cargar clima", e)
+                _uiState.value = _uiState.value.copy(
+                    weatherError = "Error del servidor",
+                    isLoadingWeather = false
+                )
+            } catch (e: Exception) {
+                Log.e("POIViewModel", "Error inesperado al cargar clima", e)
+                _uiState.value = _uiState.value.copy(
+                    weatherError = "Error al cargar el clima: ${e.message}",
+                    isLoadingWeather = false
+                )
+            }
+        }
+    }
+    
+    // Limpiar estado del clima
+    fun clearWeatherState() {
+        _uiState.value = _uiState.value.copy(
+            isLoadingWeather = false,
+            weatherResponse = null,
+            weatherError = null
+        )
     }
     
     // Actualizar ubicación del usuario
@@ -363,5 +430,16 @@ class PointOfInterestViewModel : ViewModel() {
         val c = 2 * kotlin.math.atan2(kotlin.math.sqrt(a), kotlin.math.sqrt(1 - a))
         
         return earthRadius * c
+    }
+    
+    companion object {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as PointsApplication)
+                val poiRepository = PointOfInterestRepository()
+                val weatherRepository = application.container.weatherRepository
+                PointOfInterestViewModel(poiRepository, weatherRepository)
+            }
+        }
     }
 }

@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.gms.google.services)
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.21"
 }
 
 
@@ -81,6 +82,13 @@ dependencies {
     
     // Navigation Animation
     implementation("com.google.accompanist:accompanist-navigation-animation:0.32.0")
+    
+    // Retrofit para llamadas HTTP
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    
+    // Kotlinx Serialization
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
 
     // Jetpack Compose
     implementation(libs.androidx.core.ktx)

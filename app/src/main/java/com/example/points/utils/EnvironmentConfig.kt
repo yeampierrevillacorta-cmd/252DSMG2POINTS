@@ -63,6 +63,10 @@ object EnvironmentConfig {
     val FIREBASE_APP_ID: String
         get() = getEnvValue("FIREBASE_APP_ID")
     
+    // OpenWeatherMap
+    val OPENWEATHER_API_KEY: String
+        get() = getEnvValue("OPENWEATHER_API_KEY")
+    
     // Environment
     val ENVIRONMENT: String
         get() = getEnvValue("ENVIRONMENT").ifEmpty { "development" }

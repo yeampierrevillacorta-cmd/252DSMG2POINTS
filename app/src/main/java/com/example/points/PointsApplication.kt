@@ -1,6 +1,8 @@
 package com.example.points
 
 import android.app.Application
+import com.example.points.data.AppContainer
+import com.example.points.data.DefaultAppContainer
 import com.example.points.utils.EnvironmentConfig
 
 /**
@@ -8,11 +10,16 @@ import com.example.points.utils.EnvironmentConfig
  */
 class PointsApplication : Application() {
     
+    lateinit var container: AppContainer
+    
     override fun onCreate() {
         super.onCreate()
         
         // Inicializar configuración de variables de entorno
         EnvironmentConfig.initialize(this)
+        
+        // Inicializar contenedor de dependencias
+        container = DefaultAppContainer()
         
         // Log de configuración (solo en modo debug)
         if (EnvironmentConfig.DEBUG_MODE) {

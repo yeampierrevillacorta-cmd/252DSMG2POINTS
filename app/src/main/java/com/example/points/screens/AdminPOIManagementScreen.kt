@@ -32,7 +32,7 @@ import com.google.firebase.Timestamp
 @Composable
 fun AdminPOIManagementScreen(
     navController: NavController,
-    viewModel: PointOfInterestViewModel = viewModel()
+    viewModel: PointOfInterestViewModel = viewModel(factory = PointOfInterestViewModel.Factory)
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("Pendientes", "En Revisión", "Aprobados", "Rechazados")

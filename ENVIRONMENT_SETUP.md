@@ -20,6 +20,13 @@ Este proyecto utiliza variables de entorno para manejar de forma segura las clav
    FIREBASE_STORAGE_BUCKET=tu_bucket_de_storage
    FIREBASE_API_KEY=tu_clave_de_firebase
    FIREBASE_APP_ID=tu_app_id_de_firebase
+   
+   # OpenWeatherMap API Key
+   OPENWEATHER_API_KEY=tu_clave_de_openweathermap_aqui
+   
+   # Environment Configuration
+   ENVIRONMENT=development
+   DEBUG_MODE=true
    ```
 
 ## Seguridad
@@ -87,5 +94,6 @@ El sistema genera automáticamente los archivos XML de configuración de Google 
 | `FIREBASE_STORAGE_BUCKET` | Bucket de almacenamiento Firebase | ✅ |
 | `FIREBASE_API_KEY` | Clave de API de Firebase | ✅ |
 | `FIREBASE_APP_ID` | ID de la aplicación Firebase | ✅ |
+| `OPENWEATHER_API_KEY` | Clave de API de OpenWeatherMap | ✅ |
 | `ENVIRONMENT` | Entorno (development/production) | ❌ |
 | `DEBUG_MODE` | Modo debug (true/false) | ❌ |

@@ -24,7 +24,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 import com.example.points.R
 import com.example.points.models.PointOfInterest
 import com.example.points.models.CaracteristicaPOI
@@ -44,8 +47,9 @@ import kotlin.math.roundToInt
 fun POIDetailScreen(
     navController: NavController,
     poiId: String,
-    viewModel: PointOfInterestViewModel = viewModel()
+    viewModel: PointOfInterestViewModel = viewModel(factory = PointOfInterestViewModel.Factory)
 ) {
+    val uiState by viewModel.uiState.collectAsState()
     var poi by remember { mutableStateOf<PointOfInterest?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -70,6 +74,20 @@ fun POIDetailScreen(
         } catch (e: Exception) {
             errorMessage = "Error al cargar los detalles del punto de interés: ${e.message}"
             isLoading = false
+        }
+    }
+    
+    // Cargar clima cuando el POI esté disponible
+    LaunchedEffect(poi) {
+        poi?.let { loadedPOI ->
+            viewModel.loadWeatherForPOI(loadedPOI.ubicacion)
+        }
+    }
+    
+    // Limpiar estado del clima al salir de la pantalla
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.clearWeatherState()
         }
     }
     
@@ -115,7 +133,7 @@ fun POIDetailScreen(
             }
             
             poi != null -> {
-                POIDetailContent(poi = poi!!, navController = navController)
+                POIDetailContent(poi = poi!!, navController = navController, uiState = uiState)
             }
             
             else -> {
@@ -158,7 +176,11 @@ fun POIDetailScreen(
 }
 
 @Composable
-fun POIDetailContent(poi: PointOfInterest, navController: NavController) {
+fun POIDetailContent(
+    poi: PointOfInterest, 
+    navController: NavController,
+    uiState: com.example.points.viewmodel.POIUIState
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -308,6 +330,11 @@ fun POIDetailContent(poi: PointOfInterest, navController: NavController) {
             item {
                 FeaturesCard(caracteristicas = poi.caracteristicas)
             }
+        }
+        
+        // Clima
+        item {
+            WeatherSection(uiState = uiState)
         }
         
         // Ubicación
@@ -727,6 +754,114 @@ fun POIImagesSection(imagenes: List<String>) {
                             placeholder = painterResource(id = R.drawable.placeholder_poi)
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun WeatherSection(
+    uiState: com.example.points.viewmodel.POIUIState,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = "Clima Actual",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold
+                )
+            )
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            when {
+                uiState.isLoadingWeather -> {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                }
+                
+                uiState.weatherError != null -> {
+                    Text(
+                        text = uiState.weatherError ?: "Error desconocido",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                
+                uiState.weatherResponse != null -> {
+                    val weather = uiState.weatherResponse.current
+                    val weatherDescription = weather.weather.firstOrNull()
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        // Icono del clima
+                        weatherDescription?.let { desc ->
+                            val iconUrl = "https://openweathermap.org/img/wn/${desc.icon}@2x.png"
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(iconUrl)
+                                    .crossfade(false)
+                                    .build(),
+                                contentDescription = desc.description,
+                                modifier = Modifier.size(64.dp),
+                                contentScale = ContentScale.Fit
+                            )
+                        }
+                        
+                        // Temperatura
+                        Text(
+                            text = "${weather.temperature.toInt()}°C",
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // Descripción y sensación térmica
+                    Column {
+                        weatherDescription?.let { desc ->
+                            Text(
+                                text = desc.description.replaceFirstChar { 
+                                    if (it.isLowerCase()) it.titlecase() else it.toString() 
+                                },
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(4.dp))
+                        
+                        Text(
+                            text = "Sensación térmica: ${weather.feelsLike.toInt()}°C",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                
+                else -> {
+                    Text(
+                        text = "No hay información del clima disponible",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
