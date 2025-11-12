@@ -2,6 +2,10 @@ package com.example.points.data.repository
 
 import android.util.Log
 import com.example.points.models.Incident
+import com.example.points.models.Event
+import com.example.points.models.PointOfInterest
+import com.example.points.models.EstadoEvento
+import com.example.points.models.EstadoPOI
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
@@ -9,6 +13,8 @@ class DashboardRepository(private val firestore: FirebaseFirestore) {
     companion object {
         private const val TAG = "DashboardRepository"
         private const val INCIDENTS_COLLECTION = "incidentes"
+        private const val EVENTS_COLLECTION = "eventos"
+        private const val POIS_COLLECTION = "puntos_interes"
     }
     
     suspend fun getAllIncidents(): Result<List<Incident>> {
@@ -55,6 +61,42 @@ class DashboardRepository(private val firestore: FirebaseFirestore) {
             Result.success(incidents)
         } catch (e: Exception) {
             Log.e(TAG, "Error al obtener la lista de incidentes", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun getAllEvents(): Result<List<Event>> {
+        return try {
+            val snapshot = firestore.collection(EVENTS_COLLECTION).get().await()
+            val events = snapshot.documents.mapNotNull { doc ->
+                try {
+                    doc.toObject(Event::class.java)?.copy(id = doc.id)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error parseando evento ${doc.id}", e)
+                    null
+                }
+            }
+            Result.success(events)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error al obtener la lista de eventos", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun getAllPOIs(): Result<List<PointOfInterest>> {
+        return try {
+            val snapshot = firestore.collection(POIS_COLLECTION).get().await()
+            val pois = snapshot.documents.mapNotNull { doc ->
+                try {
+                    doc.toObject(PointOfInterest::class.java)?.copy(id = doc.id)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error parseando POI ${doc.id}", e)
+                    null
+                }
+            }
+            Result.success(pois)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error al obtener la lista de POIs", e)
             Result.failure(e)
         }
     }

@@ -89,12 +89,20 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     }
     
     override val geminiRepository: GeminiRepository? by lazy {
+        // Forzar que EnvironmentConfig esté inicializado antes de acceder a la API key
+        // (aunque ya debería estar inicializado en PointsApplication.onCreate())
         val apiKey = EnvironmentConfig.GEMINI_API_KEY
+        Log.d("DefaultAppContainer", "Inicializando GeminiRepository...")
+        Log.d("DefaultAppContainer", "GEMINI_API_KEY longitud: ${apiKey.length} caracteres")
         if (apiKey.isEmpty()) {
-            Log.w("DefaultAppContainer", "Gemini API key no configurada - GeminiRepository será null")
+            Log.w("DefaultAppContainer", "❌ Gemini API key no configurada - GeminiRepository será null")
+            Log.w("DefaultAppContainer", "   Verifica que el .env tenga GEMINI_API_KEY configurada")
+            Log.w("DefaultAppContainer", "   Verifica que el .env esté en app/src/main/assets/.env")
+            Log.w("DefaultAppContainer", "   Verifica que la aplicación se haya reinstalado después de actualizar el .env")
             null
         } else {
-            Log.d("DefaultAppContainer", "GeminiRepository inicializado correctamente")
+            Log.d("DefaultAppContainer", "✅ GeminiRepository inicializado correctamente")
+            Log.d("DefaultAppContainer", "   API Key: ${apiKey.take(10)}... (longitud: ${apiKey.length})")
             DefaultGeminiRepository(geminiApiService)
         }
     }
