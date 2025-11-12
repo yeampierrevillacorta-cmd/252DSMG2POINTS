@@ -83,7 +83,7 @@ fun POISearchScreen(
             ) {
                 // Botón de ver en mapa
                 FloatingActionButton(
-                    onClick = { navController.navigate("poi_map") },
+                    onClick = { navController.navigate(AppRoutes.POI_MAP) },
                     containerColor = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.size(56.dp)
                 ) {
@@ -96,7 +96,7 @@ fun POISearchScreen(
                 
                 // Botón de añadir POI
                 FloatingActionButton(
-                    onClick = { navController.navigate("submit_poi") },
+                    onClick = { navController.navigate(AppRoutes.POI_SUBMISSION) },
                     containerColor = MaterialTheme.colorScheme.primary
                 ) {
                     Icon(Icons.Filled.Add, contentDescription = "Agregar POI")

@@ -33,6 +33,7 @@ import com.example.points.models.PointOfInterest
 import com.example.points.models.CaracteristicaPOI
 import com.example.points.models.DiaSemana
 import com.example.points.constants.ButtonText
+import com.example.points.constants.AppRoutes
 import com.example.points.models.CategoriaPOI
 import com.example.points.models.Ubicacion
 import com.example.points.viewmodel.PointOfInterestViewModel
@@ -40,6 +41,7 @@ import com.example.points.components.PointsLoading
 import com.example.points.components.PointsFeedback
 import com.example.points.utils.getCategoryIcon
 import com.example.points.ui.theme.PointsTheme
+import com.example.points.utils.EnvironmentConfig
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -332,9 +334,13 @@ fun POIDetailContent(
             }
         }
         
-        // Clima
-        item {
-            WeatherSection(uiState = uiState)
+        // Clima (solo mostrar si la API key está configurada o hay respuesta/error)
+        // Verificar si la API key está configurada antes de mostrar la sección
+        val hasWeatherApiKey = com.example.points.utils.EnvironmentConfig.OPENWEATHER_API_KEY.isNotEmpty()
+        if (hasWeatherApiKey || uiState.weatherResponse != null || uiState.weatherError != null || uiState.isLoadingWeather) {
+            item {
+                WeatherSection(uiState = uiState)
+            }
         }
         
         // Ubicación
@@ -598,7 +604,7 @@ fun LocationCard(poi: PointOfInterest, navController: NavController) {
                         // Navegar al mapa con las coordenadas del POI
                         val lat = poi.ubicacion.lat
                         val lon = poi.ubicacion.lon
-                        navController.navigate("poi_map/$lat/$lon")
+                        navController.navigate("${AppRoutes.POI_MAP}/$lat/$lon")
                     },
                     modifier = Modifier.weight(1f)
                 ) {
@@ -793,7 +799,9 @@ fun WeatherSection(
                     }
                 }
                 
-                uiState.weatherError != null -> {
+                // Solo mostrar error si hay un error real de red/servidor
+                // No mostrar error si la API key no está configurada (weatherError será null)
+                uiState.weatherError != null && uiState.weatherError!!.isNotBlank() -> {
                     Text(
                         text = uiState.weatherError ?: "Error desconocido",
                         style = MaterialTheme.typography.bodyMedium,

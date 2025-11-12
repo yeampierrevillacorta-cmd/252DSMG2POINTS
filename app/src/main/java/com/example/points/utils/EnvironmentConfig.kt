@@ -13,25 +13,61 @@ object EnvironmentConfig {
     private var dotenv: io.github.cdimascio.dotenv.Dotenv? = null
     
     fun initialize(context: Context) {
-        if (dotenv == null) {
+        try {
+            val envFile = File(context.filesDir, ".env")
+            
+            // Siempre intentar copiar desde assets (sobrescribe el existente si hay uno)
+            // Esto asegura que el .env siempre esté actualizado con la versión de assets
+            var copiedFromAssets = false
             try {
                 // Intentar cargar desde assets
-                val envFile = File(context.filesDir, ".env")
-                if (!envFile.exists()) {
-                    // Copiar desde assets si no existe
-                    context.assets.open(".env").use { input ->
-                        envFile.outputStream().use { output ->
-                            input.copyTo(output)
-                        }
+                context.assets.open(".env").use { input ->
+                    envFile.outputStream().use { output ->
+                        input.copyTo(output)
                     }
                 }
-                
+                copiedFromAssets = true
+                android.util.Log.d("EnvironmentConfig", "Archivo .env copiado desde assets a filesDir")
+            } catch (e: Exception) {
+                // Si no existe en assets, verificar si hay uno en filesDir
+                if (envFile.exists()) {
+                    android.util.Log.d("EnvironmentConfig", "No se encontró .env en assets, usando el existente en filesDir")
+                } else {
+                    // Si no existe en assets ni en filesDir, es normal - el archivo puede no estar configurado
+                    android.util.Log.w("EnvironmentConfig", "No se encontró .env en assets ni en filesDir (esto es normal si no está configurado): ${e.message}")
+                }
+            }
+            
+            // Reinicializar dotenv si se copió desde assets o si no estaba inicializado
+            // Esto asegura que siempre use la versión más reciente del .env
+            if (copiedFromAssets || dotenv == null) {
+                // Cargar desde filesDir
                 dotenv = dotenv {
                     ignoreIfMissing = true
                     directory = context.filesDir.absolutePath
                 }
-            } catch (e: Exception) {
-                // Si falla, usar valores por defecto
+                
+                // Log de configuración en modo debug
+                android.util.Log.d("EnvironmentConfig", "=== Configuración de Variables de Entorno ===")
+                android.util.Log.d("EnvironmentConfig", "GOOGLE_MAPS_API_KEY: ${if (GOOGLE_MAPS_API_KEY.isNotEmpty()) "***configurada***" else "❌ FALTA"}")
+                android.util.Log.d("EnvironmentConfig", "FIREBASE_PROJECT_ID: ${if (FIREBASE_PROJECT_ID.isNotEmpty()) "***configurada***" else "❌ FALTA"}")
+                android.util.Log.d("EnvironmentConfig", "FIREBASE_API_KEY: ${if (FIREBASE_API_KEY.isNotEmpty()) "***configurada***" else "❌ FALTA"}")
+                android.util.Log.d("EnvironmentConfig", "FIREBASE_APP_ID: ${if (FIREBASE_APP_ID.isNotEmpty()) "***configurada***" else "❌ FALTA"}")
+                android.util.Log.d("EnvironmentConfig", "OPENWEATHER_API_KEY: ${if (OPENWEATHER_API_KEY.isNotEmpty()) "***configurada***" else "❌ FALTA"}")
+                android.util.Log.d("EnvironmentConfig", "GEMINI_API_KEY: ${if (GEMINI_API_KEY.isNotEmpty()) "***configurada***" else "❌ FALTA"}")
+                android.util.Log.d("EnvironmentConfig", "Configuración válida: ${isConfigurationValid()}")
+                
+                // Verificar específicamente la API key de Gemini
+                if (GEMINI_API_KEY.isEmpty()) {
+                    android.util.Log.w("EnvironmentConfig", "⚠️ GEMINI_API_KEY está vacía después de cargar .env")
+                } else {
+                    android.util.Log.d("EnvironmentConfig", "✅ GEMINI_API_KEY cargada correctamente (longitud: ${GEMINI_API_KEY.length} caracteres)")
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("EnvironmentConfig", "Error al inicializar variables de entorno", e)
+            // Si falla y no está inicializado, usar valores por defecto
+            if (dotenv == null) {
                 dotenv = dotenv {
                     ignoreIfMissing = true
                 }
@@ -67,6 +103,10 @@ object EnvironmentConfig {
     val OPENWEATHER_API_KEY: String
         get() = getEnvValue("OPENWEATHER_API_KEY")
     
+    // Google Gemini
+    val GEMINI_API_KEY: String
+        get() = getEnvValue("GEMINI_API_KEY")
+    
     // Environment
     val ENVIRONMENT: String
         get() = getEnvValue("ENVIRONMENT").ifEmpty { "development" }
@@ -81,7 +121,8 @@ object EnvironmentConfig {
         return GOOGLE_MAPS_API_KEY.isNotEmpty() &&
                FIREBASE_PROJECT_ID.isNotEmpty() &&
                FIREBASE_API_KEY.isNotEmpty() &&
-               FIREBASE_APP_ID.isNotEmpty()
+               FIREBASE_APP_ID.isNotEmpty() &&
+               OPENWEATHER_API_KEY.isNotEmpty()
     }
     
     /**
@@ -93,7 +134,9 @@ object EnvironmentConfig {
             "Debug Mode" to DEBUG_MODE.toString(),
             "Firebase Project ID" to FIREBASE_PROJECT_ID,
             "Google Maps API Key" to if (GOOGLE_MAPS_API_KEY.isNotEmpty()) "***configured***" else "***missing***",
-            "Firebase API Key" to if (FIREBASE_API_KEY.isNotEmpty()) "***configured***" else "***missing***"
+            "Firebase API Key" to if (FIREBASE_API_KEY.isNotEmpty()) "***configured***" else "***missing***",
+            "OpenWeatherMap API Key" to if (OPENWEATHER_API_KEY.isNotEmpty()) "***configured***" else "***missing***",
+            "Gemini API Key" to if (GEMINI_API_KEY.isNotEmpty()) "***configured***" else "***missing***"
         )
     }
 }

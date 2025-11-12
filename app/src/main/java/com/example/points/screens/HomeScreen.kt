@@ -54,7 +54,7 @@ fun HomeScreen(
             title = "Lugares de Interés",
             description = "Descubre restaurantes, cultura y más",
             icon = Icons.Default.LocationOn,
-            route = AppRoutes.POI_MAP
+            route = AppRoutes.POI_LIST
         ),
         FeatureCard(
             title = "Eventos Urbanos",
@@ -211,7 +211,7 @@ fun HomeScreen(
                     when (feature.route) {
                         "create_incident" -> navController.navigate(AppRoutes.CREATE_INCIDENT)
                         "incidents" -> navController.navigate(AppRoutes.INCIDENTS)
-                        AppRoutes.POI_MAP -> navController.navigate(AppRoutes.POI_MAP)
+                        AppRoutes.POI_LIST -> navController.navigate(AppRoutes.POI_LIST)
                         "events" -> navController.navigate(AppRoutes.EVENTS)
                     }
                 }

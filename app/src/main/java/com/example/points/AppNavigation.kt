@@ -215,7 +215,8 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             }
         }
         
-        composable(AppRoutes.POI_MAP) {
+        // Lista de POIs
+        composable(AppRoutes.POI_LIST) {
             MainLayout(
                 navController = navController,
                 onProfileClick = { navController.navigate(AppRoutes.PROFILE) }
@@ -226,6 +227,21 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
             }
         }
         
+        // Mapa de POIs (sin parámetros - muestra todos los POIs)
+        composable(AppRoutes.POI_MAP) {
+            MainLayout(
+                navController = navController,
+                onProfileClick = { navController.navigate(AppRoutes.PROFILE) }
+            ) {
+                com.example.points.screens.POIMapScreen(
+                    navController = navController,
+                    targetLat = null,
+                    targetLon = null
+                )
+            }
+        }
+        
+        // Mapa de POIs con coordenadas específicas
         composable("${AppRoutes.POI_MAP}/{lat}/{lon}") { backStackEntry ->
             val lat = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull() ?: 0.0
             val lon = backStackEntry.arguments?.getString("lon")?.toDoubleOrNull() ?: 0.0

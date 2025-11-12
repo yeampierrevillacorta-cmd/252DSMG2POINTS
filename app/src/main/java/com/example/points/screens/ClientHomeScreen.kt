@@ -60,7 +60,7 @@ fun ClientHomeScreen(
             title = "Lugares de Interés",
             description = "Explora POIs cercanos",
             icon = Icons.Default.LocationOn,
-            route = AppRoutes.POI_MAP
+            route = AppRoutes.POI_LIST
         ),
         ClientFeatureCard(
             title = "Mis Reportes",
@@ -213,7 +213,7 @@ fun ClientHomeScreen(
                         "create_incident" -> navController.navigate(AppRoutes.CREATE_INCIDENT)
                         "incidents" -> navController.navigate(AppRoutes.INCIDENTS)
                         "events" -> navController.navigate(AppRoutes.EVENTS)
-                        AppRoutes.POI_MAP -> navController.navigate(AppRoutes.POI_MAP)
+                        AppRoutes.POI_LIST -> navController.navigate(AppRoutes.POI_LIST)
                         "my_reports" -> navController.navigate("my_reports")
                         "notifications" -> navController.navigate("notifications")
                     }

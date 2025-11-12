@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.gms.google.services)
     id("org.jetbrains.kotlin.plugin.serialization") version "2.0.21"
+    id("com.google.devtools.ksp") version "2.0.21-1.0.28"
 }
 
 
@@ -110,6 +111,22 @@ dependencies {
     
     //Dashboards
     implementation(libs.tehras.charts)
+    
+    // Room para almacenamiento local
+    val roomVersion = "2.6.1"
+    implementation("androidx.room:room-runtime:$roomVersion")
+    implementation("androidx.room:room-ktx:$roomVersion")
+    ksp("androidx.room:room-compiler:$roomVersion")
+    
+    // SharedPreferences
+    implementation("androidx.preference:preference-ktx:1.2.1")
+    
+    // DataStore (alternativa moderna a SharedPreferences)
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    
+    // Gson para serialización JSON
+    implementation("com.google.code.gson:gson:2.10.1")
+    
     // Tests
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -119,4 +136,25 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     implementation("androidx.navigation:navigation-compose:2.8.0")
+}
+
+// ========== Tarea para copiar .env a assets ==========
+// Esta tarea copia el archivo .env de la raíz del proyecto a app/src/main/assets/
+// para que esté disponible en la aplicación Android
+tasks.register<Copy>("copyEnvToAssets") {
+    val envFile = file("../.env")
+    val assetsDir = file("src/main/assets")
+    
+    from(envFile)
+    into(assetsDir)
+    onlyIf { envFile.exists() }
+    
+    doFirst {
+        assetsDir.mkdirs()
+    }
+}
+
+// Ejecutar copia de .env antes de procesar recursos (preBuild)
+tasks.named("preBuild") {
+    dependsOn("copyEnvToAssets")
 }

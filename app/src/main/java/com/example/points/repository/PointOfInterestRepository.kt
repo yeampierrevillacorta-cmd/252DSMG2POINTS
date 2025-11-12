@@ -7,15 +7,20 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.channels.awaitClose
 import android.net.Uri
 import android.util.Log
 import java.util.UUID
 
-class PointOfInterestRepository {
+class PointOfInterestRepository(
+    private val localPOIRepository: LocalPOIRepository? = null
+) {
     private val firestore = FirebaseFirestore.getInstance()
     private val storage = FirebaseStorage.getInstance()
     private val auth = FirebaseAuth.getInstance()
@@ -46,7 +51,7 @@ class PointOfInterestRepository {
             }
         
         awaitClose { listener.remove() }
-    }
+    }.flowOn(Dispatchers.IO)
     
     // Obtener POIs por categoría
     fun getPOIsByCategory(categoria: CategoriaPOI): Flow<List<PointOfInterest>> = callbackFlow {
@@ -73,7 +78,7 @@ class PointOfInterestRepository {
             }
         
         awaitClose { listener.remove() }
-    }
+    }.flowOn(Dispatchers.IO)
     
     // Buscar POIs por nombre o descripción
     fun searchPOIs(query: String): Flow<List<PointOfInterest>> = callbackFlow {
@@ -105,7 +110,7 @@ class PointOfInterestRepository {
             }
         
         awaitClose { listener.remove() }
-    }
+    }.flowOn(Dispatchers.IO)
     
     // Obtener POIs cercanos a una ubicación
     fun getNearbyPOIs(lat: Double, lon: Double, radiusKm: Double = 5.0): Flow<List<PointOfInterest>> = callbackFlow {
@@ -165,7 +170,7 @@ class PointOfInterestRepository {
             }
         
         awaitClose { listener.remove() }
-    }
+    }.flowOn(Dispatchers.IO)
     
     // Obtener POIs en revisión (para moderadores)
     fun getPOIsInReview(): Flow<List<PointOfInterest>> = callbackFlow {
@@ -191,106 +196,116 @@ class PointOfInterestRepository {
             }
         
         awaitClose { listener.remove() }
-    }
+    }.flowOn(Dispatchers.IO)
     
     // Crear un nuevo POI
     suspend fun createPOI(poi: PointOfInterest): Result<String> {
-        return try {
-            val currentUser = auth.currentUser
-            if (currentUser == null) {
-                return Result.failure(Exception("Usuario no autenticado"))
+        return withContext(Dispatchers.IO) {
+            try {
+                val currentUser = auth.currentUser
+                if (currentUser == null) {
+                    return@withContext Result.failure(Exception("Usuario no autenticado"))
+                }
+                
+                val poiWithUser = poi.copy(usuarioId = currentUser.uid)
+                val docRef = poiCollection.add(poiWithUser).await()
+                Log.d("POIRepository", "POI creado con ID: ${docRef.id}")
+                Result.success(docRef.id)
+            } catch (e: Exception) {
+                Log.e("POIRepository", "Error creating POI", e)
+                Result.failure(e)
             }
-            
-            val poiWithUser = poi.copy(usuarioId = currentUser.uid)
-            val docRef = poiCollection.add(poiWithUser).await()
-            Log.d("POIRepository", "POI creado con ID: ${docRef.id}")
-            Result.success(docRef.id)
-        } catch (e: Exception) {
-            Log.e("POIRepository", "Error creating POI", e)
-            Result.failure(e)
         }
     }
     
     // Actualizar un POI
     suspend fun updatePOI(poi: PointOfInterest): Result<Unit> {
-        return try {
-            if (poi.id.isEmpty()) {
-                return Result.failure(Exception("ID del POI no puede estar vacío"))
+        return withContext(Dispatchers.IO) {
+            try {
+                if (poi.id.isEmpty()) {
+                    return@withContext Result.failure(Exception("ID del POI no puede estar vacío"))
+                }
+                
+                poiCollection.document(poi.id).set(poi).await()
+                Log.d("POIRepository", "POI actualizado: ${poi.id}")
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Log.e("POIRepository", "Error updating POI", e)
+                Result.failure(e)
             }
-            
-            poiCollection.document(poi.id).set(poi).await()
-            Log.d("POIRepository", "POI actualizado: ${poi.id}")
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Log.e("POIRepository", "Error updating POI", e)
-            Result.failure(e)
         }
     }
     
     // Aprobar un POI (para moderadores/administradores)
     suspend fun approvePOI(poiId: String, comentarios: String? = null): Result<Unit> {
-        return try {
-            val currentUser = auth.currentUser
-            if (currentUser == null) {
-                return Result.failure(Exception("Usuario no autenticado"))
+        return withContext(Dispatchers.IO) {
+            try {
+                val currentUser = auth.currentUser
+                if (currentUser == null) {
+                    return@withContext Result.failure(Exception("Usuario no autenticado"))
+                }
+                
+                val updateData = mapOf(
+                    "estado" to EstadoPOI.APROBADO.name,
+                    "moderadorId" to currentUser.uid,
+                    "fechaModeracion" to com.google.firebase.Timestamp.now(),
+                    "comentariosModeracion" to comentarios,
+                    "fechaActualizacion" to com.google.firebase.Timestamp.now()
+                )
+                
+                poiCollection.document(poiId).update(updateData).await()
+                Log.d("POIRepository", "POI aprobado: $poiId")
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Log.e("POIRepository", "Error approving POI", e)
+                Result.failure(e)
             }
-            
-            val updateData = mapOf(
-                "estado" to EstadoPOI.APROBADO.name,
-                "moderadorId" to currentUser.uid,
-                "fechaModeracion" to com.google.firebase.Timestamp.now(),
-                "comentariosModeracion" to comentarios,
-                "fechaActualizacion" to com.google.firebase.Timestamp.now()
-            )
-            
-            poiCollection.document(poiId).update(updateData).await()
-            Log.d("POIRepository", "POI aprobado: $poiId")
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Log.e("POIRepository", "Error approving POI", e)
-            Result.failure(e)
         }
     }
     
     // Rechazar un POI (para moderadores/administradores)
     suspend fun rejectPOI(poiId: String, comentarios: String): Result<Unit> {
-        return try {
-            val currentUser = auth.currentUser
-            if (currentUser == null) {
-                return Result.failure(Exception("Usuario no autenticado"))
+        return withContext(Dispatchers.IO) {
+            try {
+                val currentUser = auth.currentUser
+                if (currentUser == null) {
+                    return@withContext Result.failure(Exception("Usuario no autenticado"))
+                }
+                
+                val updateData = mapOf(
+                    "estado" to EstadoPOI.RECHAZADO.name,
+                    "moderadorId" to currentUser.uid,
+                    "fechaModeracion" to com.google.firebase.Timestamp.now(),
+                    "comentariosModeracion" to comentarios,
+                    "fechaActualizacion" to com.google.firebase.Timestamp.now()
+                )
+                
+                poiCollection.document(poiId).update(updateData).await()
+                Log.d("POIRepository", "POI rechazado: $poiId")
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Log.e("POIRepository", "Error rejecting POI", e)
+                Result.failure(e)
             }
-            
-            val updateData = mapOf(
-                "estado" to EstadoPOI.RECHAZADO.name,
-                "moderadorId" to currentUser.uid,
-                "fechaModeracion" to com.google.firebase.Timestamp.now(),
-                "comentariosModeracion" to comentarios,
-                "fechaActualizacion" to com.google.firebase.Timestamp.now()
-            )
-            
-            poiCollection.document(poiId).update(updateData).await()
-            Log.d("POIRepository", "POI rechazado: $poiId")
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Log.e("POIRepository", "Error rejecting POI", e)
-            Result.failure(e)
         }
     }
     
     // Subir imagen para un POI
     suspend fun uploadPOIImage(poiId: String, imageUri: Uri): Result<String> {
-        return try {
-            val fileName = "poi_${poiId}_${UUID.randomUUID()}.jpg"
-            val imageRef = storage.reference.child("poi_images/$fileName")
-            
-            val uploadTask = imageRef.putFile(imageUri).await()
-            val downloadUrl = imageRef.downloadUrl.await()
-            
-            Log.d("POIRepository", "Imagen subida: $downloadUrl")
-            Result.success(downloadUrl.toString())
-        } catch (e: Exception) {
-            Log.e("POIRepository", "Error uploading image", e)
-            Result.failure(e)
+        return withContext(Dispatchers.IO) {
+            try {
+                val fileName = "poi_${poiId}_${UUID.randomUUID()}.jpg"
+                val imageRef = storage.reference.child("poi_images/$fileName")
+                
+                val uploadTask = imageRef.putFile(imageUri).await()
+                val downloadUrl = imageRef.downloadUrl.await()
+                
+                Log.d("POIRepository", "Imagen subida: $downloadUrl")
+                Result.success(downloadUrl.toString())
+            } catch (e: Exception) {
+                Log.e("POIRepository", "Error uploading image", e)
+                Result.failure(e)
+            }
         }
     }
     
@@ -312,29 +327,52 @@ class PointOfInterestRepository {
     
     // Obtener POI por ID
     suspend fun getPOIById(poiId: String): Result<PointOfInterest?> {
-        return try {
-            val doc = poiCollection.document(poiId).get().await()
-            if (doc.exists()) {
-                val poi = doc.toObject(PointOfInterest::class.java)?.copy(id = doc.id)
-                Result.success(poi)
-            } else {
-                Result.success(null)
+        return withContext(Dispatchers.IO) {
+            try {
+                // Intentar obtener del caché local primero
+                val cachedPOI = localPOIRepository?.getCachedPOIById(poiId)
+                if (cachedPOI != null) {
+                    Log.d("POIRepository", "POI obtenido desde caché: $poiId")
+                    return@withContext Result.success(cachedPOI)
+                }
+                
+                // Si no está en caché, obtener de Firebase
+                val doc = poiCollection.document(poiId).get().await()
+                if (doc.exists()) {
+                    val poi = doc.toObject(PointOfInterest::class.java)?.copy(id = doc.id)
+                    // Guardar en caché
+                    poi?.let { localPOIRepository?.cachePOI(it) }
+                    Result.success(poi)
+                } else {
+                    Result.success(null)
+                }
+            } catch (e: Exception) {
+                Log.e("POIRepository", "Error getting POI by ID", e)
+                // Intentar obtener del caché en caso de error de red
+                val cachedPOI = localPOIRepository?.getCachedPOIById(poiId)
+                if (cachedPOI != null) {
+                    Log.d("POIRepository", "POI obtenido desde caché (fallback): $poiId")
+                    Result.success(cachedPOI)
+                } else {
+                    Result.failure(e)
+                }
             }
-        } catch (e: Exception) {
-            Log.e("POIRepository", "Error getting POI by ID", e)
-            Result.failure(e)
         }
     }
     
     // Eliminar un POI (solo para administradores)
     suspend fun deletePOI(poiId: String): Result<Unit> {
-        return try {
-            poiCollection.document(poiId).delete().await()
-            Log.d("POIRepository", "POI eliminado: $poiId")
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Log.e("POIRepository", "Error deleting POI", e)
-            Result.failure(e)
+        return withContext(Dispatchers.IO) {
+            try {
+                poiCollection.document(poiId).delete().await()
+                // Eliminar del caché local también
+                localPOIRepository?.removeFromFavorites(poiId)
+                Log.d("POIRepository", "POI eliminado: $poiId")
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Log.e("POIRepository", "Error deleting POI", e)
+                Result.failure(e)
+            }
         }
     }
 }

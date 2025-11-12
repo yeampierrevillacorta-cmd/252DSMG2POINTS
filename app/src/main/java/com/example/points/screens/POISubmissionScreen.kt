@@ -154,7 +154,9 @@ fun POISubmissionScreen(
                         descripcion = descripcion,
                         onDescripcionChange = { descripcion = it },
                         categoria = categoria,
-                        onCategoriaChange = { categoria = it }
+                        onCategoriaChange = { categoria = it },
+                        viewModel = viewModel,
+                        direccion = direccion
                     )
                 }
                 
@@ -261,6 +263,58 @@ fun POISubmissionScreen(
                         )
                     }
                 }
+                
+                // Mostrar descripción generada si existe
+                uiState.generatedDescription?.let { generatedDesc ->
+                    item {
+                        GeneratedDescriptionCard(
+                            description = generatedDesc,
+                            onUseDescription = {
+                                descripcion = generatedDesc
+                                viewModel.clearGeneratedDescription()
+                            },
+                            onDismiss = {
+                                viewModel.clearGeneratedDescription()
+                            }
+                        )
+                    }
+                }
+                
+                // Mostrar error de generación de descripción si existe
+                uiState.descriptionGenerationError?.let { error ->
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = error,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconButton(
+                                    onClick = { viewModel.clearDescriptionGenerationError() }
+                                ) {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = "Cerrar",
+                                        tint = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -273,8 +327,12 @@ fun BasicInfoSection(
     descripcion: String,
     onDescripcionChange: (String) -> Unit,
     categoria: CategoriaPOI?,
-    onCategoriaChange: (CategoriaPOI?) -> Unit
+    onCategoriaChange: (CategoriaPOI?) -> Unit,
+    viewModel: PointOfInterestViewModel,
+    direccion: String = ""
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+    
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp)
@@ -302,15 +360,83 @@ fun BasicInfoSection(
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            OutlinedTextField(
-                value = descripcion,
-                onValueChange = onDescripcionChange,
-                label = { Text("Descripción *") },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 3,
-                maxLines = 5,
-                isError = descripcion.isEmpty()
-            )
+            // Campo de descripción con botón para generar con IA
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Descripción *",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Medium
+                        )
+                    )
+                    
+                    // Botón para generar descripción con IA
+                    TextButton(
+                        onClick = {
+                            if (nombre.isNotEmpty() && categoria != null) {
+                                viewModel.generateDescription(
+                                    nombre = nombre,
+                                    categoria = categoria,
+                                    direccion = direccion.takeIf { it.isNotEmpty() }
+                                )
+                            }
+                        },
+                        enabled = nombre.isNotEmpty() && 
+                                 categoria != null && 
+                                 !uiState.isGeneratingDescription
+                    ) {
+                        if (uiState.isGeneratingDescription) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Generando...",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        } else {
+                            Icon(
+                                Icons.Default.Create,
+                                contentDescription = "Generar con IA",
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Generar con IA",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                OutlinedTextField(
+                    value = descripcion,
+                    onValueChange = onDescripcionChange,
+                    label = { Text("Descripción *") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                    maxLines = 5,
+                    isError = descripcion.isEmpty(),
+                    enabled = !uiState.isGeneratingDescription
+                )
+                
+                // Mensaje de ayuda
+                if (nombre.isNotEmpty() && categoria != null && descripcion.isEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "💡 Haz clic en 'Generar con IA' para crear una descripción automática",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
             
             Spacer(modifier = Modifier.height(12.dp))
             
@@ -339,6 +465,89 @@ fun BasicInfoSection(
                             )
                         }
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun GeneratedDescriptionCard(
+    description: String,
+    onUseDescription: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Descripción Generada",
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                
+                IconButton(
+                    onClick = onDismiss
+                ) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Descartar",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Descartar")
+                }
+                
+                Button(
+                    onClick = onUseDescription,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Usar esta descripción")
                 }
             }
         }

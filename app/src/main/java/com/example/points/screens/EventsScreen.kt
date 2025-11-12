@@ -54,6 +54,8 @@ fun EventsScreen(
     var showFilters by remember { mutableStateOf(false) }
     var selectedEvent by remember { mutableStateOf<Event?>(null) }
     var showEventDetails by remember { mutableStateOf(false) }
+    var showSuccessMessage by remember { mutableStateOf(false) }
+    var snackbarHostState by remember { mutableStateOf(SnackbarHostState()) }
     
     // Cargar eventos al iniciar
     LaunchedEffect(Unit) {
@@ -61,10 +63,28 @@ fun EventsScreen(
         viewModel.loadUpcomingEvents()
     }
     
+    // Observar cambios en el estado del ViewModel para mostrar mensaje de éxito
+    LaunchedEffect(uiState.eventCreated) {
+        if (uiState.eventCreated) {
+            showCreateEventDialog = false
+            viewModel.clearEventCreated()
+            snackbarHostState.showSnackbar(
+                message = "Evento creado exitosamente. Está pendiente de aprobación.",
+                duration = SnackbarDuration.Short
+            )
+        }
+    }
+    
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
+        }
+    ) { paddingValues ->
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .padding(paddingValues)
     ) {
         // Header con título y botón de crear evento
         Row(
@@ -346,6 +366,7 @@ fun EventsScreen(
             }
         }
     }
+    }
     
     // Diálogo de detalles del evento
     if (showEventDetails && selectedEvent != null) {
@@ -369,10 +390,19 @@ fun EventsScreen(
     // Diálogo de crear evento
     if (showCreateEventDialog) {
         CreateEventDialog(
-            onDismiss = { showCreateEventDialog = false },
+            onDismiss = { 
+                if (!uiState.isLoading) {
+                    showCreateEventDialog = false
+                    viewModel.clearError()
+                }
+            },
             onCreateEvent = { event ->
                 viewModel.createEvent(event)
-                showCreateEventDialog = false
+            },
+            isLoading = uiState.isLoading,
+            errorMessage = uiState.errorMessage,
+            onErrorShown = {
+                viewModel.clearError()
             }
         )
     }

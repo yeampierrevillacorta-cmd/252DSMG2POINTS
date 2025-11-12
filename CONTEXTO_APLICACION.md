@@ -34,6 +34,8 @@
 - 📸 **Imágenes**: Subir y visualizar fotos de POIs, eventos e incidentes
 - 📍 **Ubicación en Tiempo Real**: Detección automática de ubicación
 - 👥 **Sistema de Roles**: Administradores, Moderadores y Ciudadanos
+- 📊 **Dashboard de Analíticas**: Visualización de estadísticas con gráficos
+- 🌤️ **Información del Clima**: Integración con OpenWeatherMap API
 
 ---
 
@@ -76,13 +78,16 @@ La aplicación sigue el patrón **MVVM (Model-View-ViewModel)** con las siguient
 
 - **Lenguaje**: Kotlin
 - **UI Framework**: Jetpack Compose
-- **Arquitectura**: MVVM
+- **Arquitectura**: MVVM con inyección de dependencias
 - **Navegación**: Jetpack Navigation Compose
-- **Backend**: Firebase (Firestore, Storage, Auth)
+- **Backend**: Firebase (Firestore, Storage, Auth, Analytics)
 - **Mapas**: Google Maps Android API
 - **Carga de Imágenes**: Coil
 - **Animaciones**: Lottie
 - **Variables de Entorno**: dotenv-kotlin
+- **HTTP Client**: Retrofit con Kotlinx Serialization
+- **Gráficos**: Tehras Charts
+- **UI Extras**: Accompanist (System UI, Pager, Navigation Animation)
 
 ---
 
@@ -258,6 +263,18 @@ data class Ubicacion(
 )
 ```
 
+### 6. WeatherResponse
+
+**Ubicación**: `app/src/main/java/com/example/points/models/weather/WeatherResponse.kt`
+
+Modelo para datos del clima desde OpenWeatherMap API.
+
+### 7. IncidentesPorTipo
+
+**Ubicación**: `app/src/main/java/com/example/points/data/model/IncidentesPorTipo.kt`
+
+Modelo para estadísticas de incidentes agrupados por tipo (usado en Dashboard).
+
 ---
 
 ## 🔐 Sistema de Autenticación y Roles
@@ -355,6 +372,11 @@ Login → Verificar tipo de usuario → Redirigir:
 | `admin_events` | AdminEventsScreen | Gestión de eventos |
 | `admin_user_management` | AdminUserManagementScreen | Gestión de usuarios (solo ADMIN) |
 | `admin_profile` | ProfileScreen | Perfil de administrador |
+| `admin_analytics` | AdminAnalyticsScreen | Dashboard de analíticas |
+| `admin_settings` | AdminSettingsScreen | Configuración del sistema (placeholder) |
+| `alerts` | AlertsScreen | Alertas y notificaciones (placeholder) |
+| `my_reports` | MyReportsScreen | Mis reportes (placeholder) |
+| `notifications` | NotificationsScreen | Centro de notificaciones (placeholder) |
 
 ### Layouts
 
@@ -430,6 +452,15 @@ Gestiona usuarios (solo para administradores):
 - Editar información de usuarios
 - Eliminar usuarios
 
+### DashboardViewModel
+
+**Ubicación**: `app/src/main/java/com/example/points/ui/screens/DashboardViewModel.kt`
+
+Gestiona el estado y datos del dashboard de analíticas:
+- Cargar estadísticas de incidentes por tipo
+- Preparar datos para visualización en gráficos
+- Estado de carga y errores
+
 ### LoginViewModel / RegisterViewModel
 
 **Ubicación**: `app/src/main/java/com/example/points/auth/`
@@ -502,6 +533,36 @@ Gestiona la subida de archivos a Firebase Storage:
 
 Gestiona la obtención de ubicación del usuario.
 
+### WeatherRepository
+
+**Ubicación**: `app/src/main/java/com/example/points/repository/WeatherRepository.kt`
+
+**Implementación**: `DefaultWeatherRepository.kt`
+
+Gestiona la obtención de datos del clima:
+- `getWeather(lat, lon)`: Obtener información del clima para una ubicación
+- Integración con OpenWeatherMap API mediante Retrofit
+
+### DashboardRepository
+
+**Ubicación**: `app/src/main/java/com/example/points/data/repository/DashboardRepository.kt`
+
+Gestiona datos para el dashboard de analíticas:
+- Estadísticas de incidentes por tipo
+- Agregaciones de datos desde Firestore
+
+### AppContainer (Inyección de Dependencias)
+
+**Ubicación**: `app/src/main/java/com/example/points/data/AppContainer.kt`
+
+**Implementación**: `DefaultAppContainer.kt`
+
+Sistema de inyección de dependencias que proporciona:
+- `weatherRepository`: Repositorio de clima
+- `dashboardRepository`: Repositorio de dashboard
+- Configuración de Retrofit para APIs externas
+- Instancias singleton de Firebase
+
 ---
 
 ## 🎨 Componentes UI
@@ -552,6 +613,9 @@ Gestiona la obtención de ubicación del usuario.
 
 13. **ShareOptionsDialog.kt / POIShareOptionsDialog.kt**
     - Diálogos para compartir contenido
+
+14. **ResponsiveButtons.kt**
+    - Botones adaptativos para diferentes tamaños de pantalla
 
 ### Sistema de Diseño
 
@@ -619,6 +683,22 @@ Gestiona la obtención de ubicación del usuario.
 - Fotos de perfil
 - Imágenes de eventos
 
+### OpenWeatherMap API
+
+**API Key**: Configurada en variables de entorno (`OPENWEATHER_API_KEY`)
+
+**Implementación**: Retrofit con Kotlinx Serialization
+
+**Funcionalidades**:
+- Obtener información del clima actual
+- Datos meteorológicos por ubicación (lat/lon)
+- Integración mediante `WeatherApiService` y `WeatherRepository`
+
+**Componentes**:
+- `WeatherApiService.kt`: Interfaz Retrofit para la API
+- `WeatherRepository.kt`: Repositorio que abstrae el acceso a la API
+- `WeatherResponse.kt`: Modelo de datos para respuestas de la API
+
 ---
 
 ## ⚙️ Configuración y Dependencias
@@ -635,6 +715,7 @@ FIREBASE_PROJECT_NUMBER=tu_numero
 FIREBASE_STORAGE_BUCKET=tu_bucket
 FIREBASE_API_KEY=tu_clave_firebase
 FIREBASE_APP_ID=tu_app_id
+OPENWEATHER_API_KEY=tu_clave_openweathermap
 ENVIRONMENT=development
 DEBUG_MODE=true
 ```
@@ -647,10 +728,11 @@ DEBUG_MODE=true
 
 ```kotlin
 // Firebase BOM
-implementation(platform("com.google.firebase:firebase-bom:33.4.0"))
+implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
 implementation("com.google.firebase:firebase-auth")
 implementation("com.google.firebase:firebase-firestore")
 implementation("com.google.firebase:firebase-storage")
+implementation("com.google.firebase:firebase-analytics")
 
 // Google Maps
 implementation("com.google.maps.android:maps-compose:4.4.1")
@@ -669,11 +751,34 @@ implementation("com.valentinilk.shimmer:compose-shimmer:1.2.0")
 // Environment variables
 implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
 
+// Retrofit para APIs HTTP
+implementation("com.squareup.retrofit2:retrofit:2.9.0")
+
+// Kotlinx Serialization
+implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
+
+// Accompanist
+implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
+implementation("com.google.accompanist:accompanist-pager:0.32.0")
+implementation("com.google.accompanist:accompanist-pager-indicators:0.32.0")
+implementation("com.google.accompanist:accompanist-navigation-animation:0.32.0")
+
+// Material 3 Extended
+implementation("androidx.compose.material3:material3-window-size-class:1.1.2")
+
+// ConstraintLayout para Compose
+implementation("androidx.constraintlayout:constraintlayout-compose:1.0.1")
+
+// Charts
+implementation("com.github.tehras:charts:0.2.4-alpha")
+
 // Jetpack Compose
 implementation(platform("androidx.compose:compose-bom:2024.09.00"))
 implementation("androidx.compose.ui:ui")
 implementation("androidx.compose.material3:material3")
 implementation("androidx.navigation:navigation-compose:2.8.0")
+implementation("androidx.compose.material:material-icons-extended")
 ```
 
 ### Configuración de Build
@@ -804,6 +909,19 @@ Utilidades generales para POIs.
 
 Utilidades para compartir contenido.
 
+### Utils.kt
+
+Utilidades generales.
+
+### AppContainer
+
+**Ubicación**: `app/src/main/java/com/example/points/data/AppContainer.kt`
+
+Sistema de inyección de dependencias que centraliza la creación de repositorios y servicios. Se inicializa en `PointsApplication` y proporciona acceso a:
+- Repositorios (Weather, Dashboard)
+- Instancias de Firebase
+- Configuración de Retrofit
+
 ### Constants
 
 **Ubicación**: `app/src/main/java/com/example/points/constants/`
@@ -843,7 +961,20 @@ app/src/main/java/com/example/points/
 │   ├── Incident.kt
 │   ├── Event.kt
 │   ├── User.kt
-│   └── Notification.kt
+│   ├── Notification.kt
+│   └── weather/
+│       └── WeatherResponse.kt
+│
+├── data/                            # Inyección de dependencias
+│   ├── AppContainer.kt
+│   ├── DefaultAppContainer.kt
+│   ├── model/
+│   │   └── IncidentesPorTipo.kt
+│   └── repository/
+│       └── DashboardRepository.kt
+│
+├── network/                         # Servicios de red
+│   └── WeatherApiService.kt
 │
 ├── screens/                         # Pantallas
 │   ├── HomeScreen.kt
@@ -878,7 +1009,8 @@ app/src/main/java/com/example/points/
 │   ├── PointsFeedback.kt
 │   ├── PointsBadges.kt
 │   ├── PointsChips.kt
-│   └── OptimizedImageLoader.kt
+│   ├── OptimizedImageLoader.kt
+│   └── ResponsiveButtons.kt
 │
 ├── viewmodel/                       # ViewModels
 │   ├── PointOfInterestViewModel.kt
@@ -886,11 +1018,19 @@ app/src/main/java/com/example/points/
 │   ├── EventViewModel.kt
 │   └── UserManagementViewModel.kt
 │
+├── ui/screens/                      # Pantallas de UI especializadas
+│   ├── DashboardScreen.kt
+│   ├── DashboardViewModel.kt
+│   ├── DashboardBarrasScreen.kt
+│   └── DashboardPieScreen.kt
+│
 ├── repository/                      # Repositorios
 │   ├── PointOfInterestRepository.kt
 │   ├── IncidentRepository.kt
 │   ├── EventRepository.kt
-│   └── UserRepository.kt
+│   ├── UserRepository.kt
+│   ├── WeatherRepository.kt
+│   └── DefaultWeatherRepository.kt
 │
 ├── services/                        # Servicios
 │   └── LocationService.kt
@@ -984,8 +1124,9 @@ app/src/main/java/com/example/points/
    - Falta implementar Firebase Cloud Messaging
 
 2. **Analíticas**
-   - Pantalla `AdminAnalyticsScreen` es placeholder
-   - Falta implementar dashboard con estadísticas
+   - ✅ Dashboard implementado con gráficos de barras y pie
+   - ✅ `DashboardScreen`, `DashboardViewModel` y `DashboardRepository` funcionales
+   - ⚠️ Pantalla `AdminAnalyticsScreen` integra el dashboard pero puede mejorarse
 
 3. **Configuración del Sistema**
    - Pantalla `AdminSettingsScreen` es placeholder
@@ -1073,7 +1214,9 @@ app/src/main/java/com/example/points/
 
 ---
 
-**Última actualización**: Generado automáticamente desde el código fuente
+**Última actualización**: Diciembre 2024
 **Versión de la App**: 1.0
 **Versión de Android**: Min SDK 24, Target SDK 36
+**Versión de Kotlin**: 2.0.21
+**Versión de Compose BOM**: 2024.09.00
 

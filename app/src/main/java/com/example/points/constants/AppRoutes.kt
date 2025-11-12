@@ -32,6 +32,7 @@ object AppRoutes {
     const val ADMIN_INCIDENTS = "admin_incidents"
     
     // Puntos de Interés
+    const val POI_LIST = "poi_list"
     const val POI_MAP = "poi_map"
     const val POI_SEARCH = "poi_search"
     const val POI_DETAIL = "poi_detail"

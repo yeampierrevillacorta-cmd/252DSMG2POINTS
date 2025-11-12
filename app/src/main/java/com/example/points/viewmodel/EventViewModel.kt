@@ -20,7 +20,8 @@ data class EventUiState(
     val errorMessage: String? = null,
     val selectedCategory: CategoriaEvento? = null,
     val searchQuery: String = "",
-    val showOnlyUpcoming: Boolean = true
+    val showOnlyUpcoming: Boolean = true,
+    val eventCreated: Boolean = false
 )
 
 class EventViewModel : ViewModel() {
@@ -164,22 +165,31 @@ class EventViewModel : ViewModel() {
     
     fun createEvent(event: Event) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            _uiState.value = _uiState.value.copy(
+                isLoading = true, 
+                errorMessage = null,
+                eventCreated = false
+            )
             
             try {
                 val result = repository.createEvent(event)
                 result.fold(
                     onSuccess = { eventId ->
                         Log.d("EventViewModel", "Evento creado exitosamente: $eventId")
-                        _uiState.value = _uiState.value.copy(isLoading = false)
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            eventCreated = true
+                        )
                         // Recargar eventos del usuario
                         loadUserEvents()
+                        loadAllEvents()
                     },
                     onFailure = { error ->
                         Log.e("EventViewModel", "Error creating event", error)
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
-                            errorMessage = "Error al crear evento: ${error.message}"
+                            errorMessage = "Error al crear evento: ${error.message}",
+                            eventCreated = false
                         )
                     }
                 )
@@ -187,10 +197,15 @@ class EventViewModel : ViewModel() {
                 Log.e("EventViewModel", "Error creating event", e)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = "Error al crear evento: ${e.message}"
+                    errorMessage = "Error al crear evento: ${e.message}",
+                    eventCreated = false
                 )
             }
         }
+    }
+    
+    fun clearEventCreated() {
+        _uiState.value = _uiState.value.copy(eventCreated = false)
     }
     
     fun approveEvent(eventId: String, comentarios: String? = null) {

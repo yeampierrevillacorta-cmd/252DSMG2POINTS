@@ -62,234 +62,237 @@ fun POIScreen(
         uiState.filteredPOIs
     }
     
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Header con título y botones
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(AppSpacing.STANDARD),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
-            Column {
-                Text(
-                    text = "📍 Puntos de Interés",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Text(
-                    text = "Descubre lugares en tu localidad",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                )
-            }
-            
+            // Header con título y botones
             Row(
-                horizontalArrangement = Arrangement.spacedBy(AppSpacing.MEDIUM)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(AppSpacing.STANDARD),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Botón de filtros
-                IconButton(
-                    onClick = { showFilters = !showFilters },
-                    modifier = Modifier
-                        .background(
-                            if (showFilters) MaterialTheme.colorScheme.primary 
-                            else MaterialTheme.colorScheme.surface,
-                            RoundedCornerShape(8.dp)
-                        )
-                ) {
-                    Icon(
-                        imageVector = if (showFilters) Icons.Default.Close else Icons.Default.FilterList,
-                        contentDescription = ContentDescription.FILTROS.value,
-                        tint = if (showFilters) MaterialTheme.colorScheme.onPrimary 
-                               else MaterialTheme.colorScheme.onSurface
+                Column {
+                    Text(
+                        text = "📍 Puntos de Interés",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Text(
+                        text = "Descubre lugares en tu localidad",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                     )
                 }
                 
-                // Botón de mapa
-                Button(
-                    onClick = { navController.navigate(AppRoutes.POI_MAP) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary
-                    )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.MEDIUM)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Map,
-                        contentDescription = null,
-                        modifier = Modifier.size(IconSize.STANDARD)
-                    )
-                    Spacer(modifier = Modifier.width(AppSpacing.SMALL))
-                    Text("Mapa")
-                }
-                
-                // Botón de agregar POI
-                Button(
-                    onClick = { navController.navigate(AppRoutes.POI_SUBMISSION) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = null,
-                        modifier = Modifier.size(IconSize.STANDARD)
-                    )
-                    Spacer(modifier = Modifier.width(AppSpacing.SMALL))
-                    Text(ButtonText.CREAR.value)
-                }
-            }
-        }
-        
-        // Panel de filtros con animación de expansión
-        AnimatedVisibility(
-            visible = showFilters,
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically()
-        ) {
-            Column {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = AppSpacing.STANDARD),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(AppSpacing.STANDARD)
-                    ) {
-                        Text(
-                            text = SectionTitle.FILTROS.value,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = AppSpacing.MEDIUM)
-                        )
-                        
-                        // Filtro de categoría
-                        Text(
-                            text = SectionTitle.CATEGORIA.value,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(bottom = AppSpacing.SMALL)
-                        )
-                        
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(AppSpacing.SMALL)
-                        ) {
-                            item {
-                                FilterChip(
-                                    onClick = { viewModel.setCategoryFilter(null) },
-                                    label = { Text(ButtonText.TODOS.value) },
-                                    selected = uiState.selectedCategory == null
-                                )
-                            }
-                            
-                            items(CategoriaPOI.values().toList()) { categoria ->
-                                FilterChip(
-                                    onClick = { viewModel.setCategoryFilter(categoria) },
-                                    label = { Text(categoria.displayName) },
-                                    selected = uiState.selectedCategory == categoria
-                                )
-                            }
-                        }
-                        
-                        Spacer(modifier = Modifier.height(AppSpacing.STANDARD))
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(AppSpacing.STANDARD))
-            }
-        }
-        
-        // Contenido principal
-        when {
-            uiState.isLoading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    PointsLoading(message = LoadingMessage.CARGANDO_POI.value)
-                }
-            }
-            
-            uiState.errorMessage != null -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    PointsFeedback(
-                        message = uiState.errorMessage ?: ErrorMessage.ERROR_DESCONOCIDO.value,
-                        type = "error",
-                        onRetry = { viewModel.loadAllPOIs() }
-                    )
-                }
-            }
-            
-            filteredPOIs.isEmpty() -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(AppSpacing.EXTRA_LARGE * 2),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    // Botón de filtros
+                    IconButton(
+                        onClick = { showFilters = !showFilters },
+                        modifier = Modifier
+                            .background(
+                                if (showFilters) MaterialTheme.colorScheme.primary 
+                                else MaterialTheme.colorScheme.surface,
+                                RoundedCornerShape(8.dp)
+                            )
                     ) {
                         Icon(
-                            imageVector = Icons.Default.LocationOff,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                        )
-                        Spacer(modifier = Modifier.height(AppSpacing.STANDARD))
-                        Text(
-                            text = ErrorMessage.NO_HAY_POI.value,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        )
-                        Text(
-                            text = "${ErrorMessage.INTENTA_CAMBIAR_FILTROS.value} punto de interés",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                        )
-                    }
-                }
-            }
-            
-            else -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(AppSpacing.STANDARD),
-                    verticalArrangement = Arrangement.spacedBy(AppSpacing.STANDARD)
-                ) {
-                    item {
-                        Text(
-                            text = if (uiState.selectedCategory != null) {
-                                "📋 ${uiState.selectedCategory!!.displayName}"
-                            } else {
-                                SectionTitle.TODOS_LOS_POI.value
-                            },
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.padding(bottom = AppSpacing.SMALL)
+                            imageVector = if (showFilters) Icons.Default.Close else Icons.Default.FilterList,
+                            contentDescription = ContentDescription.FILTROS.value,
+                            tint = if (showFilters) MaterialTheme.colorScheme.onPrimary 
+                                   else MaterialTheme.colorScheme.onSurface
                         )
                     }
                     
-                    items(filteredPOIs) { poi ->
-                        POICard(
-                            poi = poi,
-                            onClick = {
-                                navController.navigate("${AppRoutes.POI_DETAIL}/${poi.id}")
-                            }
+                    // Botón de mapa
+                    IconButton(
+                        onClick = { navController.navigate(AppRoutes.POI_MAP) },
+                        modifier = Modifier
+                            .background(
+                                MaterialTheme.colorScheme.secondaryContainer,
+                                RoundedCornerShape(8.dp)
+                            )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Map,
+                            contentDescription = "Ver mapa",
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                     }
                 }
             }
+            
+            // Panel de filtros con animación de expansión
+            AnimatedVisibility(
+                visible = showFilters,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Column {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = AppSpacing.STANDARD),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(AppSpacing.STANDARD)
+                        ) {
+                            Text(
+                                text = SectionTitle.FILTROS.value,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = AppSpacing.MEDIUM)
+                            )
+                            
+                            // Filtro de categoría
+                            Text(
+                                text = SectionTitle.CATEGORIA.value,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(bottom = AppSpacing.SMALL)
+                            )
+                            
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(AppSpacing.SMALL)
+                            ) {
+                                item {
+                                    FilterChip(
+                                        onClick = { viewModel.setCategoryFilter(null) },
+                                        label = { Text(ButtonText.TODOS.value) },
+                                        selected = uiState.selectedCategory == null
+                                    )
+                                }
+                                
+                                items(CategoriaPOI.values().toList()) { categoria ->
+                                    FilterChip(
+                                        onClick = { viewModel.setCategoryFilter(categoria) },
+                                        label = { Text(categoria.displayName) },
+                                        selected = uiState.selectedCategory == categoria
+                                    )
+                                }
+                            }
+                            
+                            Spacer(modifier = Modifier.height(AppSpacing.STANDARD))
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(AppSpacing.STANDARD))
+                }
+            }
+            
+            // Contenido principal
+            when {
+                uiState.isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        PointsLoading(message = LoadingMessage.CARGANDO_POI.value)
+                    }
+                }
+                
+                uiState.errorMessage != null -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        PointsFeedback(
+                            message = uiState.errorMessage ?: ErrorMessage.ERROR_DESCONOCIDO.value,
+                            type = "error",
+                            onRetry = { viewModel.loadAllPOIs() }
+                        )
+                    }
+                }
+                
+                filteredPOIs.isEmpty() -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(AppSpacing.EXTRA_LARGE * 2),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOff,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            )
+                            Spacer(modifier = Modifier.height(AppSpacing.STANDARD))
+                            Text(
+                                text = ErrorMessage.NO_HAY_POI.value,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                            Text(
+                                text = "${ErrorMessage.INTENTA_CAMBIAR_FILTROS.value} punto de interés",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            )
+                        }
+                    }
+                }
+                
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(AppSpacing.STANDARD),
+                        verticalArrangement = Arrangement.spacedBy(AppSpacing.STANDARD)
+                    ) {
+                        item {
+                            Text(
+                                text = if (uiState.selectedCategory != null) {
+                                    "📋 ${uiState.selectedCategory!!.displayName}"
+                                } else {
+                                    SectionTitle.TODOS_LOS_POI.value
+                                },
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.padding(bottom = AppSpacing.SMALL)
+                            )
+                        }
+                        
+                        items(filteredPOIs) { poi ->
+                            POICard(
+                                poi = poi,
+                                onClick = {
+                                    navController.navigate("${AppRoutes.POI_DETAIL}/${poi.id}")
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Botón flotante para agregar POI
+        FloatingActionButton(
+            onClick = { navController.navigate(AppRoutes.POI_SUBMISSION) },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp),
+            containerColor = MaterialTheme.colorScheme.primary
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Agregar punto de interés",
+                tint = MaterialTheme.colorScheme.onPrimary
+            )
         }
     }
 }

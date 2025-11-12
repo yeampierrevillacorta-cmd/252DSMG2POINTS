@@ -42,7 +42,7 @@ sealed class BottomNavItem(
     // Elementos para ciudadanos
     object Home : BottomNavItem(AppRoutes.HOME, "INICIO", Icons.Filled.Home)
     object Incidents : BottomNavItem(AppRoutes.INCIDENTS, "INCIDENTES", Icons.Filled.Report)
-    object Places : BottomNavItem(AppRoutes.POI_MAP, "LUGARES", Icons.Filled.LocationOn)
+    object Places : BottomNavItem(AppRoutes.POI_LIST, "LUGARES", Icons.Filled.LocationOn)
     object Events : BottomNavItem(AppRoutes.EVENTS, "EVENTOS", Icons.Filled.Event)
     object Alerts : BottomNavItem("alerts", "ALERTAS", Icons.Filled.NotificationImportant)
     object Profile : BottomNavItem(AppRoutes.PROFILE, "PERFIL", Icons.Filled.NotificationImportant)

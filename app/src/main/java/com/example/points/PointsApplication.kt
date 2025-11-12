@@ -18,8 +18,8 @@ class PointsApplication : Application() {
         // Inicializar configuración de variables de entorno
         EnvironmentConfig.initialize(this)
         
-        // Inicializar contenedor de dependencias
-        container = DefaultAppContainer()
+        // Inicializar contenedor de dependencias (pasar contexto para Room y SharedPreferences)
+        container = DefaultAppContainer(this)
         
         // Log de configuración (solo en modo debug)
         if (EnvironmentConfig.DEBUG_MODE) {

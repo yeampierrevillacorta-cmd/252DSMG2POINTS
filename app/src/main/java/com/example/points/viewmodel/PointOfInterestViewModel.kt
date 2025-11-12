@@ -37,12 +37,17 @@ data class POIUIState(
     val isLoadingWeather: Boolean = false,
     val weatherResponse: WeatherResponse? = null,
     val weatherError: String? = null,
-    val selectedPOI: PointOfInterest? = null
+    val selectedPOI: PointOfInterest? = null,
+    // Estados para generación de descripción con Gemini
+    val isGeneratingDescription: Boolean = false,
+    val generatedDescription: String? = null,
+    val descriptionGenerationError: String? = null
 )
 
 class PointOfInterestViewModel(
     private val poiRepository: PointOfInterestRepository,
-    private val weatherRepository: WeatherRepository
+    private val weatherRepository: WeatherRepository,
+    private val geminiRepository: com.example.points.repository.GeminiRepository? = null
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(POIUIState())
@@ -363,6 +368,18 @@ class PointOfInterestViewModel(
     // Cargar clima para un POI
     fun loadWeatherForPOI(ubicacion: Ubicacion) {
         viewModelScope.launch {
+            // Verificar si la API key está configurada antes de intentar cargar
+            val apiKey = com.example.points.utils.EnvironmentConfig.OPENWEATHER_API_KEY
+            if (apiKey.isEmpty()) {
+                Log.w("POIViewModel", "OpenWeatherMap API key no configurada - omitiendo carga de clima")
+                _uiState.value = _uiState.value.copy(
+                    isLoadingWeather = false,
+                    weatherError = null, // No mostramos error, solo no cargamos el clima
+                    weatherResponse = null
+                )
+                return@launch
+            }
+            
             _uiState.value = _uiState.value.copy(
                 isLoadingWeather = true,
                 weatherError = null
@@ -373,6 +390,14 @@ class PointOfInterestViewModel(
                 _uiState.value = _uiState.value.copy(
                     weatherResponse = weather,
                     isLoadingWeather = false
+                )
+            } catch (e: IllegalStateException) {
+                // API key no configurada - no es un error crítico
+                Log.w("POIViewModel", "No se puede cargar clima: ${e.message}")
+                _uiState.value = _uiState.value.copy(
+                    weatherError = null, // No mostramos error si la API key no está configurada
+                    isLoadingWeather = false,
+                    weatherResponse = null
                 )
             } catch (e: IOException) {
                 Log.e("POIViewModel", "Error de red al cargar clima", e)
@@ -389,7 +414,7 @@ class PointOfInterestViewModel(
             } catch (e: Exception) {
                 Log.e("POIViewModel", "Error inesperado al cargar clima", e)
                 _uiState.value = _uiState.value.copy(
-                    weatherError = "Error al cargar el clima: ${e.message}",
+                    weatherError = "Error al cargar el clima",
                     isLoadingWeather = false
                 )
             }
@@ -408,6 +433,84 @@ class PointOfInterestViewModel(
     // Actualizar ubicación del usuario
     fun updateUserLocation(lat: Double, lon: Double) {
         _uiState.value = _uiState.value.copy(userLocation = Pair(lat, lon))
+    }
+    
+    // Generar descripción para un POI usando Gemini
+    fun generateDescription(nombre: String, categoria: CategoriaPOI, direccion: String? = null) {
+        viewModelScope.launch {
+            // Verificar si Gemini está disponible
+            val geminiRepo = geminiRepository
+            if (geminiRepo == null) {
+                Log.w("POIViewModel", "GeminiRepository no disponible - API key no configurada")
+                _uiState.value = _uiState.value.copy(
+                    isGeneratingDescription = false,
+                    descriptionGenerationError = "La generación de descripciones no está disponible. Configura GEMINI_API_KEY en el archivo .env",
+                    generatedDescription = null
+                )
+                return@launch
+            }
+            
+            // Validar que el nombre y la categoría no estén vacíos
+            if (nombre.isBlank()) {
+                _uiState.value = _uiState.value.copy(
+                    isGeneratingDescription = false,
+                    descriptionGenerationError = "El nombre del POI es requerido para generar la descripción",
+                    generatedDescription = null
+                )
+                return@launch
+            }
+            
+            _uiState.value = _uiState.value.copy(
+                isGeneratingDescription = true,
+                descriptionGenerationError = null,
+                generatedDescription = null
+            )
+            
+            try {
+                val result = geminiRepo.generatePOIDescription(nombre, categoria, direccion)
+                
+                result.fold(
+                    onSuccess = { description ->
+                        Log.d("POIViewModel", "Descripción generada exitosamente: $description")
+                        _uiState.value = _uiState.value.copy(
+                            isGeneratingDescription = false,
+                            generatedDescription = description,
+                            descriptionGenerationError = null
+                        )
+                    },
+                    onFailure = { exception ->
+                        Log.e("POIViewModel", "Error al generar descripción", exception)
+                        _uiState.value = _uiState.value.copy(
+                            isGeneratingDescription = false,
+                            generatedDescription = null,
+                            descriptionGenerationError = exception.message ?: "Error al generar la descripción"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                Log.e("POIViewModel", "Error inesperado al generar descripción", e)
+                _uiState.value = _uiState.value.copy(
+                    isGeneratingDescription = false,
+                    generatedDescription = null,
+                    descriptionGenerationError = "Error inesperado: ${e.message}"
+                )
+            }
+        }
+    }
+    
+    // Limpiar el estado de la descripción generada
+    fun clearGeneratedDescription() {
+        _uiState.value = _uiState.value.copy(
+            generatedDescription = null,
+            descriptionGenerationError = null
+        )
+    }
+    
+    // Limpiar el error de generación de descripción
+    fun clearDescriptionGenerationError() {
+        _uiState.value = _uiState.value.copy(
+            descriptionGenerationError = null
+        )
     }
     
     override fun onCleared() {
@@ -438,7 +541,8 @@ class PointOfInterestViewModel(
                 val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as PointsApplication)
                 val poiRepository = PointOfInterestRepository()
                 val weatherRepository = application.container.weatherRepository
-                PointOfInterestViewModel(poiRepository, weatherRepository)
+                val geminiRepository = application.container.geminiRepository
+                PointOfInterestViewModel(poiRepository, weatherRepository, geminiRepository)
             }
         }
     }
