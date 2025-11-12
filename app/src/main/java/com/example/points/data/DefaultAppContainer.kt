@@ -17,18 +17,45 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import android.util.Log
+import com.example.points.BuildConfig
+import java.util.concurrent.TimeUnit
 
 class DefaultAppContainer(private val context: Context) : AppContainer {
     
     private val WEATHER_BASE_URL = "https://api.openweathermap.org/"
     private val GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/"
     
+    // Configuración de Json
     private val json = Json {
         ignoreUnknownKeys = true
         isLenient = true
+        encodeDefaults = false
+        prettyPrint = BuildConfig.DEBUG // Formato legible solo en debug
     }
+    
+    // Interceptor de logging para debugging
+    private val loggingInterceptor = HttpLoggingInterceptor { message ->
+        Log.d("Retrofit", message)
+    }.apply {
+        // Solo mostrar logs en modo debug para evitar información sensible en producción
+        level = if (BuildConfig.DEBUG) {
+            HttpLoggingInterceptor.Level.BODY // Muestra request/response completo
+        } else {
+            HttpLoggingInterceptor.Level.NONE // No muestra nada en release
+        }
+    }
+    
+    // Cliente OkHttp con configuración
+    private val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor(loggingInterceptor)
+        .connectTimeout(30, TimeUnit.SECONDS) // Timeout de conexión
+        .readTimeout(30, TimeUnit.SECONDS)    // Timeout de lectura
+        .writeTimeout(30, TimeUnit.SECONDS)   // Timeout de escritura
+        .build()
     
     // Instancia única de Firebase
     private val firestore: FirebaseFirestore by lazy {
@@ -44,6 +71,7 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     private val weatherRetrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(WEATHER_BASE_URL)
+            .client(okHttpClient) // Agregar cliente OkHttp con logging
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
     }
@@ -52,6 +80,7 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     private val geminiRetrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(GEMINI_BASE_URL)
+            .client(okHttpClient) // Agregar cliente OkHttp con logging
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
     }

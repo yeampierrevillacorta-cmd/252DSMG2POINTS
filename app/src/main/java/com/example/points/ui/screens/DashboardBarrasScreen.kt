@@ -7,9 +7,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.points.data.model.IncidentesPorTipo
-import com.example.points.utils.Utils
 import com.github.tehras.charts.bar.BarChart
 import com.github.tehras.charts.bar.BarChartData
 import com.github.tehras.charts.bar.renderer.label.SimpleValueDrawer
@@ -17,17 +19,31 @@ import com.github.tehras.charts.bar.renderer.label.SimpleValueDrawer
 @Composable
 fun BarrasScreen(data: List<IncidentesPorTipo>) {
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(vertical = 8.dp)
     ) {
-        Text(text = "Gráfico de Barras")
+        Text(
+            text = "Gráfico de Barras",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
         Barras(data)
     }
 }
 
 @Composable
 fun Barras(data: List<IncidentesPorTipo>) {
-    val datos = data
-    var barras = ArrayList<BarChartData.Bar>()
+    if (data.isEmpty()) {
+        Text(
+            text = "No hay datos para mostrar",
+            modifier = Modifier.padding(16.dp),
+            textAlign = TextAlign.Center
+        )
+        return
+    }
+    
+    val barras = ArrayList<BarChartData.Bar>()
     
     // Lista de colores predefinidos para asegurar consistencia con el gráfico Pie
     val colores = listOf(
@@ -44,15 +60,16 @@ fun Barras(data: List<IncidentesPorTipo>) {
         androidx.compose.ui.graphics.Color(0xFF009688), // Verde azulado
     )
     
-    datos.mapIndexed { index, datos ->
+    data.forEachIndexed { index, datosItem ->
         barras.add(
             BarChartData.Bar(
-                label = datos.descripcion,
-                value = datos.cantidad.toFloat(),
+                label = datosItem.descripcion,
+                value = datosItem.cantidad.toFloat(),
                 color = colores[index % colores.size]
             )
         )
     }
+    
     BarChart(
         modifier = Modifier
             .padding(30.dp, 80.dp)

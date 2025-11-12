@@ -19,7 +19,13 @@ class PointsApplication : Application() {
         EnvironmentConfig.initialize(this)
         
         // Inicializar contenedor de dependencias (pasar contexto para Room y SharedPreferences)
-        container = DefaultAppContainer(this)
+        try {
+            container = DefaultAppContainer(this)
+            android.util.Log.d("PointsApp", "PointsApplication.onCreate() - Container inicializado correctamente")
+        } catch (e: Exception) {
+            android.util.Log.e("PointsApp", "Error al inicializar container", e)
+            throw e
+        }
         
         // Log de configuración (solo en modo debug)
         if (EnvironmentConfig.DEBUG_MODE) {

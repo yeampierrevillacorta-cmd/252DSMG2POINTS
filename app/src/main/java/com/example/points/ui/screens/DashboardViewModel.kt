@@ -10,19 +10,22 @@ import com.example.points.data.model.IncidentesPorTipo
 import com.example.points.data.model.DatosPorMes
 import com.example.points.data.model.DatosPorEstado
 import com.example.points.data.repository.DashboardRepository
-import com.example.points.models.EstadoIncidente
-import com.example.points.models.EstadoEvento
-import com.example.points.models.EstadoPOI
+import com.example.points.models.Incident
+import com.example.points.models.Event
+import com.example.points.models.PointOfInterest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Calendar
+import java.util.Date
 
 data class DashboardUiState(
     val datosDashboard: List<IncidentesPorTipo> = listOf(),
     val datosPorMes: List<DatosPorMes> = listOf(),
     val datosPorEstado: List<DatosPorEstado> = listOf(),
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
     val flag_error_dashboard: Boolean = false,
 )
 
@@ -32,23 +35,36 @@ class DashboardViewModel(private val dashboardRepository: DashboardRepository) :
 
     fun cargarDashboard() {
         viewModelScope.launch {
-            val result = dashboardRepository.getAllIncidents()
-            result.onSuccess { incidents ->
-                // Agrupar incidentes por tipo
-                val resumen = incidents
-                    .filter { !it.tipo.isNullOrBlank() } // excluir nulos o vacíos
-                    .groupBy { it.tipo }
-                    .map { (tipo, lista) ->
-                        IncidentesPorTipo(tipo, lista.size)
-                    }
-                // Actualizar el estado de IU
+            try {
+                _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+                val result = dashboardRepository.getAllIncidents()
+                result.onSuccess { incidents: List<Incident> ->
+                    // Agrupar incidentes por tipo
+                    val resumen = incidents
+                        .filter { incident -> incident.tipo.isNotBlank() } // excluir vacíos
+                        .groupBy { incident -> incident.tipo }
+                        .map { (tipo, lista) ->
+                            IncidentesPorTipo(tipo, lista.size)
+                        }
+                    // Actualizar el estado de IU
+                    _uiState.value = _uiState.value.copy(
+                        datosDashboard = resumen,
+                        isLoading = false,
+                        flag_error_dashboard = false,
+                        errorMessage = null
+                    )
+                }.onFailure { exception ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        flag_error_dashboard = true,
+                        errorMessage = exception.message ?: "Error al cargar los datos del dashboard"
+                    )
+                }
+            } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
-                    datosDashboard = resumen,
-                    flag_error_dashboard = false
-                )
-            }.onFailure {
-                _uiState.value = _uiState.value.copy(
-                    flag_error_dashboard = true
+                    isLoading = false,
+                    flag_error_dashboard = true,
+                    errorMessage = "Error inesperado: ${e.message}"
                 )
             }
         }
@@ -61,32 +77,56 @@ class DashboardViewModel(private val dashboardRepository: DashboardRepository) :
             val poisResult = dashboardRepository.getAllPOIs()
             
             if (incidentsResult.isSuccess && eventsResult.isSuccess && poisResult.isSuccess) {
-                val incidents = incidentsResult.getOrNull() ?: emptyList()
-                val events = eventsResult.getOrNull() ?: emptyList()
-                val pois = poisResult.getOrNull() ?: emptyList()
+                val incidents: List<Incident> = incidentsResult.getOrNull() ?: emptyList()
+                val events: List<Event> = eventsResult.getOrNull() ?: emptyList()
+                val pois: List<PointOfInterest> = poisResult.getOrNull() ?: emptyList()
                 
                 // Agrupar por mes
                 val mesesMap = mutableMapOf<String, Triple<Int, Int, Int>>()
                 
                 // Procesar incidentes
-                incidents.forEach { incident ->
-                    val mes = obtenerMes(incident.fechaHora.toDate())
-                    val (inc, evt, poi) = mesesMap.getOrDefault(mes, Triple(0, 0, 0))
-                    mesesMap[mes] = Triple(inc + 1, evt, poi)
+                incidents.forEach { incident: Incident ->
+                    try {
+                        val fecha: Date = incident.fechaHora.toDate()
+                        val mes = obtenerMes(fecha)
+                        val (inc, evt, poi) = mesesMap.getOrDefault(mes, Triple(0, 0, 0))
+                        mesesMap[mes] = Triple(inc + 1, evt, poi)
+                    } catch (e: Exception) {
+                        // Si hay error al convertir la fecha, usar fecha actual
+                        val mes = obtenerMes(Date())
+                        val (inc, evt, poi) = mesesMap.getOrDefault(mes, Triple(0, 0, 0))
+                        mesesMap[mes] = Triple(inc + 1, evt, poi)
+                    }
                 }
                 
                 // Procesar eventos
-                events.forEach { event ->
-                    val mes = obtenerMes(event.fechaCreacion.toDate())
-                    val (inc, evt, poi) = mesesMap.getOrDefault(mes, Triple(0, 0, 0))
-                    mesesMap[mes] = Triple(inc, evt + 1, poi)
+                events.forEach { event: Event ->
+                    try {
+                        val fecha: Date = event.fechaCreacion.toDate()
+                        val mes = obtenerMes(fecha)
+                        val (inc, evt, poi) = mesesMap.getOrDefault(mes, Triple(0, 0, 0))
+                        mesesMap[mes] = Triple(inc, evt + 1, poi)
+                    } catch (e: Exception) {
+                        // Si hay error al convertir la fecha, usar fecha actual
+                        val mes = obtenerMes(Date())
+                        val (inc, evt, poi) = mesesMap.getOrDefault(mes, Triple(0, 0, 0))
+                        mesesMap[mes] = Triple(inc, evt + 1, poi)
+                    }
                 }
                 
                 // Procesar POIs
-                pois.forEach { poi ->
-                    val mes = obtenerMes(poi.fechaCreacion.toDate())
-                    val (inc, evt, p) = mesesMap.getOrDefault(mes, Triple(0, 0, 0))
-                    mesesMap[mes] = Triple(inc, evt, p + 1)
+                pois.forEach { poi: PointOfInterest ->
+                    try {
+                        val fecha: Date = poi.fechaCreacion.toDate()
+                        val mes = obtenerMes(fecha)
+                        val (inc, evt, p) = mesesMap.getOrDefault(mes, Triple(0, 0, 0))
+                        mesesMap[mes] = Triple(inc, evt, p + 1)
+                    } catch (e: Exception) {
+                        // Si hay error al convertir la fecha, usar fecha actual
+                        val mes = obtenerMes(Date())
+                        val (inc, evt, p) = mesesMap.getOrDefault(mes, Triple(0, 0, 0))
+                        mesesMap[mes] = Triple(inc, evt, p + 1)
+                    }
                 }
                 
                 // Convertir a lista y ordenar por mes (cronológicamente usando la clave original)
@@ -109,41 +149,45 @@ class DashboardViewModel(private val dashboardRepository: DashboardRepository) :
             val poisResult = dashboardRepository.getAllPOIs()
             
             if (incidentsResult.isSuccess && eventsResult.isSuccess && poisResult.isSuccess) {
-                val incidents = incidentsResult.getOrNull() ?: emptyList()
-                val events = eventsResult.getOrNull() ?: emptyList()
-                val pois = poisResult.getOrNull() ?: emptyList()
+                val incidents: List<Incident> = incidentsResult.getOrNull() ?: emptyList()
+                val events: List<Event> = eventsResult.getOrNull() ?: emptyList()
+                val pois: List<PointOfInterest> = poisResult.getOrNull() ?: emptyList()
                 
                 // Procesar incidentes
-                val incidentesAtendidos = incidents.count { 
-                    it.estado == EstadoIncidente.CONFIRMADO || it.estado == EstadoIncidente.RESUELTO 
+                val incidentesAtendidos = incidents.count { incident: Incident -> 
+                    incident.estado == com.example.points.models.EstadoIncidente.CONFIRMADO || 
+                    incident.estado == com.example.points.models.EstadoIncidente.RESUELTO 
                 }
-                val incidentesDenegados = incidents.count { 
-                    it.estado == EstadoIncidente.RECHAZADO 
+                val incidentesDenegados = incidents.count { incident: Incident -> 
+                    incident.estado == com.example.points.models.EstadoIncidente.RECHAZADO 
                 }
-                val incidentesEnRevision = incidents.count { 
-                    it.estado == EstadoIncidente.EN_REVISION 
+                val incidentesEnRevision = incidents.count { incident: Incident -> 
+                    incident.estado == com.example.points.models.EstadoIncidente.EN_REVISION 
                 }
                 
                 // Procesar eventos
-                val eventosAtendidos = events.count { 
-                    it.estado == EstadoEvento.APROBADO || it.estado == EstadoEvento.FINALIZADO 
+                val eventosAtendidos = events.count { event: Event -> 
+                    event.estado == com.example.points.models.EstadoEvento.APROBADO || 
+                    event.estado == com.example.points.models.EstadoEvento.FINALIZADO 
                 }
-                val eventosDenegados = events.count { 
-                    it.estado == EstadoEvento.RECHAZADO || it.estado == EstadoEvento.CANCELADO 
+                val eventosDenegados = events.count { event: Event -> 
+                    event.estado == com.example.points.models.EstadoEvento.RECHAZADO || 
+                    event.estado == com.example.points.models.EstadoEvento.CANCELADO 
                 }
-                val eventosEnRevision = events.count { 
-                    it.estado == EstadoEvento.EN_REVISION 
+                val eventosEnRevision = events.count { event: Event -> 
+                    event.estado == com.example.points.models.EstadoEvento.EN_REVISION 
                 }
                 
                 // Procesar POIs
-                val poisAtendidos = pois.count { 
-                    it.estado == EstadoPOI.APROBADO 
+                val poisAtendidos = pois.count { poi: PointOfInterest -> 
+                    poi.estado == com.example.points.models.EstadoPOI.APROBADO 
                 }
-                val poisDenegados = pois.count { 
-                    it.estado == EstadoPOI.RECHAZADO || it.estado == EstadoPOI.SUSPENDIDO 
+                val poisDenegados = pois.count { poi: PointOfInterest -> 
+                    poi.estado == com.example.points.models.EstadoPOI.RECHAZADO || 
+                    poi.estado == com.example.points.models.EstadoPOI.SUSPENDIDO 
                 }
-                val poisEnRevision = pois.count { 
-                    it.estado == EstadoPOI.EN_REVISION 
+                val poisEnRevision = pois.count { poi: PointOfInterest -> 
+                    poi.estado == com.example.points.models.EstadoPOI.EN_REVISION 
                 }
                 
                 val datosPorEstado = listOf(
@@ -159,7 +203,7 @@ class DashboardViewModel(private val dashboardRepository: DashboardRepository) :
         }
     }
     
-    private fun obtenerMes(date: java.util.Date): String {
+    private fun obtenerMes(date: Date): String {
         val calendar = Calendar.getInstance()
         calendar.time = date
         val año = calendar.get(Calendar.YEAR)
@@ -193,12 +237,39 @@ class DashboardViewModel(private val dashboardRepository: DashboardRepository) :
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                val application = (
-                    this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]
-                        as PointsApplication
-                )
-                val dashboardRepository = application.container.dashboardRepository
-                DashboardViewModel(dashboardRepository = dashboardRepository)
+                try {
+                    val application = try {
+                        this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as? PointsApplication
+                    } catch (e: Exception) {
+                        android.util.Log.e("DashboardViewModel", "Error al obtener Application", e)
+                        null
+                    }
+                    
+                    if (application == null) {
+                        android.util.Log.e("DashboardViewModel", "Application es null o no es PointsApplication")
+                        throw IllegalStateException("Application no es una instancia de PointsApplication")
+                    }
+                    
+                    android.util.Log.d("DashboardViewModel", "Inicializando DashboardViewModel...")
+                    
+                    // Intentar acceder al container (si no está inicializado, se lanzará una excepción)
+                    val dashboardRepository = try {
+                        application.container.dashboardRepository
+                    } catch (e: UninitializedPropertyAccessException) {
+                        android.util.Log.e("DashboardViewModel", "Container no está inicializado", e)
+                        throw IllegalStateException("AppContainer no está inicializado. Verifica que PointsApplication.onCreate() se haya ejecutado correctamente.", e)
+                    } catch (e: Exception) {
+                        android.util.Log.e("DashboardViewModel", "Error al obtener dashboardRepository", e)
+                        throw IllegalStateException("Error al obtener dashboardRepository: ${e.message}", e)
+                    }
+                    
+                    android.util.Log.d("DashboardViewModel", "DashboardViewModel inicializado correctamente")
+                    DashboardViewModel(dashboardRepository = dashboardRepository)
+                } catch (e: Exception) {
+                    android.util.Log.e("DashboardViewModel", "Error al inicializar ViewModel", e)
+                    android.util.Log.e("DashboardViewModel", "Stack trace:", e)
+                    throw e
+                }
             }
         }
     }

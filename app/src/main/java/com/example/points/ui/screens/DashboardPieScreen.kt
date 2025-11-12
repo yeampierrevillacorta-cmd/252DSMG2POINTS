@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -15,9 +14,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.points.data.model.IncidentesPorTipo
-import com.example.points.utils.Utils
 import com.github.tehras.charts.piechart.PieChart
 import com.github.tehras.charts.piechart.PieChartData
 import com.github.tehras.charts.piechart.renderer.SimpleSliceDrawer
@@ -25,18 +26,42 @@ import com.github.tehras.charts.piechart.renderer.SimpleSliceDrawer
 @Composable
 fun PieScreen(data: List<IncidentesPorTipo>) {
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(vertical = 8.dp)
     ) {
-        Text(text = "Gráfico Pie")
+        Text(
+            text = "Gráfico Pie",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
         Pie(data)
     }
 }
 
 @Composable
 fun Pie(data: List<IncidentesPorTipo>) {
+    if (data.isEmpty()) {
+        Text(
+            text = "No hay datos para mostrar",
+            modifier = Modifier.padding(16.dp),
+            textAlign = TextAlign.Center
+        )
+        return
+    }
+    
     val datos = data
     val slices = ArrayList<PieChartData.Slice>()
     val total = datos.sumOf { it.cantidad.toDouble() }.toFloat()
+    
+    if (total <= 0) {
+        Text(
+            text = "No hay datos válidos para mostrar",
+            modifier = Modifier.padding(16.dp),
+            textAlign = TextAlign.Center
+        )
+        return
+    }
     
     // Lista de colores predefinidos para asegurar consistencia
     val colores = listOf(
@@ -58,18 +83,18 @@ fun Pie(data: List<IncidentesPorTipo>) {
         colores[index % colores.size]
     }
 
-    datos.mapIndexed { index, datos ->
+    datos.forEachIndexed { index, datosItem ->
         slices.add(
             PieChartData.Slice(
-                value = datos.cantidad.toFloat(),
+                value = datosItem.cantidad.toFloat(),
                 color = coloresAsignados[index]
             )
         )
     }
+    
     Column(
         modifier = Modifier
-            .padding(2.dp, 80.dp)
-            .fillMaxSize(),
+            .padding(horizontal = 2.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         PieChart(
@@ -83,10 +108,14 @@ fun Pie(data: List<IncidentesPorTipo>) {
                 slices = slices
             )
         )
-        Spacer(modifier = Modifier.height(1.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         // Leyenda del Pie - usar el mismo color que el slice correspondiente
         datos.forEachIndexed { index, it ->
-            val porcentaje = (it.cantidad / total * 100).toInt()
+            val porcentaje = if (total > 0) {
+                (it.cantidad / total * 100).toInt()
+            } else {
+                0
+            }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(vertical = 4.dp)

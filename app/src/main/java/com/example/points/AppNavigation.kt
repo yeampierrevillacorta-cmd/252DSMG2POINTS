@@ -619,21 +619,8 @@ fun AdminUsersScreen() {
 
 @Composable
 fun AdminAnalyticsScreen() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "📊 Analíticas del Sistema",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-        // Dashboard con estadísticas de incidentes por tipo
-        com.example.points.ui.screens.DashboardScreen()
-    }
+    // Dashboard con estadísticas de incidentes por tipo (tiene su propio scroll)
+    com.example.points.ui.screens.DashboardScreen()
 }
 
 @Composable

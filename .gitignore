@@ -19,3 +19,6 @@ local.properties
 .env.local
 .env.development
 .env.production
+# Documentation files (except README.md)
+*.md
+!README.md
