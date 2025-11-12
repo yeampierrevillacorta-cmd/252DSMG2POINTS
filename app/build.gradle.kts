@@ -43,9 +43,10 @@ android {
 }
 
 dependencies {
-    // Firebase BOM (te asegura usar versiones compatibles)
-    implementation(platform("com.google.firebase:firebase-bom:33.4.0"))
-
+    // --- Firebase (BOM) ---
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.firestore.ktx)
+    
     // Firebase
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
@@ -103,7 +104,12 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.androidx.compose.runtime)
     implementation(libs.lifecycle.viewmodel.compose)
+    //Viemodel
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.compose.ui.text)
+    
+    //Dashboards
+    implementation(libs.tehras.charts)
     // Tests
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

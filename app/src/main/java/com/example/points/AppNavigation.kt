@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.History
@@ -604,29 +606,17 @@ fun AdminAnalyticsScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
     ) {
-        Icon(
-            Icons.Default.Analytics,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "📊 Analíticas del Sistema",
             style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(bottom = 16.dp)
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Próximamente: Dashboard con estadísticas y reportes del sistema",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-            textAlign = TextAlign.Center
-        )
+        // Dashboard con estadísticas de incidentes por tipo
+        com.example.points.ui.screens.DashboardScreen()
     }
 }
 

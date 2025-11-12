@@ -10,9 +10,11 @@ activityCompose = "1.11.0"
 composeBom = "2024.09.00"
 googleGmsGoogleServices = "4.4.3"
 firebaseAuth = "24.0.1"
+firebaseBom = "33.1.0" # Usando una versión un poco anterior a la 33.2.0 por si acaso
 runtime = "1.9.2"
 lifecycle = "2.8.6"
 uiText = "1.9.3" # puedes usar la última estable
+tehras-charts = "0.2.4-alpha"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -30,9 +32,14 @@ androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth", version.ref = "firebaseAuth" }
+# Firebase (la BOM de Firebase maneja versiones de los ktx)
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx" }
 androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "runtime" }
 lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidx-compose-ui-text = { group = "androidx.compose.ui", name = "ui-text", version.ref = "uiText" }
+tehras-charts = { module = "com.github.tehras:charts", version.ref = "tehras-charts" }
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
