@@ -4,10 +4,7 @@ import androidx.room.*
 import com.example.points.database.entity.CachedPOI
 import kotlinx.coroutines.flow.Flow
 
-/**
- * DAO para operaciones con caché de POIs
- * Permite acceso offline a POIs vistos recientemente
- */
+
 @Dao
 interface CachedPOIDao {
     

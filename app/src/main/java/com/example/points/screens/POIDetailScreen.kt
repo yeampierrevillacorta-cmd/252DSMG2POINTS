@@ -29,13 +29,9 @@ import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.example.points.R
-import com.example.points.models.PointOfInterest
-import com.example.points.models.CaracteristicaPOI
-import com.example.points.models.DiaSemana
+import com.example.points.models.*
 import com.example.points.constants.ButtonText
 import com.example.points.constants.AppRoutes
-import com.example.points.models.CategoriaPOI
-import com.example.points.models.Ubicacion
 import com.example.points.viewmodel.PointOfInterestViewModel
 import com.example.points.components.PointsLoading
 import com.example.points.components.PointsFeedback
@@ -67,6 +63,10 @@ fun POIDetailScreen(
                 onSuccess = { loadedPOI ->
                     poi = loadedPOI
                     isLoading = false
+                    // Verificar si es favorito
+                    viewModel.checkIfFavorite(poiId)
+                    // Guardar en caché solo si existe
+                    loadedPOI?.let { viewModel.cachePOI(it) }
                 },
                 onFailure = { error ->
                     errorMessage = "Error al cargar los detalles del punto de interés: ${error.message}"
@@ -110,8 +110,15 @@ fun POIDetailScreen(
                 IconButton(onClick = { /* Compartir */ }) {
                     Icon(Icons.Filled.Share, contentDescription = "Compartir")
                 }
-                IconButton(onClick = { /* Favoritos */ }) {
-                    Icon(Icons.Filled.FavoriteBorder, contentDescription = "Favorito")
+                // Botón de favoritos con estado dinámico (Room Database)
+                IconButton(onClick = { 
+                    poi?.let { viewModel.toggleFavorite(it) }
+                }) {
+                    Icon(
+                        imageVector = if (uiState.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                        contentDescription = if (uiState.isFavorite) "Eliminar de favoritos" else "Agregar a favoritos",
+                        tint = if (uiState.isFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         )

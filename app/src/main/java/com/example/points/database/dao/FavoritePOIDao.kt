@@ -4,10 +4,6 @@ import androidx.room.*
 import com.example.points.database.entity.FavoritePOI
 import kotlinx.coroutines.flow.Flow
 
-/**
- * DAO para operaciones con POIs favoritos
- * Implementa operaciones CRUD para la Unidad 5 de Android Basics
- */
 @Dao
 interface FavoritePOIDao {
     

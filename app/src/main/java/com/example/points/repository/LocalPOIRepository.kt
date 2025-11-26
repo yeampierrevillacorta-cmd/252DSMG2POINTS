@@ -21,10 +21,6 @@ import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 import java.util.Date
 
-/**
- * Repositorio local para operaciones con Room
- * Implementa almacenamiento local para la Unidad 5 de Android Basics
- */
 class LocalPOIRepository(private val database: PointsDatabase) {
     
     private val favoriteDao: FavoritePOIDao = database.favoritePOIDao()
@@ -42,10 +38,7 @@ class LocalPOIRepository(private val database: PointsDatabase) {
     }
     
     // ========== POIs Favoritos ==========
-    
-    /**
-     * Obtener todos los POIs favoritos
-     */
+
     fun getAllFavorites(): Flow<List<PointOfInterest>> {
         return favoriteDao.getAllFavorites()
             .map { favorites ->
@@ -53,19 +46,13 @@ class LocalPOIRepository(private val database: PointsDatabase) {
             }
             .flowOn(Dispatchers.IO)
     }
-    
-    /**
-     * Verificar si un POI es favorito
-     */
+
     suspend fun isFavorite(poiId: String): Boolean {
         return withContext(Dispatchers.IO) {
             favoriteDao.isFavorite(poiId)
         }
     }
-    
-    /**
-     * Agregar POI a favoritos
-     */
+
     suspend fun addToFavorites(poi: PointOfInterest): Result<Unit> {
         return withContext(Dispatchers.IO) {
             try {
@@ -80,9 +67,7 @@ class LocalPOIRepository(private val database: PointsDatabase) {
         }
     }
     
-    /**
-     * Eliminar POI de favoritos
-     */
+
     suspend fun removeFromFavorites(poiId: String): Result<Unit> {
         return withContext(Dispatchers.IO) {
             try {
@@ -95,10 +80,7 @@ class LocalPOIRepository(private val database: PointsDatabase) {
             }
         }
     }
-    
-    /**
-     * Obtener contador de favoritos
-     */
+
     suspend fun getFavoriteCount(): Int {
         return withContext(Dispatchers.IO) {
             favoriteDao.getFavoriteCount()
@@ -106,10 +88,6 @@ class LocalPOIRepository(private val database: PointsDatabase) {
     }
     
     // ========== Caché de POIs ==========
-    
-    /**
-     * Guardar POI en caché local
-     */
     suspend fun cachePOI(poi: PointOfInterest): Result<Unit> {
         return withContext(Dispatchers.IO) {
             try {
@@ -123,10 +101,7 @@ class LocalPOIRepository(private val database: PointsDatabase) {
             }
         }
     }
-    
-    /**
-     * Guardar múltiples POIs en caché
-     */
+
     suspend fun cachePOIs(pois: List<PointOfInterest>): Result<Unit> {
         return withContext(Dispatchers.IO) {
             try {
@@ -140,10 +115,7 @@ class LocalPOIRepository(private val database: PointsDatabase) {
             }
         }
     }
-    
-    /**
-     * Obtener POIs desde caché local
-     */
+
     fun getCachedPOIs(limit: Int = 50): Flow<List<PointOfInterest>> {
         return cachedDao.getCachedPOIs(limit)
             .map { cached ->

@@ -128,6 +128,9 @@ dependencies {
     
     // DataStore (alternativa moderna a SharedPreferences)
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+
+    // Seguridad para almacenamiento cifrado de credenciales
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
     
     // Gson para serialización JSON
     implementation("com.google.code.gson:gson:2.10.1")

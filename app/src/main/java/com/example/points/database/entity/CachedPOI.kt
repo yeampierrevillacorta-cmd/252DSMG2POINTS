@@ -3,10 +3,7 @@ package com.example.points.database.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-/**
- * Entidad Room para caché de POIs
- * Permite acceso offline a POIs vistos recientemente
- */
+
 @Entity(tableName = "cached_pois")
 data class CachedPOI(
     @PrimaryKey

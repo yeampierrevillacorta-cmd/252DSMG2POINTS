@@ -270,6 +270,20 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 navController = navController
             )
         }
+        
+        // Pantalla de Favoritos - Room Database
+        composable(AppRoutes.POI_FAVORITES) {
+            com.example.points.screens.FavoritesScreen(
+                navController = navController
+            )
+        }
+        
+        // Pantalla de Demostración de Room Database
+        composable(AppRoutes.DATABASE_DEMO) {
+            com.example.points.screens.DatabaseDemoScreen(
+                navController = navController
+            )
+        }
 
         composable(AppRoutes.EVENTS) {
             MainLayout(

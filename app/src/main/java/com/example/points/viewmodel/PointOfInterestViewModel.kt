@@ -41,13 +41,18 @@ data class POIUIState(
     // Estados para generación de descripción con Gemini
     val isGeneratingDescription: Boolean = false,
     val generatedDescription: String? = null,
-    val descriptionGenerationError: String? = null
+    val descriptionGenerationError: String? = null,
+    // Estados para favoritos (Room Database)
+    val favorites: List<PointOfInterest> = emptyList(),
+    val isFavorite: Boolean = false,
+    val favoriteCount: Int = 0
 )
 
 class PointOfInterestViewModel(
     private val poiRepository: PointOfInterestRepository,
     private val weatherRepository: WeatherRepository,
-    private val geminiRepository: com.example.points.repository.GeminiRepository? = null
+    private val geminiRepository: com.example.points.repository.GeminiRepository? = null,
+    private val localPOIRepository: com.example.points.repository.LocalPOIRepository? = null
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(POIUIState())
@@ -535,6 +540,120 @@ class PointOfInterestViewModel(
         return earthRadius * c
     }
     
+    // ========== FUNCIONES DE FAVORITOS (Room Database) ==========
+    
+    /**
+     * Cargar todos los POIs favoritos desde la base de datos local
+     */
+    fun loadFavorites() {
+        viewModelScope.launch {
+            try {
+                localPOIRepository?.getAllFavorites()?.collect { favorites ->
+                    _uiState.value = _uiState.value.copy(
+                        favorites = favorites,
+                        favoriteCount = favorites.size
+                    )
+                    Log.d("POIViewModel", "✅ Favoritos cargados: ${favorites.size}")
+                }
+            } catch (e: Exception) {
+                Log.e("POIViewModel", "❌ Error al cargar favoritos", e)
+            }
+        }
+    }
+    
+    /**
+     * Verificar si un POI es favorito
+     */
+    fun checkIfFavorite(poiId: String) {
+        viewModelScope.launch {
+            try {
+                val isFav = localPOIRepository?.isFavorite(poiId) ?: false
+                _uiState.value = _uiState.value.copy(isFavorite = isFav)
+                Log.d("POIViewModel", "POI $poiId es favorito: $isFav")
+            } catch (e: Exception) {
+                Log.e("POIViewModel", "Error al verificar favorito", e)
+            }
+        }
+    }
+    
+    /**
+     * Agregar POI a favoritos
+     */
+    fun addToFavorites(poi: PointOfInterest) {
+        viewModelScope.launch {
+            try {
+                val result = localPOIRepository?.addToFavorites(poi)
+                if (result?.isSuccess == true) {
+                    _uiState.value = _uiState.value.copy(isFavorite = true)
+                    Log.d("POIViewModel", "✅ POI agregado a favoritos: ${poi.nombre}")
+                } else {
+                    Log.e("POIViewModel", "❌ Error al agregar a favoritos")
+                }
+            } catch (e: Exception) {
+                Log.e("POIViewModel", "❌ Excepción al agregar a favoritos", e)
+            }
+        }
+    }
+    
+    /**
+     * Eliminar POI de favoritos
+     */
+    fun removeFromFavorites(poiId: String) {
+        viewModelScope.launch {
+            try {
+                val result = localPOIRepository?.removeFromFavorites(poiId)
+                if (result?.isSuccess == true) {
+                    _uiState.value = _uiState.value.copy(isFavorite = false)
+                    Log.d("POIViewModel", "✅ POI eliminado de favoritos: $poiId")
+                } else {
+                    Log.e("POIViewModel", "❌ Error al eliminar de favoritos")
+                }
+            } catch (e: Exception) {
+                Log.e("POIViewModel", "❌ Excepción al eliminar de favoritos", e)
+            }
+        }
+    }
+    
+    /**
+     * Alternar estado de favorito (agregar/eliminar)
+     */
+    fun toggleFavorite(poi: PointOfInterest) {
+        if (_uiState.value.isFavorite) {
+            removeFromFavorites(poi.id)
+        } else {
+            addToFavorites(poi)
+        }
+    }
+    
+    /**
+     * Obtener cantidad de favoritos
+     */
+    fun getFavoriteCount() {
+        viewModelScope.launch {
+            try {
+                val count = localPOIRepository?.getFavoriteCount() ?: 0
+                _uiState.value = _uiState.value.copy(favoriteCount = count)
+                Log.d("POIViewModel", "Cantidad de favoritos: $count")
+            } catch (e: Exception) {
+                Log.e("POIViewModel", "Error al obtener cantidad de favoritos", e)
+            }
+        }
+    }
+    
+    /**
+     * Guardar POI en caché
+     */
+    fun cachePOI(poi: PointOfInterest) {
+        viewModelScope.launch {
+            try {
+                localPOIRepository?.cachePOI(poi)
+                Log.d("POIViewModel", "✅ POI guardado en caché: ${poi.nombre}")
+            } catch (e: Exception) {
+                Log.e("POIViewModel", "❌ Error al guardar en caché", e)
+            }
+        }
+    }
+    
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
@@ -542,7 +661,8 @@ class PointOfInterestViewModel(
                 val poiRepository = PointOfInterestRepository()
                 val weatherRepository = application.container.weatherRepository
                 val geminiRepository = application.container.geminiRepository
-                PointOfInterestViewModel(poiRepository, weatherRepository, geminiRepository)
+                val localPOIRepository = application.container.localPOIRepository
+                PointOfInterestViewModel(poiRepository, weatherRepository, geminiRepository, localPOIRepository)
             }
         }
     }

@@ -3,10 +3,6 @@ package com.example.points.database
 import androidx.room.TypeConverter
 import com.google.firebase.Timestamp
 
-/**
- * Convertidores de tipos para Room
- * Convierte tipos complejos a tipos primitivos para SQLite
- */
 class Converters {
     
     @TypeConverter
