@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,6 +41,7 @@ import com.example.points.constants.AppSpacing
 import com.example.points.constants.AppRoutes
 import com.example.points.constants.IconSize
 import com.example.points.utils.getCategoryIcon
+import com.example.points.ui.theme.ButtonSize
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,6 +73,8 @@ fun POIScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
+            val iconButtonSize = 48.dp
+
             // Header con título y botones
             Row(
                 modifier = Modifier
@@ -79,38 +83,50 @@ fun POIScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Column(
+                    modifier = Modifier.weight(1f, fill = false)
+                ) {
                     Text(
                         text = "📍 Puntos de Interés",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
+                        color = MaterialTheme.colorScheme.onBackground,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = "Descubre lugares en tu localidad",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 
+                Spacer(modifier = Modifier.width(8.dp))
+                
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.MEDIUM)
+                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.MEDIUM),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Botón de filtros
                     IconButton(
                         onClick = { showFilters = !showFilters },
                         modifier = Modifier
+                            .size(iconButtonSize)
+                            .clip(RoundedCornerShape(8.dp))
                             .background(
                                 if (showFilters) MaterialTheme.colorScheme.primary 
                                 else MaterialTheme.colorScheme.surface,
-                                RoundedCornerShape(8.dp)
-                            )
+                            ),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = if (showFilters) MaterialTheme.colorScheme.onPrimary
+                            else MaterialTheme.colorScheme.onSurface
+                        )
                     ) {
                         Icon(
                             imageVector = if (showFilters) Icons.Default.Close else Icons.Default.FilterList,
-                            contentDescription = ContentDescription.FILTROS.value,
-                            tint = if (showFilters) MaterialTheme.colorScheme.onPrimary 
-                                   else MaterialTheme.colorScheme.onSurface
+                            contentDescription = ContentDescription.FILTROS.value
                         )
                     }
                     
@@ -118,15 +134,18 @@ fun POIScreen(
                     IconButton(
                         onClick = { navController.navigate(AppRoutes.POI_MAP) },
                         modifier = Modifier
+                            .size(iconButtonSize)
+                            .clip(RoundedCornerShape(8.dp))
                             .background(
                                 MaterialTheme.colorScheme.secondaryContainer,
-                                RoundedCornerShape(8.dp)
-                            )
+                            ),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
                     ) {
                         Icon(
                             imageVector = Icons.Default.Map,
-                            contentDescription = "Ver mapa",
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer
+                            contentDescription = "Ver mapa"
                         )
                     }
                 }

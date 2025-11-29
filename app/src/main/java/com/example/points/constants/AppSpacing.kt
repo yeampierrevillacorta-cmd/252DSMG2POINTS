@@ -1,21 +1,32 @@
 package com.example.points.constants
 
-import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.Dp
+import com.example.points.ui.theme.Spacing
 
 /**
  * Espaciados comunes utilizados en la aplicación
  */
 object AppSpacing {
-    val SMALL = 4.dp
-    val MEDIUM = 8.dp
-    val STANDARD = 16.dp
-    val LARGE = 24.dp
-    val EXTRA_LARGE = 32.dp
+    val SMALL: Dp
+        @Composable get() = Spacing.xs
+    val MEDIUM: Dp
+        @Composable get() = Spacing.sm
+    val STANDARD: Dp
+        @Composable get() = Spacing.lg
+    val LARGE: Dp
+        @Composable get() = Spacing.xxl
+    val EXTRA_LARGE: Dp
+        @Composable get() = Spacing.xxxl
     
     // Espaciados específicos
-    val CARD_PADDING = 16.dp
-    val SCREEN_PADDING = 16.dp
-    val BUTTON_SPACING = 8.dp
-    val SECTION_SPACING = 16.dp
+    val CARD_PADDING: Dp
+        @Composable get() = Spacing.lg
+    val SCREEN_PADDING: Dp
+        @Composable get() = Spacing.xxl
+    val BUTTON_SPACING: Dp
+        @Composable get() = Spacing.sm
+    val SECTION_SPACING: Dp
+        @Composable get() = Spacing.xxl
 }
 

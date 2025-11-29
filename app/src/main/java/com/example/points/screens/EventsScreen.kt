@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +38,7 @@ import com.example.points.constants.ErrorMessage
 import com.example.points.constants.SectionTitle
 import com.example.points.constants.ContentDescription
 import com.example.points.constants.AppSpacing
+import com.example.points.ui.theme.ButtonSize
 import com.example.points.utils.getCategoryIcon
 import java.text.SimpleDateFormat
 import java.util.*
@@ -86,6 +88,8 @@ fun EventsScreen(
             .background(MaterialTheme.colorScheme.background)
             .padding(paddingValues)
     ) {
+        val iconButtonSize = 48.dp
+
         // Header con título y botón de crear evento
         Row(
             modifier = Modifier
@@ -94,44 +98,57 @@ fun EventsScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(
+                modifier = Modifier.weight(1f, fill = false)
+            ) {
                 Text(
                     text = "🎉 Eventos",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = MaterialTheme.colorScheme.onBackground,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = "Descubre eventos en tu localidad",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
             
+            Spacer(modifier = Modifier.width(8.dp))
+            
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 // Botón de filtros
                 IconButton(
                     onClick = { showFilters = !showFilters },
                     modifier = Modifier
+                        .size(iconButtonSize)
+                        .clip(RoundedCornerShape(8.dp))
                         .background(
                             if (showFilters) MaterialTheme.colorScheme.primary 
                             else MaterialTheme.colorScheme.surface,
-                            RoundedCornerShape(8.dp)
-                        )
+                        ),
+                    colors = IconButtonDefaults.iconButtonColors(
+                        contentColor = if (showFilters) MaterialTheme.colorScheme.onPrimary
+                        else MaterialTheme.colorScheme.onSurface
+                    )
                 ) {
                     Icon(
                         imageVector = if (showFilters) Icons.Default.Close else Icons.Default.FilterList,
-                        contentDescription = ContentDescription.FILTROS.value,
-                        tint = if (showFilters) MaterialTheme.colorScheme.onPrimary 
-                               else MaterialTheme.colorScheme.onSurface
+                        contentDescription = ContentDescription.FILTROS.value
                     )
                 }
                 
                 // Botón de crear evento
                 Button(
                     onClick = { showCreateEventDialog = true },
+                    modifier = Modifier.heightIn(min = ButtonSize.height),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary
                     )
@@ -142,7 +159,10 @@ fun EventsScreen(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(ButtonText.CREAR.value)
+                    Text(
+                        text = ButtonText.CREAR.value,
+                        maxLines = 1
+                    )
                 }
             }
         }

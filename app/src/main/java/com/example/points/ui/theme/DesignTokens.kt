@@ -1,5 +1,6 @@
 package com.example.points.ui.theme
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -19,17 +20,30 @@ import androidx.compose.ui.graphics.StrokeJoin
 /**
  * Sistema de espaciado basado en 8pt grid (Estilo Airbnb)
  */
+@Composable
+private fun scaledDp(value: Float): Dp = (value * LocalSpacingScale.current).dp
+
 object Spacing {
-    val xs = 4.dp
-    val sm = 8.dp
-    val md = 12.dp
-    val lg = 16.dp
-    val xl = 20.dp
-    val xxl = 24.dp
-    val xxxl = 32.dp
-    val xxxxl = 40.dp
-    val xxxxxl = 48.dp
-    val xxxxxxl = 64.dp
+    val xs: Dp
+        @Composable get() = scaledDp(4f)
+    val sm: Dp
+        @Composable get() = scaledDp(8f)
+    val md: Dp
+        @Composable get() = scaledDp(12f)
+    val lg: Dp
+        @Composable get() = scaledDp(16f)
+    val xl: Dp
+        @Composable get() = scaledDp(20f)
+    val xxl: Dp
+        @Composable get() = scaledDp(24f)
+    val xxxl: Dp
+        @Composable get() = scaledDp(32f)
+    val xxxxl: Dp
+        @Composable get() = scaledDp(40f)
+    val xxxxxl: Dp
+        @Composable get() = scaledDp(48f)
+    val xxxxxxl: Dp
+        @Composable get() = scaledDp(64f)
 }
 
 /**
@@ -136,90 +150,126 @@ object AvatarSize {
  * Sistema de tamaños de botones (Estilo Airbnb)
  */
 object ButtonSize {
-    val height = 44.dp
-    val heightLarge = 52.dp
-    val heightSmall = 36.dp
-    val minWidth = 80.dp
-    val paddingHorizontal = Spacing.xl
-    val paddingVertical = Spacing.md
+    val height: Dp
+        @Composable get() = scaledDp(44f)
+    val heightLarge: Dp
+        @Composable get() = scaledDp(52f)
+    val heightSmall: Dp
+        @Composable get() = scaledDp(36f)
+    val minWidth: Dp
+        @Composable get() = scaledDp(80f)
+    val paddingHorizontal: Dp
+        @Composable get() = Spacing.xl
+    val paddingVertical: Dp
+        @Composable get() = Spacing.md
 }
 
 /**
  * Sistema de tamaños de chips
  */
 object ChipSize {
-    val height = 32.dp
-    val heightLarge = 40.dp
-    val paddingHorizontal = Spacing.md
-    val paddingVertical = Spacing.xs
+    val height: Dp
+        @Composable get() = scaledDp(32f)
+    val heightLarge: Dp
+        @Composable get() = scaledDp(40f)
+    val paddingHorizontal: Dp
+        @Composable get() = Spacing.md
+    val paddingVertical: Dp
+        @Composable get() = Spacing.xs
 }
 
 /**
  * Sistema de tamaños de campos de texto
  */
 object TextFieldSize {
-    val height = 56.dp
-    val heightSmall = 48.dp
-    val paddingHorizontal = Spacing.md
-    val paddingVertical = Spacing.sm
+    val height: Dp
+        @Composable get() = scaledDp(56f)
+    val heightSmall: Dp
+        @Composable get() = scaledDp(48f)
+    val paddingHorizontal: Dp
+        @Composable get() = Spacing.md
+    val paddingVertical: Dp
+        @Composable get() = Spacing.sm
 }
 
 /**
  * Sistema de tamaños de tarjetas (Estilo Airbnb)
  */
 object CardSize {
-    val padding = Spacing.xl
-    val paddingSmall = Spacing.lg
-    val paddingLarge = Spacing.xxl
-    val minHeight = 100.dp
+    val padding: Dp
+        @Composable get() = Spacing.xl
+    val paddingSmall: Dp
+        @Composable get() = Spacing.lg
+    val paddingLarge: Dp
+        @Composable get() = Spacing.xxl
+    val minHeight: Dp
+        @Composable get() = scaledDp(100f)
 }
 
 /**
  * Sistema de tamaños de listas
  */
 object ListSize {
-    val itemHeight = 56.dp
-    val itemHeightLarge = 72.dp
-    val itemHeightSmall = 48.dp
-    val paddingHorizontal = Spacing.lg
-    val paddingVertical = Spacing.sm
+    val itemHeight: Dp
+        @Composable get() = scaledDp(56f)
+    val itemHeightLarge: Dp
+        @Composable get() = scaledDp(72f)
+    val itemHeightSmall: Dp
+        @Composable get() = scaledDp(48f)
+    val paddingHorizontal: Dp
+        @Composable get() = Spacing.lg
+    val paddingVertical: Dp
+        @Composable get() = Spacing.sm
 }
 
 /**
  * Sistema de tamaños de diálogos
  */
 object DialogSize {
-    val padding = Spacing.xl
-    val paddingSmall = Spacing.lg
-    val minWidth = 280.dp
-    val maxWidth = 560.dp
+    val padding: Dp
+        @Composable get() = Spacing.xl
+    val paddingSmall: Dp
+        @Composable get() = Spacing.lg
+    val minWidth: Dp
+        @Composable get() = scaledDp(280f)
+    val maxWidth: Dp
+        @Composable get() = scaledDp(560f)
 }
 
 /**
  * Sistema de tamaños de snackbars
  */
 object SnackbarSize {
-    val padding = Spacing.lg
-    val minHeight = 48.dp
-    val maxWidth = 344.dp
+    val padding: Dp
+        @Composable get() = Spacing.lg
+    val minHeight: Dp
+        @Composable get() = scaledDp(48f)
+    val maxWidth: Dp
+        @Composable get() = scaledDp(344f)
 }
 
 /**
  * Sistema de tamaños de banners
  */
 object BannerSize {
-    val padding = Spacing.lg
-    val minHeight = 56.dp
-    val iconSize = IconSize.lg
+    val padding: Dp
+        @Composable get() = Spacing.lg
+    val minHeight: Dp
+        @Composable get() = scaledDp(56f)
+    val iconSize: Dp
+        @Composable get() = IconSize.lg
 }
 
 /**
  * Sistema de tamaños de badges
  */
 object BadgeSize {
-    val size = 16.dp
-    val sizeLarge = 20.dp
-    val padding = Spacing.xs
+    val size: Dp
+        @Composable get() = scaledDp(16f)
+    val sizeLarge: Dp
+        @Composable get() = scaledDp(20f)
+    val padding: Dp
+        @Composable get() = Spacing.xs
     val fontSize = 10.sp
     val fontSizeLarge = 12.sp
 }
@@ -228,67 +278,90 @@ object BadgeSize {
  * Sistema de tamaños de indicadores
  */
 object IndicatorSize {
-    val size = 8.dp
-    val sizeLarge = 12.dp
-    val spacing = Spacing.xs
+    val size: Dp
+        @Composable get() = scaledDp(8f)
+    val sizeLarge: Dp
+        @Composable get() = scaledDp(12f)
+    val spacing: Dp
+        @Composable get() = Spacing.xs
 }
 
 /**
  * Sistema de tamaños de separadores
  */
 object DividerSize {
-    val thickness = Stroke.normal
-    val padding = Spacing.lg
+    val thickness: Dp
+        @Composable get() = Stroke.normal
+    val padding: Dp
+        @Composable get() = Spacing.lg
 }
 
 /**
  * Sistema de tamaños de tabs
  */
 object TabSize {
-    val height = 48.dp
-    val paddingHorizontal = Spacing.lg
-    val paddingVertical = Spacing.sm
-    val indicatorHeight = 3.dp
+    val height: Dp
+        @Composable get() = scaledDp(48f)
+    val paddingHorizontal: Dp
+        @Composable get() = Spacing.lg
+    val paddingVertical: Dp
+        @Composable get() = Spacing.sm
+    val indicatorHeight: Dp
+        @Composable get() = scaledDp(3f)
 }
 
 /**
  * Sistema de tamaños de bottom navigation
  */
 object BottomNavSize {
-    val height = 80.dp
-    val iconSize = IconSize.lg
+    val height: Dp
+        @Composable get() = scaledDp(80f)
+    val iconSize: Dp
+        @Composable get() = IconSize.lg
     val labelSize = 12.sp
-    val padding = Spacing.sm
+    val padding: Dp
+        @Composable get() = Spacing.sm
 }
 
 /**
  * Sistema de tamaños de top app bar
  */
 object TopAppBarSize {
-    val height = 64.dp
-    val heightLarge = 152.dp
-    val padding = Spacing.lg
-    val iconSize = IconSize.lg
+    val height: Dp
+        @Composable get() = scaledDp(64f)
+    val heightLarge: Dp
+        @Composable get() = scaledDp(152f)
+    val padding: Dp
+        @Composable get() = Spacing.lg
+    val iconSize: Dp
+        @Composable get() = IconSize.lg
 }
 
 /**
  * Sistema de tamaños de floating action button
  */
 object FabSize {
-    val size = 56.dp
-    val sizeSmall = 40.dp
-    val sizeLarge = 64.dp
-    val iconSize = IconSize.lg
+    val size: Dp
+        @Composable get() = scaledDp(56f)
+    val sizeSmall: Dp
+        @Composable get() = scaledDp(40f)
+    val sizeLarge: Dp
+        @Composable get() = scaledDp(64f)
+    val iconSize: Dp
+        @Composable get() = IconSize.lg
 }
 
 /**
  * Sistema de tamaños de mapas
  */
 object MapSize {
-    val markerSize = 40.dp
-    val clusterSize = 32.dp
+    val markerSize: Dp
+        @Composable get() = scaledDp(40f)
+    val clusterSize: Dp
+        @Composable get() = scaledDp(32f)
     val clusterTextSize = 12.sp
-    val infoWindowPadding = Spacing.md
+    val infoWindowPadding: Dp
+        @Composable get() = Spacing.md
 }
 
 /**
@@ -307,28 +380,40 @@ object ImageSize {
  * Sistema de tamaños de carruseles
  */
 object CarouselSize {
-    val height = 200.dp
-    val heightLarge = 300.dp
-    val indicatorSize = IndicatorSize.size
-    val indicatorSpacing = Spacing.sm
+    val height: Dp
+        @Composable get() = scaledDp(200f)
+    val heightLarge: Dp
+        @Composable get() = scaledDp(300f)
+    val indicatorSize: Dp
+        @Composable get() = IndicatorSize.size
+    val indicatorSpacing: Dp
+        @Composable get() = Spacing.sm
 }
 
 /**
  * Sistema de tamaños de shimmer
  */
 object ShimmerSize {
-    val height = 20.dp
-    val heightLarge = 24.dp
-    val heightSmall = 16.dp
-    val borderRadius = Radius.sm
+    val height: Dp
+        @Composable get() = scaledDp(20f)
+    val heightLarge: Dp
+        @Composable get() = scaledDp(24f)
+    val heightSmall: Dp
+        @Composable get() = scaledDp(16f)
+    val borderRadius: Dp
+        @Composable get() = Radius.sm
 }
 
 /**
  * Sistema de tamaños de skeleton
  */
 object SkeletonSize {
-    val cardHeight = 120.dp
-    val listItemHeight = 72.dp
-    val avatarSize = AvatarSize.lg
-    val borderRadius = Radius.md
+    val cardHeight: Dp
+        @Composable get() = scaledDp(120f)
+    val listItemHeight: Dp
+        @Composable get() = scaledDp(72f)
+    val avatarSize: Dp
+        @Composable get() = AvatarSize.lg
+    val borderRadius: Dp
+        @Composable get() = Radius.md
 }
