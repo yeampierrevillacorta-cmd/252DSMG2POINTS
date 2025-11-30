@@ -8,6 +8,7 @@ import com.example.points.database.entity.FavoritePOI
 import com.example.points.models.PointOfInterest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -45,6 +46,32 @@ class LocalPOIRepository(private val database: PointsDatabase) {
                 favorites.map { it.toPointOfInterest() }
             }
             .flowOn(Dispatchers.IO)
+    }
+    
+    /**
+     * Obtiene todos los favoritos como lista (útil para sincronización)
+     */
+    suspend fun getAllFavoritesList(): List<PointOfInterest> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val favorites = favoriteDao.getAllFavorites()
+                    .map { favoriteList ->
+                        favoriteList.map { it.toPointOfInterest() }
+                    }
+                    .flowOn(Dispatchers.IO)
+                    .first()
+                
+                Log.d(TAG, "✅ [getAllFavoritesList] Obtenidos ${favorites.size} favoritos de la base de datos")
+                favorites.forEach { poi ->
+                    Log.d(TAG, "   - Favorito: ${poi.nombre} (ID: ${poi.id})")
+                }
+                
+                favorites
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ [getAllFavoritesList] Error al obtener favoritos: ${e.message}", e)
+                emptyList()
+            }
+        }
     }
 
     suspend fun isFavorite(poiId: String): Boolean {

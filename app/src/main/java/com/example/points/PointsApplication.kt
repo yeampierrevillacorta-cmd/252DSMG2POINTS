@@ -4,6 +4,8 @@ import android.app.Application
 import com.example.points.data.AppContainer
 import com.example.points.data.DefaultAppContainer
 import com.example.points.utils.EnvironmentConfig
+import com.example.points.worker.SyncWorkManager
+import com.google.firebase.auth.FirebaseAuth
 
 /**
  * Clase Application personalizada para inicializar configuraciones globales
@@ -11,6 +13,7 @@ import com.example.points.utils.EnvironmentConfig
 class PointsApplication : Application() {
     
     lateinit var container: AppContainer
+    private var syncWorkManager: SyncWorkManager? = null
     
     override fun onCreate() {
         super.onCreate()
@@ -27,6 +30,12 @@ class PointsApplication : Application() {
             throw e
         }
         
+        // Inicializar SyncWorkManager
+        syncWorkManager = SyncWorkManager(this, container.preferencesManager)
+        
+        // Inicializar sincronización automática si está habilitada
+        initializeAutoSync()
+        
         // Log de configuración (solo en modo debug)
         if (EnvironmentConfig.DEBUG_MODE) {
             val configInfo = EnvironmentConfig.getConfigurationInfo()
@@ -35,5 +44,31 @@ class PointsApplication : Application() {
                 android.util.Log.d("PointsApp", "$key: $value")
             }
         }
+    }
+    
+    /**
+     * Inicializa la sincronización automática si está habilitada
+     */
+    private fun initializeAutoSync() {
+        if (container.preferencesManager.autoSyncEnabled) {
+            android.util.Log.d("PointsApp", "Iniciando sincronización automática...")
+            syncWorkManager?.startPeriodicSync()
+        } else {
+            android.util.Log.d("PointsApp", "Sincronización automática deshabilitada")
+        }
+    }
+    
+    /**
+     * Reinicia la sincronización automática (útil cuando el usuario cambia las preferencias)
+     */
+    fun restartAutoSync() {
+        syncWorkManager?.restartPeriodicSync()
+    }
+    
+    /**
+     * Ejecuta una sincronización inmediata
+     */
+    fun syncNow() {
+        syncWorkManager?.syncNow()
     }
 }

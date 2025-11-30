@@ -55,6 +55,7 @@ import com.example.points.components.MainLayout
 import com.example.points.components.AdminMainLayout
 import com.example.points.profile.ProfileScreen
 import com.example.points.profile.EditProfileScreen
+import com.example.points.screens.SyncSettingsScreen
 import com.example.points.screens.AdminHomeScreen
 import com.example.points.screens.ClientHomeScreen
 import com.example.points.screens.HomeScreen
@@ -340,11 +341,25 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                     },
                     onEditProfile = {
                         navController.navigate(AppRoutes.EDIT_PROFILE)
+                    },
+                    onSyncSettings = {
+                        navController.navigate(AppRoutes.SYNC_SETTINGS)
                     }
                 )
             }
         }
 
+        composable(AppRoutes.SYNC_SETTINGS) {
+            MainLayout(
+                navController = navController,
+                onProfileClick = { navController.navigate(AppRoutes.PROFILE) }
+            ) {
+                SyncSettingsScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
+        
         composable(AppRoutes.EDIT_PROFILE) {
             MainLayout(
                 navController = navController,
@@ -428,6 +443,9 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                     },
                     onEditProfile = {
                         navController.navigate("admin_edit_profile")
+                    },
+                    onSyncSettings = {
+                        navController.navigate(AppRoutes.SYNC_SETTINGS)
                     }
                 )
             }

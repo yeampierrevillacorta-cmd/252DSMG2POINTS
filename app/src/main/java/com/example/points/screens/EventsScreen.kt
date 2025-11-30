@@ -63,6 +63,7 @@ fun EventsScreen(
     LaunchedEffect(Unit) {
         viewModel.loadAllEvents()
         viewModel.loadUpcomingEvents()
+        viewModel.loadUserEvents() // Cargar eventos del usuario (incluyendo pendientes)
     }
     
     // Observar cambios en el estado del ViewModel para mostrar mensaje de éxito
@@ -321,7 +322,40 @@ fun EventsScreen(
                         }
                     }
                     
-                    // Sección de todos los eventos
+                    // Sección de mis eventos (incluyendo pendientes)
+                    if (uiState.userEvents.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = "Mis Eventos",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                        
+                        items(uiState.userEvents) { event ->
+                            EventCard(
+                                event = event,
+                                onClick = {
+                                    selectedEvent = event
+                                    showEventDetails = true
+                                },
+                                onRegisterClick = {
+                                    if (event.estado == EstadoEvento.APROBADO) {
+                                        viewModel.registerToEvent(event.id)
+                                    }
+                                }
+                            )
+                        }
+                        
+                        item {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Divider()
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                    }
+                    
+                    // Sección de todos los eventos aprobados
                     if (!uiState.showOnlyUpcoming || uiState.upcomingEvents.isEmpty()) {
                         item {
                             Text(
@@ -423,6 +457,10 @@ fun EventsScreen(
             errorMessage = uiState.errorMessage,
             onErrorShown = {
                 viewModel.clearError()
+            },
+            onEventCreated = {
+                // Cerrar el diálogo cuando el evento se crea exitosamente
+                showCreateEventDialog = false
             }
         )
     }

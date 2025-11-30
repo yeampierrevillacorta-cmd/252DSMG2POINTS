@@ -142,7 +142,12 @@ fun POIDetailScreen(
             }
             
             poi != null -> {
-                POIDetailContent(poi = poi!!, navController = navController, uiState = uiState)
+                POIDetailContent(
+                    poi = poi!!, 
+                    navController = navController, 
+                    uiState = uiState,
+                    viewModel = viewModel
+                )
             }
             
             else -> {
@@ -188,7 +193,8 @@ fun POIDetailScreen(
 fun POIDetailContent(
     poi: PointOfInterest, 
     navController: NavController,
-    uiState: com.example.points.viewmodel.POIUIState
+    uiState: com.example.points.viewmodel.POIUIState,
+    viewModel: PointOfInterestViewModel
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -357,7 +363,11 @@ fun POIDetailContent(
         
         // Botones de acción
         item {
-            ActionButtons(poi = poi)
+            ActionButtons(
+                poi = poi,
+                viewModel = viewModel,
+                isFavorite = uiState.isFavorite
+            )
         }
     }
 }
@@ -644,7 +654,11 @@ fun LocationCard(poi: PointOfInterest, navController: NavController) {
 }
 
 @Composable
-fun ActionButtons(poi: PointOfInterest) {
+fun ActionButtons(
+    poi: PointOfInterest,
+    viewModel: PointOfInterestViewModel,
+    isFavorite: Boolean
+) {
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -663,16 +677,19 @@ fun ActionButtons(poi: PointOfInterest) {
         }
         
         OutlinedButton(
-            onClick = { /* Agregar a favoritos */ },
+            onClick = { 
+                viewModel.toggleFavorite(poi)
+            },
             modifier = Modifier.fillMaxWidth()
         ) {
             Icon(
-                Icons.Filled.FavoriteBorder,
+                imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                 contentDescription = null,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(18.dp),
+                tint = if (isFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Agregar a favoritos")
+            Text(if (isFavorite) "Eliminar de favoritos" else "Agregar a favoritos")
         }
         
         OutlinedButton(

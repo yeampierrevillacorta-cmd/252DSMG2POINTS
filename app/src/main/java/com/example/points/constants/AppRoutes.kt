@@ -45,5 +45,8 @@ object AppRoutes {
     
     // Administración
     const val ADMIN_USER_MANAGEMENT = "admin_user_management"
+    
+    // Configuración
+    const val SYNC_SETTINGS = "sync_settings"
 }
 

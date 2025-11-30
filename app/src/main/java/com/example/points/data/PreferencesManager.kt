@@ -27,6 +27,9 @@ class PreferencesManager(context: Context) {
         private const val KEY_SHOW_ONLY_APPROVED = "show_only_approved"
         private const val KEY_LAST_SEARCH_QUERY = "last_search_query"
         private const val KEY_LAST_CATEGORY_FILTER = "last_category_filter"
+        private const val KEY_AUTO_SYNC_ENABLED = "auto_sync_enabled"
+        private const val KEY_AUTO_SYNC_INTERVAL_HOURS = "auto_sync_interval_hours"
+        private const val KEY_SYNC_ONLY_WIFI = "sync_only_wifi"
     }
     
     // Preferencias de notificaciones
@@ -73,6 +76,21 @@ class PreferencesManager(context: Context) {
     var lastCategoryFilter: String
         get() = prefs.getString(KEY_LAST_CATEGORY_FILTER, "") ?: ""
         set(value) = prefs.edit().putString(KEY_LAST_CATEGORY_FILTER, value).apply()
+    
+    // Sincronización automática habilitada
+    var autoSyncEnabled: Boolean
+        get() = prefs.getBoolean(KEY_AUTO_SYNC_ENABLED, true)
+        set(value) = prefs.edit().putBoolean(KEY_AUTO_SYNC_ENABLED, value).apply()
+    
+    // Intervalo de sincronización automática (en horas)
+    var autoSyncIntervalHours: Int
+        get() = prefs.getInt(KEY_AUTO_SYNC_INTERVAL_HOURS, 6) // Por defecto cada 6 horas
+        set(value) = prefs.edit().putInt(KEY_AUTO_SYNC_INTERVAL_HOURS, value).apply()
+    
+    // Sincronizar solo con WiFi
+    var syncOnlyWifi: Boolean
+        get() = prefs.getBoolean(KEY_SYNC_ONLY_WIFI, false)
+        set(value) = prefs.edit().putBoolean(KEY_SYNC_ONLY_WIFI, value).apply()
     
     // Limpiar todas las preferencias
     fun clear() {

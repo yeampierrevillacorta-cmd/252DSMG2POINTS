@@ -180,6 +180,10 @@ object EnvironmentConfig {
     val GEMINI_API_KEY: String
         get() = getEnvValue("GEMINI_API_KEY")
     
+    // Backend Spring Boot
+    val BACKEND_BASE_URL: String
+        get() = getEnvValue("BACKEND_BASE_URL").ifEmpty { "https://mysyncapp-backend-860998153214.us-central1.run.app/" }
+    
     // Environment
     val ENVIRONMENT: String
         get() = getEnvValue("ENVIRONMENT").ifEmpty { "development" }
@@ -209,7 +213,8 @@ object EnvironmentConfig {
             "Google Maps API Key" to if (GOOGLE_MAPS_API_KEY.isNotEmpty()) "***configured***" else "***missing***",
             "Firebase API Key" to if (FIREBASE_API_KEY.isNotEmpty()) "***configured***" else "***missing***",
             "OpenWeatherMap API Key" to if (OPENWEATHER_API_KEY.isNotEmpty()) "***configured***" else "***missing***",
-            "Gemini API Key" to if (GEMINI_API_KEY.isNotEmpty()) "***configured***" else "***missing***"
+            "Gemini API Key" to if (GEMINI_API_KEY.isNotEmpty()) "***configured***" else "***missing***",
+            "Backend Base URL" to if (BACKEND_BASE_URL.isNotEmpty()) BACKEND_BASE_URL else "***missing***"
         )
     }
 }

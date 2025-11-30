@@ -5,6 +5,7 @@ import com.example.points.data.repository.DashboardRepository
 import com.example.points.repository.GeminiRepository
 import com.example.points.repository.LocalPOIRepository
 import com.example.points.repository.LocalSearchRepository
+import com.example.points.repository.SyncRepository
 import com.example.points.repository.WeatherRepository
 import com.example.points.storage.LocalFileStorage
 
@@ -16,5 +17,6 @@ interface AppContainer {
     val localSearchRepository: LocalSearchRepository
     val localFileStorage: LocalFileStorage
     val geminiRepository: GeminiRepository?
+    val syncRepository: SyncRepository?
 }
 

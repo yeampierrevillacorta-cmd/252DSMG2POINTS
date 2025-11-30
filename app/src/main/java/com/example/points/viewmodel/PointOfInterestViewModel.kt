@@ -16,6 +16,7 @@ import com.example.points.repository.WeatherRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.CancellationException
@@ -650,6 +651,104 @@ class PointOfInterestViewModel(
                 Log.d("POIViewModel", "✅ POI guardado en caché: ${poi.nombre}")
             } catch (e: Exception) {
                 Log.e("POIViewModel", "❌ Error al guardar en caché", e)
+            }
+        }
+    }
+    
+    // Cargar POIs pendientes (para administradores)
+    fun loadPendingPOIs() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            try {
+                poiRepository.getPendingPOIs().collect { pois ->
+                    _uiState.value = _uiState.value.copy(
+                        pois = pois,
+                        isLoading = false
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("POIViewModel", "Error loading pending POIs", e)
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Error al cargar POIs pendientes: ${e.message}"
+                )
+            }
+        }
+    }
+    
+    // Cargar POIs en revisión (para administradores)
+    fun loadPOIsInReview() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            try {
+                poiRepository.getPOIsInReview().collect { pois ->
+                    _uiState.value = _uiState.value.copy(
+                        pois = pois,
+                        isLoading = false
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("POIViewModel", "Error loading POIs in review", e)
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Error al cargar POIs en revisión: ${e.message}"
+                )
+            }
+        }
+    }
+    
+    // Aprobar un POI
+    fun approvePOI(poiId: String, comentarios: String? = null) {
+        viewModelScope.launch {
+            try {
+                val result = poiRepository.approvePOI(poiId, comentarios)
+                result.fold(
+                    onSuccess = {
+                        Log.d("POIViewModel", "POI aprobado exitosamente: $poiId")
+                        // Recargar POIs pendientes/en revisión
+                        loadPendingPOIs()
+                        loadPOIsInReview()
+                    },
+                    onFailure = { error ->
+                        Log.e("POIViewModel", "Error al aprobar POI", error)
+                        _uiState.value = _uiState.value.copy(
+                            errorMessage = "Error al aprobar POI: ${error.message}"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                Log.e("POIViewModel", "Error inesperado al aprobar POI", e)
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "Error al aprobar POI: ${e.message}"
+                )
+            }
+        }
+    }
+    
+    // Rechazar un POI
+    fun rejectPOI(poiId: String, comentarios: String) {
+        viewModelScope.launch {
+            try {
+                val result = poiRepository.rejectPOI(poiId, comentarios)
+                result.fold(
+                    onSuccess = {
+                        Log.d("POIViewModel", "POI rechazado exitosamente: $poiId")
+                        // Recargar POIs pendientes/en revisión
+                        loadPendingPOIs()
+                        loadPOIsInReview()
+                    },
+                    onFailure = { error ->
+                        Log.e("POIViewModel", "Error al rechazar POI", error)
+                        _uiState.value = _uiState.value.copy(
+                            errorMessage = "Error al rechazar POI: ${error.message}"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                Log.e("POIViewModel", "Error inesperado al rechazar POI", e)
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "Error al rechazar POI: ${e.message}"
+                )
             }
         }
     }
