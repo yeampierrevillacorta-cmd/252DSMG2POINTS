@@ -12,7 +12,9 @@ data class Incident(
     val ubicacion: Ubicacion = Ubicacion(),
     val fechaHora: Timestamp = Timestamp.now(),
     val estado: EstadoIncidente = EstadoIncidente.PENDIENTE,
-    val usuarioId: String = ""
+    val usuarioId: String = "",
+    val prioridad: String? = null,  // "ALTA", "MEDIA", "BAJA"
+    val etiqueta_ia: String? = null  // Objeto detectado por IA: "knife", "pistol", etc.
 )
 
 data class Ubicacion(
@@ -50,6 +52,23 @@ enum class TipoIncidente(val displayName: String) {
     VANDALISMO("Vandalismo"),
     SERVICIO_PUBLICO("Servicio Público"),
     OTRO("Otro")
+}
+
+enum class PrioridadIncidente(val displayName: String, val value: String) {
+    ALTA("Alta", "ALTA"),
+    MEDIA("Media", "MEDIA"),
+    BAJA("Baja", "BAJA");
+    
+    companion object {
+        fun fromString(value: String?): PrioridadIncidente? {
+            return when (value?.uppercase()) {
+                "ALTA" -> ALTA
+                "MEDIA" -> MEDIA
+                "BAJA" -> BAJA
+                else -> null
+            }
+        }
+    }
 }
 
 // Extensión para convertir Date a Timestamp

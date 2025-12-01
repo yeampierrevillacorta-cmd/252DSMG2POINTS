@@ -85,17 +85,25 @@ dependencies {
     
     // Navigation Animation
     implementation("com.google.accompanist:accompanist-navigation-animation:0.32.0")
-    
-    // Retrofit para llamadas HTTP
+
+
+    //----------------------------------------------------------------------------
+    // Retrofit para llamadas HTTP al servidor de IA
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     
     // OkHttp para interceptores y logging
+    //Cliente HTTP con soporte para multipart (envío de imágenes)
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    //Para logging de requests HTTP
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     
     // Kotlinx Serialization
+    //Para parsear las respuestas JSON del servidor
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    //Convierte respuestas JSON a objetos Kotlin
     implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
+    //----------------------------------------------------------------------------
+
 
     // Jetpack Compose
     implementation(libs.androidx.core.ktx)

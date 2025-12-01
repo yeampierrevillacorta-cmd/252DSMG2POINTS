@@ -40,7 +40,7 @@ import com.google.android.gms.location.LocationServices
 fun CreateIncidentScreen(
     onBackClick: () -> Unit,
     onIncidentCreated: () -> Unit,
-    viewModel: IncidentViewModel = viewModel()
+    viewModel: IncidentViewModel = viewModel(factory = IncidentViewModel.Factory)
 ) {
     val context = LocalContext.current
     val createState by viewModel.createIncidentState.collectAsState()
@@ -281,6 +281,60 @@ fun CreateIncidentScreen(
                 }
             }
             
+            // Estado de análisis de imagen
+            if (createState.isAnalyzingImage) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                text = "Analizando imagen con IA...",
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
+            }
+            
+            // Resultado de la detección
+            createState.detectionResult?.let { result ->
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (result.contains("amenaza", ignoreCase = true)) {
+                                MaterialTheme.colorScheme.errorContainer
+                            } else {
+                                MaterialTheme.colorScheme.tertiaryContainer
+                            }
+                        )
+                    ) {
+                        Text(
+                            text = result,
+                            modifier = Modifier.padding(16.dp),
+                            color = if (result.contains("amenaza", ignoreCase = true)) {
+                                MaterialTheme.colorScheme.onErrorContainer
+                            } else {
+                                MaterialTheme.colorScheme.onTertiaryContainer
+                            }
+                        )
+                    }
+                }
+            }
+            
             // Error message
             createState.errorMessage?.let { error ->
                 item {
@@ -302,7 +356,7 @@ fun CreateIncidentScreen(
             // Botón de envío
             item {
                 Button(
-                    onClick = viewModel::createIncident,
+                    onClick = { viewModel.createIncident(context) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !createState.isSubmitting
                 ) {

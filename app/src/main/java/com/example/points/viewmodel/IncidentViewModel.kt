@@ -1,9 +1,14 @@
 package com.example.points.viewmodel
 
+import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.points.PointsApplication
 import com.example.points.models.Incident
 import com.example.points.models.EstadoIncidente
 import com.example.points.models.TipoIncidente
@@ -36,17 +41,24 @@ data class CreateIncidentUiState(
     val ubicacion: Ubicacion = Ubicacion(),
     val selectedImageUri: Uri? = null,
     val isSubmitting: Boolean = false,
+    val isAnalyzingImage: Boolean = false,
     val submitSuccess: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val detectionResult: String? = null  // Mensaje del resultado de la detección
 )
 
 class IncidentViewModel(
-    val repository: IncidentRepository = IncidentRepository(),
-    private val userRepository: UserRepository = UserRepository(
-        com.google.firebase.firestore.FirebaseFirestore.getInstance(),
-        com.google.firebase.auth.FirebaseAuth.getInstance()
-    )
+    val repository: IncidentRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
+    
+    constructor() : this(
+        repository = IncidentRepository(null),
+        userRepository = UserRepository(
+            com.google.firebase.firestore.FirebaseFirestore.getInstance(),
+            com.google.firebase.auth.FirebaseAuth.getInstance()
+        )
+    )
     
     private val _uiState = MutableStateFlow(IncidentUiState())
     val uiState: StateFlow<IncidentUiState> = _uiState.asStateFlow()
@@ -67,15 +79,10 @@ class IncidentViewModel(
     
     fun loadAllIncidents() {
         viewModelScope.launch {
-            Log.d("IncidentViewModel", "Iniciando carga de incidentes...")
             _uiState.value = _uiState.value.copy(isLoading = true)
             
             try {
                 repository.getAllIncidents().collect { incidents ->
-                    Log.d("IncidentViewModel", "Incidentes recibidos: ${incidents.size}")
-                    incidents.forEach { incident ->
-                        Log.d("IncidentViewModel", "Incidente: ${incident.id} - ${incident.tipo} - Lat: ${incident.ubicacion.lat}, Lon: ${incident.ubicacion.lon}")
-                    }
                     _uiState.value = _uiState.value.copy(
                         incidents = incidents,
                         filteredIncidents = incidents,
@@ -84,7 +91,7 @@ class IncidentViewModel(
                     )
                 }
             } catch (e: Exception) {
-                Log.e("IncidentViewModel", "Error cargando incidentes", e)
+                Log.e("IncidentViewModel", "Error cargando incidentes: ${e.message}", e)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     errorMessage = e.message ?: "Error desconocido"
@@ -158,7 +165,7 @@ class IncidentViewModel(
         _createIncidentState.value = _createIncidentState.value.copy(selectedImageUri = uri)
     }
     
-    fun createIncident() {
+    fun createIncident(context: Context) {
         viewModelScope.launch {
             val currentState = _createIncidentState.value
             
@@ -178,49 +185,106 @@ class IncidentViewModel(
             
             _createIncidentState.value = currentState.copy(
                 isSubmitting = true,
-                errorMessage = null
+                errorMessage = null,
+                detectionResult = null
             )
             
             try {
                 // Subir imagen si existe
                 var imageUrl: String? = null
+                var prioridad: String? = null
+                var etiqueta_ia: String? = null
+                var detectionMessage: String? = null
+                
                 if (currentState.selectedImageUri != null) {
+                    // Subir imagen a Firebase Storage
                     val uploadResult = repository.uploadImage(currentState.selectedImageUri)
                     if (uploadResult.isSuccess) {
                         imageUrl = uploadResult.getOrNull()
+                        
+                        // Analizar imagen con IA
+                        _createIncidentState.value = currentState.copy(
+                            isAnalyzingImage = true,
+                            isSubmitting = true
+                        )
+                        
+                        val analysisResult = repository.analyzeImageForThreats(
+                            currentState.selectedImageUri,
+                            context
+                        )
+                        
+                        if (analysisResult.isSuccess) {
+                            val detection = analysisResult.getOrNull()
+                            if (detection != null) {
+                                // Determinar prioridad basada en cantidad de amenazas
+                                if (detection.cantidad_amenazas > 0) {
+                                    prioridad = "ALTA"
+                                    val primeraAmenaza = detection.detalles.firstOrNull()
+                                    etiqueta_ia = primeraAmenaza?.objeto
+                                    detectionMessage = "⚠️ Se detectó una amenaza (${primeraAmenaza?.objeto ?: "objeto desconocido"}) con ${String.format("%.0f", (primeraAmenaza?.confianza ?: 0.0) * 100)}% de confianza. Prioridad: ALTA"
+                                } else {
+                                    prioridad = "BAJA"
+                                    detectionMessage = "✓ No se detectaron amenazas en la imagen. Prioridad: BAJA"
+                                }
+                            } else {
+                                prioridad = "MEDIA"
+                                detectionMessage = "⚠️ No se pudo procesar el resultado del análisis"
+                            }
+                        } else {
+                            // Si falla el análisis, usar prioridad media por defecto
+                            val errorMsg = analysisResult.exceptionOrNull()?.message ?: "Error desconocido"
+                            prioridad = "MEDIA"
+                            detectionMessage = "⚠️ No se pudo analizar la imagen: $errorMsg. El incidente se guardará con prioridad media."
+                        }
+                        
+                        _createIncidentState.value = currentState.copy(
+                            isAnalyzingImage = false,
+                            detectionResult = detectionMessage
+                        )
                     } else {
+                        val errorMsg = uploadResult.exceptionOrNull()?.message ?: "Error desconocido"
                         _createIncidentState.value = currentState.copy(
                             isSubmitting = false,
-                            errorMessage = "Error al subir la imagen"
+                            isAnalyzingImage = false,
+                            errorMessage = "Error al subir la imagen: $errorMsg"
                         )
                         return@launch
                     }
+                } else {
+                    // Si no hay imagen, usar prioridad media por defecto
+                    prioridad = "MEDIA"
                 }
                 
-                // Crear el incidente
+                // Crear el incidente con la información de detección
                 val incident = Incident(
                     tipo = currentState.tipo.displayName,
                     descripcion = currentState.descripcion,
                     fotoUrl = imageUrl,
                     ubicacion = currentState.ubicacion,
                     fechaHora = Timestamp.now(),
-                    estado = EstadoIncidente.PENDIENTE
+                    estado = EstadoIncidente.PENDIENTE,
+                    prioridad = prioridad,
+                    etiqueta_ia = etiqueta_ia
                 )
                 
                 val result = repository.createIncident(incident)
                 if (result.isSuccess) {
                     _createIncidentState.value = CreateIncidentUiState(
-                        submitSuccess = true
+                        submitSuccess = true,
+                        detectionResult = detectionMessage
                     )
                 } else {
                     _createIncidentState.value = currentState.copy(
                         isSubmitting = false,
+                        isAnalyzingImage = false,
                         errorMessage = result.exceptionOrNull()?.message ?: "Error al crear el incidente"
                     )
                 }
             } catch (e: Exception) {
+                Log.e("IncidentViewModel", "Error al crear incidente: ${e.message}", e)
                 _createIncidentState.value = currentState.copy(
                     isSubmitting = false,
+                    isAnalyzingImage = false,
                     errorMessage = e.message ?: "Error desconocido"
                 )
             }
@@ -245,10 +309,8 @@ class IncidentViewModel(
                     currentUser = user,
                     isUserAdmin = isAdmin
                 )
-                
-                Log.d("IncidentViewModel", "Usuario cargado: ${user?.nombre}, Tipo: ${user?.tipo}, Es admin: $isAdmin")
             } catch (e: Exception) {
-                Log.e("IncidentViewModel", "Error al cargar usuario actual", e)
+                Log.e("IncidentViewModel", "Error al cargar usuario actual: ${e.message}", e)
                 _uiState.value = _uiState.value.copy(
                     currentUser = null,
                     isUserAdmin = false
@@ -261,20 +323,15 @@ class IncidentViewModel(
     fun updateIncidentStatus(incidentId: String, newStatus: EstadoIncidente) {
         viewModelScope.launch {
             try {
-                Log.d("IncidentViewModel", "Actualizando estado del incidente $incidentId a ${newStatus.displayName}")
-                
                 val result = repository.updateIncidentStatus(incidentId, newStatus)
-                if (result.isSuccess) {
-                    Log.d("IncidentViewModel", "Estado del incidente actualizado exitosamente")
-                    // El estado se actualizará automáticamente a través del listener de Firebase
-                } else {
-                    Log.e("IncidentViewModel", "Error al actualizar estado del incidente", result.exceptionOrNull())
+                if (result.isFailure) {
+                    Log.e("IncidentViewModel", "Error al actualizar estado del incidente: ${result.exceptionOrNull()?.message}")
                     _uiState.value = _uiState.value.copy(
                         errorMessage = result.exceptionOrNull()?.message ?: "Error al actualizar el estado del incidente"
                     )
                 }
             } catch (e: Exception) {
-                Log.e("IncidentViewModel", "Error al actualizar estado del incidente", e)
+                Log.e("IncidentViewModel", "Error al actualizar estado del incidente: ${e.message}", e)
                 _uiState.value = _uiState.value.copy(
                     errorMessage = e.message ?: "Error desconocido al actualizar el incidente"
                 )
@@ -317,5 +374,20 @@ class IncidentViewModel(
     
     fun getResolvedIncidents() {
         getIncidentsByStatus(EstadoIncidente.RESUELTO)
+    }
+    
+    companion object {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as? PointsApplication
+                val detectionApiService = application?.container?.detectionApiService
+                val repository = IncidentRepository(detectionApiService)
+                val userRepository = UserRepository(
+                    com.google.firebase.firestore.FirebaseFirestore.getInstance(),
+                    com.google.firebase.auth.FirebaseAuth.getInstance()
+                )
+                IncidentViewModel(repository, userRepository)
+            }
+        }
     }
 }

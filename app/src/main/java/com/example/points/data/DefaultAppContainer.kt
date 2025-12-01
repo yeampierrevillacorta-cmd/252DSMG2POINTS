@@ -3,6 +3,7 @@ package com.example.points.data
 import android.content.Context
 import com.example.points.data.repository.DashboardRepository
 import com.example.points.database.PointsDatabase
+import com.example.points.network.DetectionApiService
 import com.example.points.network.GeminiApiService
 import com.example.points.network.WeatherApiService
 import com.example.points.repository.DefaultGeminiRepository
@@ -28,6 +29,11 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     
     private val WEATHER_BASE_URL = "https://api.openweathermap.org/"
     private val GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/"
+    // Solución temporal: URL hardcodeada
+    // TODO: Implementar lectura desde .env en producción
+    private val DETECTION_BASE_URL = EnvironmentConfig.DETECTION_API_URL.ifEmpty { 
+        "INGRESA_TU_URL_DE_SERVIDOR_AQUI" 
+    }
     
     // Configuración de Json
     private val json = Json {
@@ -85,12 +91,26 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
             .build()
     }
     
+    // Retrofit para Detection API
+    private val detectionRetrofit: Retrofit by lazy {
+        val baseUrl = if (DETECTION_BASE_URL.endsWith("/")) DETECTION_BASE_URL else "$DETECTION_BASE_URL/"
+        Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+            .build()
+    }
+    
     private val weatherApiService: WeatherApiService by lazy {
         weatherRetrofit.create(WeatherApiService::class.java)
     }
     
     private val geminiApiService: GeminiApiService by lazy {
         geminiRetrofit.create(GeminiApiService::class.java)
+    }
+    
+    override val detectionApiService: DetectionApiService by lazy {
+        detectionRetrofit.create(DetectionApiService::class.java)
     }
     
     override val weatherRepository: WeatherRepository by lazy {

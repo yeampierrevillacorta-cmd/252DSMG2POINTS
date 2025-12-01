@@ -43,13 +43,25 @@ fun AdminIncidentsScreen(
     var showEvaluationDialog by remember { mutableStateOf(false) }
     var selectedIncidentForEvaluation by remember { mutableStateOf<com.example.points.models.Incident?>(null) }
 
-    // Filtrar incidentes según los filtros seleccionados
+    // Filtrar y ordenar incidentes según los filtros seleccionados
     val filteredIncidents = remember(uiState.incidents, selectedStatusFilter, selectedTypeFilter) {
-        uiState.incidents.filter { incident ->
+        val filtered = uiState.incidents.filter { incident ->
             val statusMatch = selectedStatusFilter?.let { incident.estado == it } ?: true
             val typeMatch = selectedTypeFilter?.let { incident.tipo == it.displayName } ?: true
             statusMatch && typeMatch
         }
+        
+        // Ordenar por prioridad (ALTA primero) y luego por fecha
+        filtered.sortedWith(
+            compareByDescending<com.example.points.models.Incident> { incident ->
+                when (incident.prioridad?.uppercase()) {
+                    "ALTA" -> 3
+                    "MEDIA" -> 2
+                    "BAJA" -> 1
+                    else -> 0
+                }
+            }.thenByDescending { it.fechaHora.toDate().time }
+        )
     }
 
     // Estadísticas
@@ -393,6 +405,77 @@ private fun IncidentAdminCard(
                         color = MarkerUtils.getColorForIncidentStatus(incident.estado.displayName),
                         fontWeight = FontWeight.Medium
                     )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Prioridad y etiqueta IA
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Badge de prioridad
+                incident.prioridad?.let { prioridad ->
+                    val (priorityColor, priorityText) = when (prioridad.uppercase()) {
+                        "ALTA" -> Pair(Color(0xFFFF5252), "ALTA")
+                        "MEDIA" -> Pair(Color(0xFFFFA726), "MEDIA")
+                        "BAJA" -> Pair(Color(0xFF66BB6A), "BAJA")
+                        else -> Pair(MaterialTheme.colorScheme.onSurfaceVariant, prioridad)
+                    }
+                    
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = priorityColor.copy(alpha = 0.2f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, priorityColor)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.PriorityHigh,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = priorityColor
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Prioridad: $priorityText",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = priorityColor,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+                
+                // Etiqueta IA si existe
+                incident.etiqueta_ia?.let { etiqueta ->
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Warning,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "IA: $etiqueta",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
                 }
             }
             

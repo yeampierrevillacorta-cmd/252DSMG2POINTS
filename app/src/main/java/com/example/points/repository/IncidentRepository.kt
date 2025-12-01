@@ -4,19 +4,33 @@ import com.example.points.models.Incident
 import com.example.points.models.EstadoIncidente
 import com.example.points.models.TipoIncidente
 import com.example.points.models.Ubicacion
+import com.example.points.models.detection.DetectionResponse
+import com.example.points.network.DetectionApiService
+import com.example.points.utils.EnvironmentConfig
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.withContext
+import android.content.Context
 import android.net.Uri
 import android.util.Log
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import retrofit2.HttpException
+import java.io.File
+import java.io.IOException
 import java.util.UUID
 
-class IncidentRepository {
+class IncidentRepository(
+    private val detectionApiService: DetectionApiService? = null
+) {
     private val firestore = FirebaseFirestore.getInstance()
     private val storage = FirebaseStorage.getInstance()
     private val auth = FirebaseAuth.getInstance()
@@ -25,23 +39,19 @@ class IncidentRepository {
     
     // Obtener todos los incidentes en tiempo real
     fun getAllIncidents(): Flow<List<Incident>> = callbackFlow {
-        Log.d("IncidentRepository", "Iniciando escucha de incidentes en Firebase")
-        
         val listener = incidentsCollection
             .orderBy("fechaHora", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    Log.e("IncidentRepository", "Error en listener de Firebase", error)
+                    Log.e("IncidentRepository", "Error en listener de Firebase: ${error.message}", error)
                     close(error)
                     return@addSnapshotListener
                 }
                 
-                Log.d("IncidentRepository", "Snapshot recibido con ${snapshot?.documents?.size ?: 0} documentos")
-                
                 val incidents = snapshot?.documents?.mapNotNull { doc ->
                     try {
                         val data = doc.data
-                        val incident = Incident(
+                        Incident(
                             id = doc.id,
                             tipo = data?.get("tipo") as? String ?: "",
                             descripcion = data?.get("descripcion") as? String ?: "",
@@ -68,24 +78,20 @@ class IncidentRepository {
                             } catch (e: Exception) {
                                 EstadoIncidente.PENDIENTE
                             },
-                            usuarioId = data?.get("usuarioId") as? String ?: ""
+                            usuarioId = data?.get("usuarioId") as? String ?: "",
+                            prioridad = data?.get("prioridad") as? String,
+                            etiqueta_ia = data?.get("etiqueta_ia") as? String
                         )
-                        Log.d("IncidentRepository", "Documento parseado: ${doc.id} - ${incident.tipo}")
-                        incident
                     } catch (e: Exception) {
-                        Log.e("IncidentRepository", "Error parseando documento ${doc.id}", e)
+                        Log.e("IncidentRepository", "Error parseando documento ${doc.id}: ${e.message}")
                         null
                     }
                 } ?: emptyList()
                 
-                Log.d("IncidentRepository", "Enviando ${incidents.size} incidentes al Flow")
                 trySend(incidents)
             }
         
-        awaitClose { 
-            Log.d("IncidentRepository", "Cerrando listener de Firebase")
-            listener.remove() 
-        }
+        awaitClose { listener.remove() }
     }
     
     // Obtener incidentes filtrados
@@ -129,7 +135,9 @@ class IncidentRepository {
                             } catch (e: Exception) {
                                 EstadoIncidente.PENDIENTE
                             },
-                            usuarioId = data?.get("usuarioId") as? String ?: ""
+                            usuarioId = data?.get("usuarioId") as? String ?: "",
+                            prioridad = data?.get("prioridad") as? String,
+                            etiqueta_ia = data?.get("etiqueta_ia") as? String
                         )
                         incident
                     } catch (e: Exception) {
@@ -184,7 +192,9 @@ class IncidentRepository {
                             } catch (e: Exception) {
                                 EstadoIncidente.PENDIENTE
                             },
-                            usuarioId = data?.get("usuarioId") as? String ?: ""
+                            usuarioId = data?.get("usuarioId") as? String ?: "",
+                            prioridad = data?.get("prioridad") as? String,
+                            etiqueta_ia = data?.get("etiqueta_ia") as? String
                         )
                         incident
                     } catch (e: Exception) {
@@ -226,6 +236,77 @@ class IncidentRepository {
             Result.success(downloadUrl.toString())
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+    
+    // Analizar imagen con API de detección de amenazas
+    suspend fun analyzeImageForThreats(uri: Uri, context: Context): Result<DetectionResponse> = withContext(Dispatchers.IO) {
+        if (detectionApiService == null) {
+            Log.w("IncidentRepository", "DetectionApiService no disponible")
+            return@withContext Result.failure(Exception("Servicio de detección no configurado"))
+        }
+        
+        // Solución temporal: API key hardcodeada
+        // TODO: Implementar lectura desde .env en producción
+        val apiKey = "INGRESA_TU_API_KEY_AQUI"
+        val finalApiKey = EnvironmentConfig.DETECTION_API_KEY.ifEmpty { apiKey }
+        
+        var tempFile: File? = null
+        try {
+            // Convertir Uri a File temporal
+            val inputStream = context.contentResolver.openInputStream(uri)
+            if (inputStream == null) {
+                return@withContext Result.failure(Exception("No se pudo abrir el archivo de imagen"))
+            }
+            
+            // Crear archivo temporal
+            tempFile = File.createTempFile("detection_", ".jpg", context.cacheDir)
+            
+            // Copiar contenido del inputStream al archivo temporal
+            inputStream.use { input ->
+                tempFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            
+            // Verificar que el archivo se creó correctamente
+            if (!tempFile.exists() || tempFile.length() == 0L) {
+                return@withContext Result.failure(Exception("Error al procesar la imagen"))
+            }
+            
+            // Detectar el tipo MIME real de la imagen
+            val mimeType = context.contentResolver.getType(uri) ?: "image/jpeg"
+            
+            // Crear RequestBody y MultipartBody.Part
+            val requestFile = tempFile.asRequestBody(mimeType.toMediaType())
+            val imagePart = MultipartBody.Part.createFormData("file", tempFile.name, requestFile)
+            
+            // Llamar a la API
+            val response = detectionApiService.detectarAmenazas(finalApiKey, imagePart)
+            
+            Log.d("IncidentRepository", "Análisis completado: ${response.cantidad_amenazas} amenaza(s) detectada(s)")
+            
+            Result.success(response)
+            
+        } catch (e: HttpException) {
+            val errorMessage = when (e.code()) {
+                400 -> "Solicitud inválida a la API de detección"
+                401 -> "API key inválida o no autorizada"
+                403 -> "Acceso denegado a la API de detección"
+                429 -> "Límite de solicitudes excedido. Intenta más tarde"
+                500 -> "Error del servidor de detección"
+                else -> "Error del servidor: ${e.message()}"
+            }
+            Log.e("IncidentRepository", "Error HTTP ${e.code()}: $errorMessage")
+            Result.failure(Exception(errorMessage))
+        } catch (e: IOException) {
+            Log.e("IncidentRepository", "Error de conexión al analizar imagen", e)
+            Result.failure(Exception("Error de conexión. Verifica tu conexión a internet."))
+        } catch (e: Exception) {
+            Log.e("IncidentRepository", "Error al analizar imagen: ${e.message}", e)
+            Result.failure(Exception("Error al analizar imagen: ${e.message}"))
+        } finally {
+            tempFile?.delete()
         }
     }
     
@@ -398,7 +479,9 @@ class IncidentRepository {
                 } catch (e: Exception) {
                     EstadoIncidente.PENDIENTE
                 },
-                usuarioId = data?.get("usuarioId") as? String ?: ""
+                usuarioId = data?.get("usuarioId") as? String ?: "",
+                prioridad = data?.get("prioridad") as? String,
+                etiqueta_ia = data?.get("etiqueta_ia") as? String
             )
         } catch (e: Exception) {
             Log.e("IncidentRepository", "Error parseando documento ${doc.id}", e)
