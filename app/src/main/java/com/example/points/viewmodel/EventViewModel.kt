@@ -8,6 +8,7 @@ import com.example.points.repository.EventRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import android.util.Log
 
@@ -83,8 +84,15 @@ class EventViewModel : ViewModel() {
     fun loadPendingEvents() {
         viewModelScope.launch {
             try {
-                repository.getPendingEvents().collect { events ->
+                // Combinar eventos pendientes y en revisión
+                combine(
+                    repository.getPendingEvents(),
+                    repository.getEventsInReview()
+                ) { pending, inReview ->
+                    (pending + inReview).distinctBy { it.id }
+                }.collect { events ->
                     _uiState.value = _uiState.value.copy(pendingEvents = events)
+                    Log.d("EventViewModel", "Eventos pendientes/en revisión cargados: ${events.size}")
                 }
             } catch (e: Exception) {
                 Log.e("EventViewModel", "Error loading pending events", e)

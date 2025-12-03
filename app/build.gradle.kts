@@ -129,6 +129,13 @@ dependencies {
     
     // DataStore (alternativa moderna a SharedPreferences)
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+
+    // WorkManager para tareas en background
+    val workVersion = "2.9.0"
+    implementation("androidx.work:work-runtime-ktx:$workVersion")
+
+    // Seguridad para almacenamiento cifrado de credenciales
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
     
     // WorkManager para tareas en segundo plano (Unidad 7)
     implementation("androidx.work:work-runtime-ktx:2.9.0")

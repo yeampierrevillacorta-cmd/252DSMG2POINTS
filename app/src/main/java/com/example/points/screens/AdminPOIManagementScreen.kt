@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -98,25 +99,15 @@ fun AdminPOIManagementScreen(
 
 @Composable
 fun PendingPOIsList(viewModel: PointOfInterestViewModel) {
-    var pendingPOIs by remember { mutableStateOf<List<PointOfInterest>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val uiState by viewModel.uiState.collectAsState()
+    val pendingPOIs = uiState.pois.filter { it.estado == EstadoPOI.PENDIENTE }
     
     LaunchedEffect(Unit) {
-        // Aquí deberías cargar los POIs pendientes desde el repositorio
-        // viewModel.repository.getPendingPOIs().collect { pois ->
-        //     pendingPOIs = pois
-        //     isLoading = false
-        // }
-        
-        // Simulación temporal
-        kotlinx.coroutines.delay(1000)
-        pendingPOIs = emptyList() // Datos reales se cargarán desde Firebase
-        isLoading = false
+        viewModel.loadPendingPOIs()
     }
     
     when {
-        isLoading -> {
+        uiState.isLoading -> {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -125,17 +116,17 @@ fun PendingPOIsList(viewModel: PointOfInterestViewModel) {
             }
         }
         
-        errorMessage != null -> {
+        uiState.errorMessage != null -> {
             PointsFeedback(
-                message = errorMessage ?: ErrorMessage.ERROR_DESCONOCIDO.value,
+                message = uiState.errorMessage ?: ErrorMessage.ERROR_DESCONOCIDO.value,
                 type = "error",
-                onRetry = { /* Retry logic */ }
+                onRetry = { viewModel.loadPendingPOIs() }
             )
         }
         
         pendingPOIs.isEmpty() -> {
             PointsFeedback(
-                message = ErrorMessage.NO_HAY_POI.value,
+                message = "No hay POIs pendientes",
                 type = "empty"
             )
         }
@@ -149,9 +140,16 @@ fun PendingPOIsList(viewModel: PointOfInterestViewModel) {
                 items(pendingPOIs) { poi ->
                     POIManagementCard(
                         poi = poi,
-                        onApprove = { /* Approve logic */ },
-                        onReject = { /* Reject logic */ },
-                        onViewDetails = { /* View details logic */ }
+                        onApprove = { 
+                            viewModel.approvePOI(poi.id)
+                        },
+                        onReject = { 
+                            // TODO: Mostrar diálogo para comentarios de rechazo
+                            viewModel.rejectPOI(poi.id, "Rechazado por administrador")
+                        },
+                        onViewDetails = { 
+                            // TODO: Navegar a detalles del POI
+                        }
                     )
                 }
             }
@@ -161,17 +159,18 @@ fun PendingPOIsList(viewModel: PointOfInterestViewModel) {
 
 @Composable
 fun InReviewPOIsList(viewModel: PointOfInterestViewModel) {
-    var inReviewPOIs by remember { mutableStateOf<List<PointOfInterest>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
+    val uiState by viewModel.uiState.collectAsState()
+    val inReviewPOIs = uiState.pois.filter { 
+        it.estado == EstadoPOI.EN_REVISION || it.estado == EstadoPOI.PENDIENTE 
+    }
     
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(1000)
-        inReviewPOIs = emptyList() // Datos reales se cargarán desde Firebase
-        isLoading = false
+        viewModel.loadPOIsInReview()
+        viewModel.loadPendingPOIs()
     }
     
     when {
-        isLoading -> {
+        uiState.isLoading -> {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -182,7 +181,7 @@ fun InReviewPOIsList(viewModel: PointOfInterestViewModel) {
         
         inReviewPOIs.isEmpty() -> {
             PointsFeedback(
-                message = ErrorMessage.NO_HAY_POI.value,
+                message = "No hay POIs pendientes de revisión",
                 type = "empty"
             )
         }
@@ -196,9 +195,16 @@ fun InReviewPOIsList(viewModel: PointOfInterestViewModel) {
                 items(inReviewPOIs) { poi ->
                     POIManagementCard(
                         poi = poi,
-                        onApprove = { /* Approve logic */ },
-                        onReject = { /* Reject logic */ },
-                        onViewDetails = { /* View details logic */ }
+                        onApprove = { 
+                            viewModel.approvePOI(poi.id)
+                        },
+                        onReject = { 
+                            // TODO: Mostrar diálogo para comentarios de rechazo
+                            viewModel.rejectPOI(poi.id, "Rechazado por administrador")
+                        },
+                        onViewDetails = { 
+                            // TODO: Navegar a detalles del POI
+                        }
                     )
                 }
             }
@@ -208,17 +214,15 @@ fun InReviewPOIsList(viewModel: PointOfInterestViewModel) {
 
 @Composable
 fun ApprovedPOIsList(viewModel: PointOfInterestViewModel) {
-    var approvedPOIs by remember { mutableStateOf<List<PointOfInterest>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
+    val uiState by viewModel.uiState.collectAsState()
+    val approvedPOIs = uiState.pois.filter { it.estado == EstadoPOI.APROBADO }
     
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(1000)
-        approvedPOIs = emptyList() // Datos reales se cargarán desde Firebase
-        isLoading = false
+        viewModel.loadAllPOIs()
     }
     
     when {
-        isLoading -> {
+        uiState.isLoading -> {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -227,9 +231,17 @@ fun ApprovedPOIsList(viewModel: PointOfInterestViewModel) {
             }
         }
         
+        uiState.errorMessage != null -> {
+            PointsFeedback(
+                message = uiState.errorMessage ?: ErrorMessage.ERROR_DESCONOCIDO.value,
+                type = "error",
+                onRetry = { viewModel.loadAllPOIs() }
+            )
+        }
+        
         approvedPOIs.isEmpty() -> {
             PointsFeedback(
-                message = ErrorMessage.NO_HAY_POI.value,
+                message = "No hay POIs aprobados",
                 type = "empty"
             )
         }
@@ -244,8 +256,13 @@ fun ApprovedPOIsList(viewModel: PointOfInterestViewModel) {
                     POIManagementCard(
                         poi = poi,
                         onApprove = null, // Ya está aprobado
-                        onReject = { /* Suspend logic */ },
-                        onViewDetails = { /* View details logic */ }
+                        onReject = { 
+                            // Opción para suspender/rechazar un POI aprobado
+                            viewModel.rejectPOI(poi.id, "Suspendido por administrador")
+                        },
+                        onViewDetails = { 
+                            // TODO: Navegar a detalles del POI
+                        }
                     )
                 }
             }

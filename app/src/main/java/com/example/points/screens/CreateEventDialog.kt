@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -18,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -38,10 +40,12 @@ fun CreateEventDialog(
     onCreateEvent: (Event) -> Unit,
     isLoading: Boolean = false,
     errorMessage: String? = null,
-    onErrorShown: () -> Unit = {}
+    onErrorShown: () -> Unit = {},
+    onEventCreated: () -> Unit = {} // Callback cuando el evento se crea exitosamente
 ) {
     val context = LocalContext.current
     val locationService = remember { LocationService(context) }
+    val keyboardController = LocalSoftwareKeyboardController.current
     
     var nombre by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
@@ -102,6 +106,7 @@ fun CreateEventDialog(
         }
     }
     
+    
     Dialog(
         onDismissRequest = {
             if (!isLoading) {
@@ -135,11 +140,153 @@ fun CreateEventDialog(
                     Text(
                         text = "Crear Evento",
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
                     )
                     
+                    // Botón Crear Evento en la barra superior
+                    TextButton(
+                        onClick = {
+                            keyboardController?.hide()
+                            // Validar campos requeridos
+                            validationError = null
+                            
+                            when {
+                                nombre.isBlank() -> {
+                                    validationError = "El nombre del evento es requerido"
+                                    return@TextButton
+                                }
+                                descripcion.isBlank() -> {
+                                    validationError = "La descripción es requerida"
+                                    return@TextButton
+                                }
+                                direccion.isBlank() -> {
+                                    validationError = "La dirección es requerida"
+                                    return@TextButton
+                                }
+                                fechaInicio == null -> {
+                                    validationError = "La fecha de inicio es requerida"
+                                    return@TextButton
+                                }
+                                fechaFin == null -> {
+                                    validationError = "La fecha de fin es requerida"
+                                    return@TextButton
+                                }
+                                horaInicio == null -> {
+                                    validationError = "La hora de inicio es requerida"
+                                    return@TextButton
+                                }
+                                horaFin == null -> {
+                                    validationError = "La hora de fin es requerida"
+                                    return@TextButton
+                                }
+                                !esGratuito && precioGeneral.isBlank() -> {
+                                    validationError = "El precio es requerido para eventos de pago"
+                                    return@TextButton
+                                }
+                                capacidad.isNotBlank() && capacidad.toIntOrNull() == null -> {
+                                    validationError = "La capacidad debe ser un número válido"
+                                    return@TextButton
+                                }
+                                capacidad.isNotBlank() && capacidad.toIntOrNull()!! < 1 -> {
+                                    validationError = "La capacidad debe ser mayor a 0"
+                                    return@TextButton
+                                }
+                            }
+                            
+                            // Validar fechas y horas
+                            val calInicio = Calendar.getInstance().apply { time = fechaInicio!! }
+                            val calFin = Calendar.getInstance().apply { time = fechaFin!! }
+                            
+                            if (calFin.before(calInicio)) {
+                                validationError = "La fecha de fin debe ser posterior o igual a la fecha de inicio"
+                                return@TextButton
+                            }
+                            
+                            // Si son el mismo día, validar las horas
+                            if (calInicio.get(Calendar.YEAR) == calFin.get(Calendar.YEAR) &&
+                                calInicio.get(Calendar.DAY_OF_YEAR) == calFin.get(Calendar.DAY_OF_YEAR)) {
+                                if (horaFin!!.first < horaInicio!!.first ||
+                                    (horaFin!!.first == horaInicio!!.first && horaFin!!.second <= horaInicio!!.second)) {
+                                    validationError = "La hora de fin debe ser posterior a la hora de inicio"
+                                    return@TextButton
+                                }
+                            }
+                            
+                            // Crear el evento
+                            val calendarInicio = Calendar.getInstance().apply {
+                                time = fechaInicio!!
+                                set(Calendar.HOUR_OF_DAY, horaInicio!!.first)
+                                set(Calendar.MINUTE, horaInicio!!.second)
+                                set(Calendar.SECOND, 0)
+                                set(Calendar.MILLISECOND, 0)
+                            }
+                            
+                            val calendarFin = Calendar.getInstance().apply {
+                                time = fechaFin!!
+                                set(Calendar.HOUR_OF_DAY, horaFin!!.first)
+                                set(Calendar.MINUTE, horaFin!!.second)
+                                set(Calendar.SECOND, 0)
+                                set(Calendar.MILLISECOND, 0)
+                            }
+                            
+                            val event = Event(
+                                nombre = nombre.trim(),
+                                descripcion = descripcion.trim(),
+                                categoria = categoria,
+                                ubicacion = Ubicacion(
+                                    lat = latitud ?: 0.0,
+                                    lon = longitud ?: 0.0,
+                                    direccion = direccion.trim()
+                                ),
+                                direccion = direccion.trim(),
+                                fechaInicio = com.google.firebase.Timestamp(calendarInicio.time),
+                                fechaFin = com.google.firebase.Timestamp(calendarFin.time),
+                                horaInicio = String.format("%02d:%02d", horaInicio!!.first, horaInicio!!.second),
+                                horaFin = String.format("%02d:%02d", horaFin!!.first, horaFin!!.second),
+                                organizador = organizador.trim(),
+                                contacto = ContactoEvento(
+                                    telefono = telefono.takeIf { it.isNotBlank() },
+                                    email = email.takeIf { it.isNotBlank() }
+                                ),
+                                precio = PrecioEvento(
+                                    esGratuito = esGratuito,
+                                    precioGeneral = if (!esGratuito) precioGeneral.toDoubleOrNull() else null
+                                ),
+                                capacidad = capacidad.toIntOrNull(),
+                                requiereInscripcion = requiereInscripcion,
+                                edadMinima = edadMinima.toIntOrNull(),
+                                edadMaxima = edadMaxima.toIntOrNull(),
+                                accesibilidad = accesibilidad,
+                                estacionamiento = estacionamiento,
+                                transportePublico = transportePublico,
+                                etiquetas = etiquetas.split(",").map { it.trim() }.filter { it.isNotBlank() },
+                                sitioWeb = sitioWeb.takeIf { it.isNotBlank() },
+                                esGratuito = esGratuito,
+                                estado = EstadoEvento.PENDIENTE
+                            )
+                            
+                            onCreateEvent(event)
+                        },
+                        enabled = !isLoading && nombre.isNotBlank() && descripcion.isNotBlank() && 
+                                 direccion.isNotBlank() && fechaInicio != null && 
+                                 fechaFin != null && horaInicio != null && horaFin != null
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        Text(if (isLoading) "Creando..." else "Crear")
+                    }
+                    
                     IconButton(
-                        onClick = onDismiss,
+                        onClick = {
+                            keyboardController?.hide()
+                            onDismiss()
+                        },
                         enabled = !isLoading
                     ) {
                         Icon(
@@ -223,7 +370,13 @@ fun CreateEventDialog(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         enabled = !isLoading,
-                        isError = validationError != null && nombre.isBlank()
+                        isError = validationError != null && nombre.isBlank(),
+                        keyboardOptions = KeyboardOptions(
+                            imeAction = androidx.compose.ui.text.input.ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { keyboardController?.hide() }
+                        )
                     )
                     
                     OutlinedTextField(
@@ -234,7 +387,13 @@ fun CreateEventDialog(
                         minLines = 3,
                         maxLines = 5,
                         enabled = !isLoading,
-                        isError = validationError != null && descripcion.isBlank()
+                        isError = validationError != null && descripcion.isBlank(),
+                        keyboardOptions = KeyboardOptions(
+                            imeAction = androidx.compose.ui.text.input.ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = { keyboardController?.hide() }
+                        )
                     )
                     
                     // Categoría
@@ -278,7 +437,13 @@ fun CreateEventDialog(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         enabled = !isLoading,
-                        isError = validationError != null && direccion.isBlank()
+                        isError = validationError != null && direccion.isBlank(),
+                        keyboardOptions = KeyboardOptions(
+                            imeAction = androidx.compose.ui.text.input.ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = { keyboardController?.hide() }
+                        )
                     )
                     
                     Row(
@@ -535,7 +700,13 @@ fun CreateEventDialog(
                         label = { Text("Organizador") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        enabled = !isLoading
+                        enabled = !isLoading,
+                        keyboardOptions = KeyboardOptions(
+                            imeAction = androidx.compose.ui.text.input.ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { keyboardController?.hide() }
+                        )
                     )
                     
                     Row(
@@ -547,7 +718,13 @@ fun CreateEventDialog(
                             onValueChange = { telefono = it },
                             label = { Text("Teléfono") },
                             modifier = Modifier.weight(1f),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Phone,
+                                imeAction = androidx.compose.ui.text.input.ImeAction.Next
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onNext = { keyboardController?.hide() }
+                            ),
                             enabled = !isLoading
                         )
                         
@@ -556,7 +733,13 @@ fun CreateEventDialog(
                             onValueChange = { email = it },
                             label = { Text("Email") },
                             modifier = Modifier.weight(1f),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Email,
+                                imeAction = androidx.compose.ui.text.input.ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onDone = { keyboardController?.hide() }
+                            ),
                             enabled = !isLoading
                         )
                     }
@@ -591,7 +774,13 @@ fun CreateEventDialog(
                             onValueChange = { precioGeneral = it },
                             label = { Text("Precio general") },
                             modifier = Modifier.fillMaxWidth(),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Decimal,
+                                imeAction = androidx.compose.ui.text.input.ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onDone = { keyboardController?.hide() }
+                            ),
                             enabled = !isLoading,
                             leadingIcon = {
                                 Text("$")
@@ -608,7 +797,13 @@ fun CreateEventDialog(
                             onValueChange = { capacidad = it },
                             label = { Text("Capacidad") },
                             modifier = Modifier.weight(1f),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = androidx.compose.ui.text.input.ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onDone = { keyboardController?.hide() }
+                            ),
                             enabled = !isLoading
                         )
                         
@@ -727,7 +922,13 @@ fun CreateEventDialog(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         enabled = !isLoading,
-                        placeholder = { Text("ej: música, arte, familia") }
+                        placeholder = { Text("ej: música, arte, familia") },
+                        keyboardOptions = KeyboardOptions(
+                            imeAction = androidx.compose.ui.text.input.ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { keyboardController?.hide() }
+                        )
                     )
                     
                     OutlinedTextField(
@@ -737,166 +938,20 @@ fun CreateEventDialog(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         enabled = !isLoading,
-                        placeholder = { Text("https://...") }
+                        placeholder = { Text("https://...") },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Uri,
+                            imeAction = androidx.compose.ui.text.input.ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = { keyboardController?.hide() }
+                        )
                     )
                     
                     Spacer(modifier = Modifier.height(16.dp))
                 }
                 
                 Divider()
-                
-                // Botones de acción
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f),
-                        enabled = !isLoading
-                    ) {
-                        Text(ButtonText.CANCELAR.value)
-                    }
-                    
-                    Button(
-                        onClick = {
-                            // Validar campos requeridos
-                            validationError = null
-                            
-                            when {
-                                nombre.isBlank() -> {
-                                    validationError = "El nombre del evento es requerido"
-                                    return@Button
-                                }
-                                descripcion.isBlank() -> {
-                                    validationError = "La descripción es requerida"
-                                    return@Button
-                                }
-                                direccion.isBlank() -> {
-                                    validationError = "La dirección es requerida"
-                                    return@Button
-                                }
-                                fechaInicio == null -> {
-                                    validationError = "La fecha de inicio es requerida"
-                                    return@Button
-                                }
-                                fechaFin == null -> {
-                                    validationError = "La fecha de fin es requerida"
-                                    return@Button
-                                }
-                                horaInicio == null -> {
-                                    validationError = "La hora de inicio es requerida"
-                                    return@Button
-                                }
-                                horaFin == null -> {
-                                    validationError = "La hora de fin es requerida"
-                                    return@Button
-                                }
-                                !esGratuito && precioGeneral.isBlank() -> {
-                                    validationError = "El precio es requerido para eventos de pago"
-                                    return@Button
-                                }
-                                capacidad.isNotBlank() && capacidad.toIntOrNull() == null -> {
-                                    validationError = "La capacidad debe ser un número válido"
-                                    return@Button
-                                }
-                                capacidad.isNotBlank() && capacidad.toIntOrNull()!! < 1 -> {
-                                    validationError = "La capacidad debe ser mayor a 0"
-                                    return@Button
-                                }
-                            }
-                            
-                            // Validar fechas y horas
-                            val calInicio = Calendar.getInstance().apply { time = fechaInicio!! }
-                            val calFin = Calendar.getInstance().apply { time = fechaFin!! }
-                            
-                            if (calFin.before(calInicio)) {
-                                validationError = "La fecha de fin debe ser posterior o igual a la fecha de inicio"
-                                return@Button
-                            }
-                            
-                            // Si son el mismo día, validar las horas
-                            if (calInicio.get(Calendar.YEAR) == calFin.get(Calendar.YEAR) &&
-                                calInicio.get(Calendar.DAY_OF_YEAR) == calFin.get(Calendar.DAY_OF_YEAR)) {
-                                if (horaFin!!.first < horaInicio!!.first ||
-                                    (horaFin!!.first == horaInicio!!.first && horaFin!!.second <= horaInicio!!.second)) {
-                                    validationError = "La hora de fin debe ser posterior a la hora de inicio"
-                                    return@Button
-                                }
-                            }
-                            
-                            // Crear el evento
-                            val calendarInicio = Calendar.getInstance().apply {
-                                time = fechaInicio!!
-                                set(Calendar.HOUR_OF_DAY, horaInicio!!.first)
-                                set(Calendar.MINUTE, horaInicio!!.second)
-                                set(Calendar.SECOND, 0)
-                                set(Calendar.MILLISECOND, 0)
-                            }
-                            
-                            val calendarFin = Calendar.getInstance().apply {
-                                time = fechaFin!!
-                                set(Calendar.HOUR_OF_DAY, horaFin!!.first)
-                                set(Calendar.MINUTE, horaFin!!.second)
-                                set(Calendar.SECOND, 0)
-                                set(Calendar.MILLISECOND, 0)
-                            }
-                            
-                            val event = Event(
-                                nombre = nombre.trim(),
-                                descripcion = descripcion.trim(),
-                                categoria = categoria,
-                                ubicacion = Ubicacion(
-                                    lat = latitud ?: 0.0,
-                                    lon = longitud ?: 0.0,
-                                    direccion = direccion.trim()
-                                ),
-                                direccion = direccion.trim(),
-                                fechaInicio = com.google.firebase.Timestamp(calendarInicio.time),
-                                fechaFin = com.google.firebase.Timestamp(calendarFin.time),
-                                horaInicio = String.format("%02d:%02d", horaInicio!!.first, horaInicio!!.second),
-                                horaFin = String.format("%02d:%02d", horaFin!!.first, horaFin!!.second),
-                                organizador = organizador.trim(),
-                                contacto = ContactoEvento(
-                                    telefono = telefono.takeIf { it.isNotBlank() },
-                                    email = email.takeIf { it.isNotBlank() }
-                                ),
-                                precio = PrecioEvento(
-                                    esGratuito = esGratuito,
-                                    precioGeneral = if (!esGratuito) precioGeneral.toDoubleOrNull() else null
-                                ),
-                                capacidad = capacidad.toIntOrNull(),
-                                requiereInscripcion = requiereInscripcion,
-                                edadMinima = edadMinima.toIntOrNull(),
-                                edadMaxima = edadMaxima.toIntOrNull(),
-                                accesibilidad = accesibilidad,
-                                estacionamiento = estacionamiento,
-                                transportePublico = transportePublico,
-                                etiquetas = etiquetas.split(",").map { it.trim() }.filter { it.isNotBlank() },
-                                sitioWeb = sitioWeb.takeIf { it.isNotBlank() },
-                                esGratuito = esGratuito,
-                                estado = EstadoEvento.PENDIENTE
-                            )
-                            
-                            onCreateEvent(event)
-                        },
-                        modifier = Modifier.weight(1f),
-                        enabled = !isLoading && nombre.isNotBlank() && descripcion.isNotBlank() && 
-                                 direccion.isNotBlank() && fechaInicio != null && 
-                                 fechaFin != null && horaInicio != null && horaFin != null
-                    ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                        }
-                        Text(if (isLoading) "Creando..." else "Crear Evento")
-                    }
-                }
             }
         }
     }

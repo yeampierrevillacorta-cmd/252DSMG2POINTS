@@ -41,11 +41,19 @@ object AppRoutes {
     const val POI_DETAIL = "poi_detail"
     const val POI_SUBMISSION = "poi_submission"
     const val ADMIN_POI_MANAGEMENT = "admin_poi_management"
+    const val POI_FAVORITES = "poi_favorites"
+    
+    // Base de Datos
+    const val DATABASE_DEMO = "database_demo"
     
     // Administración
     const val ADMIN_USER_MANAGEMENT = "admin_user_management"
     
+<<<<<<< HEAD
     // Sincronización
+=======
+    // Configuración
+>>>>>>> 3616147010ca71a00c51183b96f2dd12eda121ab
     const val SYNC_SETTINGS = "sync_settings"
 }
 

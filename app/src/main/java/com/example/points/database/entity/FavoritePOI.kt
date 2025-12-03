@@ -4,10 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.firebase.Timestamp
 
-/**
- * Entidad Room para POIs favoritos almacenados localmente
- * Implementa almacenamiento local para la Unidad 5 de Android Basics
- */
+
 @Entity(tableName = "favorite_pois")
 data class FavoritePOI(
     @PrimaryKey

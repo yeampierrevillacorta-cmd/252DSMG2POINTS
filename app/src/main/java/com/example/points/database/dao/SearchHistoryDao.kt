@@ -4,10 +4,6 @@ import androidx.room.*
 import com.example.points.database.entity.SearchHistory
 import kotlinx.coroutines.flow.Flow
 
-/**
- * DAO para operaciones con historial de búsquedas
- * Implementa operaciones CRUD para la Unidad 5 de Android Basics
- */
 @Dao
 interface SearchHistoryDao {
     

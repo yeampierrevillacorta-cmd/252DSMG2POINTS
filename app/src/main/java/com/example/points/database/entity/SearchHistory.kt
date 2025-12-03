@@ -3,10 +3,6 @@ package com.example.points.database.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-/**
- * Entidad Room para historial de búsquedas
- * Implementa almacenamiento local para la Unidad 5 de Android Basics
- */
 @Entity(tableName = "search_history")
 data class SearchHistory(
     @PrimaryKey(autoGenerate = true)

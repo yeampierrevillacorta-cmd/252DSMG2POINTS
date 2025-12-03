@@ -11,7 +11,7 @@ import android.util.Log
 
 /**
  * Repositorio local para historial de búsquedas
- * Implementa almacenamiento local para la Unidad 5 de Android Basics
+ * Implementa almacenamiento local
  */
 class LocalSearchRepository(private val database: PointsDatabase) {
     
@@ -20,7 +20,7 @@ class LocalSearchRepository(private val database: PointsDatabase) {
     companion object {
         private const val TAG = "LocalSearchRepository"
     }
-    
+
     /**
      * Obtener historial de búsquedas recientes
      */
@@ -28,7 +28,7 @@ class LocalSearchRepository(private val database: PointsDatabase) {
         return searchDao.getRecentSearches(limit)
             .flowOn(Dispatchers.IO)
     }
-    
+
     /**
      * Obtener queries de búsqueda recientes
      */
@@ -36,7 +36,7 @@ class LocalSearchRepository(private val database: PointsDatabase) {
         return searchDao.getRecentSearchQueries(limit)
             .flowOn(Dispatchers.IO)
     }
-    
+
     /**
      * Guardar búsqueda en historial
      */

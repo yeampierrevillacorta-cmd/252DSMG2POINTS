@@ -7,6 +7,8 @@ import androidx.activity.result.contract.ActivityResultContracts.GetContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -33,7 +35,11 @@ import androidx.compose.runtime.LaunchedEffect
 fun ProfileScreen(
     onSignOut: () -> Unit,
     onEditProfile: () -> Unit,
+<<<<<<< HEAD
     onSyncSettingsClick: (() -> Unit)? = null,
+=======
+    onSyncSettings: () -> Unit = {},
+>>>>>>> 3616147010ca71a00c51183b96f2dd12eda121ab
     viewModel: ProfileViewModel = viewModel()
 ) {
     val profile by viewModel.profile.collectAsState()
@@ -47,6 +53,7 @@ fun ProfileScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -239,6 +246,31 @@ fun ProfileScreen(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+
+        // Botón para configuración de sincronización
+        OutlinedButton(
+            onClick = onSyncSettings,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.primary
+            ),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(
+                Icons.Default.Sync,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Sincronización",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Medium
+                )
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Botón para modificar datos
         Button(

@@ -2,6 +2,7 @@ package com.example.points.auth
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -15,11 +16,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -37,9 +40,13 @@ fun LoginScreen(
     onLoginSuccess: (com.example.points.models.TipoUsuario) -> Unit,
     onRegisterClick: () -> Unit,
     onForgotPasswordClick: () -> Unit,
-    viewModel: LoginViewModel = viewModel()
+    viewModel: LoginViewModel = rememberLoginViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(uiState.keepSessionActive) {
+        viewModel.tryRestoreSession(onLoginSuccess)
+    }
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -183,14 +190,40 @@ fun LoginScreen(
                         }
                     )
 
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        PreferenceOptionRow(
+                            text = "Mantener sesión iniciada",
+                            checked = uiState.keepSessionActive,
+                            onCheckedChange = viewModel::onKeepSessionChange
+                        )
+                        PreferenceOptionRow(
+                            text = "Recordar contraseña en este dispositivo",
+                            checked = uiState.rememberCredentials,
+                            onCheckedChange = viewModel::onRememberCredentialsChange
+                        )
+                    }
+
                     Spacer(modifier = Modifier.height(24.dp))
+
+                    if (uiState.isRestoringSession) {
+                        LinearProgressIndicator(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 12.dp)
+                        )
+                    }
 
                     Button(
                         onClick = { viewModel.loginUser(onLoginSuccess) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp),
-                        enabled = !uiState.isLoading,
+                        enabled = !uiState.isLoading && !uiState.isRestoringSession,
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary
@@ -256,4 +289,39 @@ private fun LoginScreenPreview() {
             onForgotPasswordClick = { }
         )
     }
+}
+
+@Composable
+private fun PreferenceOptionRow(
+    text: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable { onCheckedChange(!checked) }
+            .padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Checkbox(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun rememberLoginViewModel(): LoginViewModel {
+    val context = LocalContext.current
+    return viewModel(
+        factory = LoginViewModel.provideFactory(context)
+    )
 }

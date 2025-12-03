@@ -10,10 +10,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +41,7 @@ import com.example.points.constants.AppSpacing
 import com.example.points.constants.AppRoutes
 import com.example.points.constants.IconSize
 import com.example.points.utils.getCategoryIcon
+import com.example.points.ui.theme.ButtonSize
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,6 +73,8 @@ fun POIScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
+            val iconButtonSize = 48.dp
+
             // Header con título y botones
             Row(
                 modifier = Modifier
@@ -78,38 +83,50 @@ fun POIScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Column(
+                    modifier = Modifier.weight(1f, fill = false)
+                ) {
                     Text(
                         text = "📍 Puntos de Interés",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
+                        color = MaterialTheme.colorScheme.onBackground,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = "Descubre lugares en tu localidad",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 
+                Spacer(modifier = Modifier.width(8.dp))
+                
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.MEDIUM)
+                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.MEDIUM),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Botón de filtros
                     IconButton(
                         onClick = { showFilters = !showFilters },
                         modifier = Modifier
+                            .size(iconButtonSize)
+                            .clip(RoundedCornerShape(8.dp))
                             .background(
                                 if (showFilters) MaterialTheme.colorScheme.primary 
                                 else MaterialTheme.colorScheme.surface,
-                                RoundedCornerShape(8.dp)
-                            )
+                            ),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = if (showFilters) MaterialTheme.colorScheme.onPrimary
+                            else MaterialTheme.colorScheme.onSurface
+                        )
                     ) {
                         Icon(
                             imageVector = if (showFilters) Icons.Default.Close else Icons.Default.FilterList,
-                            contentDescription = ContentDescription.FILTROS.value,
-                            tint = if (showFilters) MaterialTheme.colorScheme.onPrimary 
-                                   else MaterialTheme.colorScheme.onSurface
+                            contentDescription = ContentDescription.FILTROS.value
                         )
                     }
                     
@@ -117,15 +134,18 @@ fun POIScreen(
                     IconButton(
                         onClick = { navController.navigate(AppRoutes.POI_MAP) },
                         modifier = Modifier
+                            .size(iconButtonSize)
+                            .clip(RoundedCornerShape(8.dp))
                             .background(
                                 MaterialTheme.colorScheme.secondaryContainer,
-                                RoundedCornerShape(8.dp)
-                            )
+                            ),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
                     ) {
                         Icon(
                             imageVector = Icons.Default.Map,
-                            contentDescription = "Ver mapa",
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer
+                            contentDescription = "Ver mapa"
                         )
                     }
                 }
@@ -300,7 +320,8 @@ fun POIScreen(
 @Composable
 fun POICard(
     poi: PointOfInterest,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    showFavoriteIndicator: Boolean = false
 ) {
     Card(
         modifier = Modifier
@@ -312,136 +333,160 @@ fun POICard(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(AppSpacing.STANDARD),
-            horizontalArrangement = Arrangement.spacedBy(AppSpacing.STANDARD)
+        Box(
+            modifier = Modifier.fillMaxWidth()
         ) {
-            // Imagen del POI
-            if (poi.imagenes.isNotEmpty()) {
-                OptimizedRoundedImage(
-                    imageUrl = poi.imagenes.first(),
-                    contentDescription = poi.nombre,
-                    modifier = Modifier
-                        .size(100.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = getCategoryIcon(poi.categoria.displayName),
-                        contentDescription = null,
-                        modifier = Modifier.size(IconSize.LARGE),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                    )
-                }
-            }
-            
-            // Información del POI
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(AppSpacing.SMALL)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(AppSpacing.STANDARD),
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.STANDARD)
             ) {
-                Text(
-                    text = poi.nombre,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                
-                if (poi.descripcion.isNotEmpty()) {
-                    Text(
-                        text = poi.descripcion,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                // Imagen del POI
+                if (poi.imagenes.isNotEmpty()) {
+                    OptimizedRoundedImage(
+                        imageUrl = poi.imagenes.first(),
+                        contentDescription = poi.nombre,
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clip(RoundedCornerShape(8.dp))
                     )
-                }
-                
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.SMALL)
-                ) {
-                    Icon(
-                        imageVector = getCategoryIcon(poi.categoria.displayName),
-                        contentDescription = null,
-                        modifier = Modifier.size(IconSize.SMALL),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = poi.categoria.displayName,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-                
-                if (poi.direccion.isNotEmpty()) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(AppSpacing.SMALL)
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.LocationOn,
+                            imageVector = getCategoryIcon(poi.categoria.displayName),
                             contentDescription = null,
-                            modifier = Modifier.size(IconSize.SMALL),
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                        Text(
-                            text = poi.direccion,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            modifier = Modifier.size(IconSize.LARGE),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                         )
                     }
                 }
                 
-                // Calificación si existe
-                if (poi.calificacion > 0.0) {
+                // Información del POI
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(AppSpacing.SMALL)
+                ) {
+                    Text(
+                        text = poi.nombre,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    
+                    if (poi.descripcion.isNotEmpty()) {
+                        Text(
+                            text = poi.descripcion,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(AppSpacing.SMALL)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Star,
+                            imageVector = getCategoryIcon(poi.categoria.displayName),
                             contentDescription = null,
                             modifier = Modifier.size(IconSize.SMALL),
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = String.format("%.1f", poi.calificacion),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Medium
+                            text = poi.categoria.displayName,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
                         )
-                        if (poi.totalCalificaciones > 0) {
+                    }
+                    
+                    if (poi.direccion.isNotEmpty()) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(AppSpacing.SMALL)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = null,
+                                modifier = Modifier.size(IconSize.SMALL),
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
                             Text(
-                                text = "(${poi.totalCalificaciones})",
+                                text = poi.direccion,
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
+                    
+                    // Calificación si existe
+                    if (poi.calificacion > 0.0) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(AppSpacing.SMALL)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = null,
+                                modifier = Modifier.size(IconSize.SMALL),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = String.format("%.1f", poi.calificacion),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            if (poi.totalCalificaciones > 0) {
+                                Text(
+                                    text = "(${poi.totalCalificaciones})",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                            }
+                        }
+                    }
                 }
+                
+                // Icono de flecha
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(IconSize.STANDARD)
+                        .align(Alignment.CenterVertically),
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                )
             }
             
-            // Icono de flecha
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                modifier = Modifier
-                    .size(IconSize.STANDARD)
-                    .align(Alignment.CenterVertically),
-                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-            )
+            if (showFavoriteIndicator) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(AppSpacing.SMALL),
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    shape = CircleShape,
+                    tonalElevation = 2.dp
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Favorite,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(20.dp)
+                            .padding(AppSpacing.SMALL / 2),
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
         }
     }
 }
