@@ -16,7 +16,7 @@ import com.example.points.repository.SyncRepository
 import com.example.points.repository.WeatherRepository
 import com.example.points.storage.LocalFileStorage
 import com.example.points.sync.data.SyncPreferences
-import com.example.points.sync.network.SyncApiService
+import com.example.points.sync.network.SyncApiService as SyncNetworkApiService
 import com.example.points.sync.repository.RemoteSyncRepository
 import com.example.points.sync.worker.SyncWorkManager
 import com.example.points.utils.EnvironmentConfig
@@ -38,18 +38,12 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     
     private val WEATHER_BASE_URL = "https://api.openweathermap.org/"
     private val GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/"
-<<<<<<< HEAD
     // URL del backend - debe configurarse en .env como BACKEND_BASE_URL
-    // Obtener la URL con: gcloud run services describe mysyncapp-backend --region us-central1 --format 'value(status.url)'
-    private val BACKEND_BASE_URL = EnvironmentConfig.BACKEND_BASE_URL.ifEmpty { 
-        // URL por defecto - REEMPLAZAR con la URL real de tu Cloud Run
-        // Formato: https://mysyncapp-backend-[HASH]-uc.a.run.app/
-        "https://mysyncapp-backend-xxxxx-uc.a.run.app/"
-    }
-=======
     private val BACKEND_BASE_URL: String
-        get() = com.example.points.utils.EnvironmentConfig.BACKEND_BASE_URL
->>>>>>> 3616147010ca71a00c51183b96f2dd12eda121ab
+        get() = EnvironmentConfig.BACKEND_BASE_URL.ifEmpty { 
+            // URL por defecto - REEMPLAZAR con la URL real de tu Cloud Run
+            "https://mysyncapp-backend-xxxxx-uc.a.run.app/"
+        }
     
     // Configuración de Json
     private val json = Json {
@@ -177,18 +171,11 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     private val geminiRetrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(GEMINI_BASE_URL)
-            .client(okHttpClient) // Agregar cliente OkHttp con logging
+            .client(okHttpClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
     }
     
-<<<<<<< HEAD
-    // Retrofit para Backend de Sincronización
-    private val syncRetrofit: Retrofit by lazy {
-        Retrofit.Builder()
-            .baseUrl(BACKEND_BASE_URL)
-            .client(okHttpClient)
-=======
     // Retrofit para Backend Spring Boot
     private val backendRetrofit: Retrofit by lazy {
         val baseUrl = BACKEND_BASE_URL
@@ -197,8 +184,7 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
         
         Retrofit.Builder()
             .baseUrl(baseUrl)
-            .client(backendOkHttpClient) // Usar cliente específico para backend
->>>>>>> 3616147010ca71a00c51183b96f2dd12eda121ab
+            .client(backendOkHttpClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
     }
@@ -211,14 +197,18 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
         geminiRetrofit.create(GeminiApiService::class.java)
     }
     
+    // SyncApiService para RemoteSyncRepository (sync.network)
+    private val syncNetworkApiService: SyncNetworkApiService by lazy {
+        Log.d("DefaultAppContainer", "✅ [RETROFIT] SyncNetworkApiService creado")
+        Log.d("DefaultAppContainer", "   📍 Endpoint: ${BACKEND_BASE_URL}api/v1/sync/")
+        backendRetrofit.create(SyncNetworkApiService::class.java)
+    }
+    
+    // SyncApiService para DefaultSyncRepository (network)
     private val syncApiService: SyncApiService by lazy {
-<<<<<<< HEAD
-        syncRetrofit.create(SyncApiService::class.java)
-=======
-        Log.d("DefaultAppContainer", "✅ [RETROFIT] SyncApiService creado")
+        Log.d("DefaultAppContainer", "✅ [RETROFIT] SyncApiService (network) creado")
         Log.d("DefaultAppContainer", "   📍 Endpoint: ${BACKEND_BASE_URL}api/v1/sync/")
         backendRetrofit.create(SyncApiService::class.java)
->>>>>>> 3616147010ca71a00c51183b96f2dd12eda121ab
     }
     
     override val weatherRepository: WeatherRepository by lazy {
@@ -264,18 +254,18 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
         }
     }
     
-<<<<<<< HEAD
     override val syncPreferences: SyncPreferences by lazy {
         SyncPreferences(context)
     }
     
     override val remoteSyncRepository: RemoteSyncRepository by lazy {
-        RemoteSyncRepository(syncApiService)
+        RemoteSyncRepository(syncNetworkApiService)
     }
     
     override val syncWorkManager: SyncWorkManager by lazy {
         SyncWorkManager(context)
-=======
+    }
+    
     override val syncRepository: SyncRepository? by lazy {
         val backendUrl = EnvironmentConfig.BACKEND_BASE_URL
         Log.d("DefaultAppContainer", "Inicializando SyncRepository...")
@@ -291,7 +281,6 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
                 context = context
             )
         }
->>>>>>> 3616147010ca71a00c51183b96f2dd12eda121ab
     }
 }
 

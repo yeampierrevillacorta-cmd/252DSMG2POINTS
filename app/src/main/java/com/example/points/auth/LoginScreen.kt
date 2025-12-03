@@ -1,15 +1,14 @@
 package com.example.points.auth
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,9 +16,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -34,6 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.points.R
 import com.example.points.ui.theme.PointsTheme
+import com.example.points.ui.components.*
 
 @Composable
 fun LoginScreen(
@@ -48,6 +48,12 @@ fun LoginScreen(
         viewModel.tryRestoreSession(onLoginSuccess)
     }
 
+    // Animación de entrada
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        visible = true
+    }
+    
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -57,69 +63,101 @@ fun LoginScreen(
             contentDescription = "Fondo de inicio de sesión",
             modifier = Modifier
                 .fillMaxSize()
-                .alpha(0.6f) // Reducir brillo
-                .blur(radius = 2.dp), // Difuminar ligeramente
+                .alpha(0.7f)
+                .blur(radius = 3.dp),
             contentScale = ContentScale.Crop
         )
         
-        // Overlay oscuro para mejorar legibilidad
+        // Gradiente overlay moderno
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
-                    Color.Black.copy(alpha = 0.4f)
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.6f),
+                            Color.Black.copy(alpha = 0.3f),
+                            Color.Black.copy(alpha = 0.7f)
+                        )
+                    )
                 )
         )
         
-        // Contenido principal
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+        // Fondo animado sutil
+        AnimatedBackground(
+            modifier = Modifier.fillMaxSize(),
+            particleCount = 15
+        )
+        
+        // Contenido principal con animación
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn(animationSpec = tween(800)) + 
+                    slideInVertically(
+                        initialOffsetY = { it / 2 },
+                        animationSpec = tween(800, easing = FastOutSlowInEasing)
+                    )
         ) {
-            // Logo/Texto de la marca POINTS con tipografía rústica
-            Text(
-                text = "POINTS",
-                style = MaterialTheme.typography.displayLarge.copy(
-                    fontSize = 48.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Serif, // Tipografía rústica
-                    letterSpacing = 4.sp
-                ),
-                color = Color.White,
-                textAlign = TextAlign.Center,
+            Column(
                 modifier = Modifier
-                    .graphicsLayer {
-                        shadowElevation = 8f
-                    }
-            )
-            
-            Text(
-                text = "Monitoreo Urbano Inteligente",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = 16.sp,
-                    fontFamily = FontFamily.Serif
-                ),
-                color = Color.White.copy(alpha = 0.9f),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-
-            Spacer(modifier = Modifier.height(48.dp))
-
-            // Tarjeta de login con fondo semitransparente
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White.copy(alpha = 0.95f)
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                    .fillMaxSize()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // Logo animado
+                val scale by animateFloatAsState(
+                    targetValue = if (visible) 1f else 0.8f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessLow
+                    ),
+                    label = "logo_scale"
+                )
+                
+                Column(
+                    modifier = Modifier.scale(scale),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "POINTS",
+                        style = MaterialTheme.typography.displayLarge.copy(
+                            fontSize = 56.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontFamily = FontFamily.Serif,
+                            letterSpacing = 6.sp
+                        ),
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .graphicsLayer {
+                                shadowElevation = 12f
+                            }
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Text(
+                        text = "Monitoreo Urbano Inteligente",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontSize = 16.sp,
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Medium,
+                            letterSpacing = 1.sp
+                        ),
+                        color = Color.White.copy(alpha = 0.95f),
+                        textAlign = TextAlign.Center
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(56.dp))
+
+                // Card moderna con glassmorphism
+                ModernCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -132,23 +170,24 @@ fun LoginScreen(
                         ),
                         color = MaterialTheme.colorScheme.primary
                     )
+                    
+                    Text(
+                        text = "Inicia sesión para continuar",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
 
-                    OutlinedTextField(
+                    ModernTextField(
                         value = uiState.email,
                         onValueChange = { viewModel.onEmailChange(it) },
-                        label = { Text("Correo electrónico") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                        ),
+                        label = "Correo electrónico",
+                        placeholder = "ejemplo@correo.com",
+                        leadingIcon = Icons.Default.Email,
                         isError = uiState.email.isNotBlank() && !android.util.Patterns.EMAIL_ADDRESS.matcher(uiState.email.trim()).matches(),
-                        supportingText = if (uiState.email.isNotBlank() && !android.util.Patterns.EMAIL_ADDRESS.matcher(uiState.email.trim()).matches()) {
-                            { Text("Formato de correo inválido", color = MaterialTheme.colorScheme.error) }
+                        errorMessage = if (uiState.email.isNotBlank() && !android.util.Patterns.EMAIL_ADDRESS.matcher(uiState.email.trim()).matches()) {
+                            "Formato de correo inválido"
                         } else null
                     )
 
@@ -156,37 +195,18 @@ fun LoginScreen(
 
                     var passwordVisible by remember { mutableStateOf(false) }
                     
-                    OutlinedTextField(
+                    ModernTextField(
                         value = uiState.password,
                         onValueChange = { viewModel.onPasswordChange(it) },
-                        label = { Text("Contraseña") },
+                        label = "Contraseña",
+                        placeholder = "Ingresa tu contraseña",
+                        leadingIcon = Icons.Default.Lock,
+                        trailingIcon = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                        onTrailingIconClick = { passwordVisible = !passwordVisible },
                         visualTransformation = if (passwordVisible) {
                             androidx.compose.ui.text.input.VisualTransformation.None
                         } else {
                             PasswordVisualTransformation()
-                        },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                        ),
-                        trailingIcon = {
-                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                Icon(
-                                    imageVector = if (passwordVisible) {
-                                        Icons.Default.VisibilityOff
-                                    } else {
-                                        Icons.Default.Visibility
-                                    },
-                                    contentDescription = if (passwordVisible) {
-                                        "Ocultar contraseña"
-                                    } else {
-                                        "Mostrar contraseña"
-                                    }
-                                )
-                            }
                         }
                     )
 
@@ -210,39 +230,28 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    if (uiState.isRestoringSession) {
+                    AnimatedVisibility(
+                        visible = uiState.isRestoringSession,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
                         LinearProgressIndicator(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 12.dp)
+                                .padding(bottom = 12.dp),
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
 
-                    Button(
+                    ModernButton(
+                        text = "Iniciar Sesión",
                         onClick = { viewModel.loginUser(onLoginSuccess) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        icon = Icons.Default.Login,
                         enabled = !uiState.isLoading && !uiState.isRestoringSession,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        if (uiState.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = Color.White
-                            )
-                        } else {
-                            Text(
-                                "Iniciar Sesión",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            )
-                        }
-                    }
+                        loading = uiState.isLoading,
+                        variant = ButtonVariant.Primary
+                    )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -252,27 +261,59 @@ fun LoginScreen(
                     ) {
                         TextButton(onClick = onRegisterClick) {
                             Text(
-                                "Registrar",
-                                color = MaterialTheme.colorScheme.primary
+                                "Crear cuenta",
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
                         TextButton(onClick = onForgotPasswordClick) {
                             Text(
                                 "¿Olvidaste tu contraseña?",
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.secondary,
+                                fontWeight = FontWeight.Medium
                             )
                         }
                     }
 
-                    uiState.errorMessage?.let { msg ->
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = msg,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall,
-                            textAlign = TextAlign.Center
-                        )
+                    AnimatedVisibility(
+                        visible = uiState.errorMessage != null,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        uiState.errorMessage?.let { msg ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 12.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.errorContainer
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.Error,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = msg,
+                                        color = MaterialTheme.colorScheme.onErrorContainer,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                            }
+                        }
                     }
+                }
                 }
             }
         }

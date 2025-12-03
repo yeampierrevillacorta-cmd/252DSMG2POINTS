@@ -4,14 +4,12 @@ import android.app.Application
 import com.example.points.data.AppContainer
 import com.example.points.data.DefaultAppContainer
 import com.example.points.utils.EnvironmentConfig
-<<<<<<< HEAD
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-=======
 import com.example.points.worker.SyncWorkManager
+import com.example.points.worker.NotificationHelper
 import com.google.firebase.auth.FirebaseAuth
->>>>>>> 3616147010ca71a00c51183b96f2dd12eda121ab
 
 /**
  * Clase Application personalizada para inicializar configuraciones globales
@@ -38,6 +36,9 @@ class PointsApplication : Application() {
         
         // Inicializar SyncWorkManager
         syncWorkManager = SyncWorkManager(this, container.preferencesManager)
+        
+        // Inicializar canal de notificaciones
+        NotificationHelper.createNotificationChannel(this)
         
         // Inicializar sincronización automática si está habilitada
         initializeAutoSync()

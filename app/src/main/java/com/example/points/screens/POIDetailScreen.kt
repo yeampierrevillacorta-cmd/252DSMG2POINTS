@@ -1,11 +1,14 @@
 package com.example.points.screens
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -14,6 +17,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -35,10 +41,15 @@ import com.example.points.constants.AppRoutes
 import com.example.points.viewmodel.PointOfInterestViewModel
 import com.example.points.components.PointsLoading
 import com.example.points.components.PointsFeedback
+import com.example.points.ui.components.ModernCard
+import com.example.points.ui.components.ModernButton
+import com.example.points.ui.components.ButtonVariant
+import com.example.points.ui.theme.*
 import com.example.points.utils.getCategoryIcon
 import com.example.points.ui.theme.PointsTheme
 import com.example.points.utils.EnvironmentConfig
 import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,94 +104,251 @@ fun POIDetailScreen(
         }
     }
     
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        // Top App Bar
-        TopAppBar(
-            title = { Text("Detalles") },
-            navigationIcon = {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.Filled.ArrowBack, contentDescription = "Volver")
-                }
-            },
-            actions = {
-                IconButton(onClick = { /* Compartir */ }) {
-                    Icon(Icons.Filled.Share, contentDescription = "Compartir")
-                }
-                // Botón de favoritos con estado dinámico (Room Database)
-                IconButton(onClick = { 
-                    poi?.let { viewModel.toggleFavorite(it) }
-                }) {
-                    Icon(
-                        imageVector = if (uiState.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                        contentDescription = if (uiState.isFavorite) "Eliminar de favoritos" else "Agregar a favoritos",
-                        tint = if (uiState.isFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Fondo con gradiente
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFFF0FFFF),
+                            MaterialTheme.colorScheme.background
+                        )
                     )
-                }
-            }
+                )
         )
         
-        when {
-            isLoading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Header moderno con gradiente
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                Color(0xFF4ECDC4),
+                                Color(0xFF44A08D)
+                            ),
+                            start = Offset.Zero,
+                            end = Offset.Infinite
+                        )
+                    )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    PointsLoading(message = "Cargando detalles...")
+                    Surface(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clickable { navController.popBackStack() },
+                        shape = CircleShape,
+                        color = Color.White.copy(0.2f)
+                    ) {
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = Color.White,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.width(16.dp))
+                    
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Detalles del Lugar",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Text(
+                            text = "Información completa",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White.copy(0.9f)
+                        )
+                    }
+                    
+                    // Botón compartir
+                    Surface(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clickable { /* Compartir */ },
+                        shape = CircleShape,
+                        color = Color.White.copy(0.2f)
+                    ) {
+                        Icon(
+                            Icons.Default.Share,
+                            contentDescription = "Compartir",
+                            tint = Color.White,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    // Botón de favoritos con estado dinámico
+                    Surface(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clickable { 
+                                poi?.let { viewModel.toggleFavorite(it) }
+                            },
+                        shape = CircleShape,
+                        color = if (uiState.isFavorite) Color.White else Color.White.copy(0.2f)
+                    ) {
+                        Icon(
+                            imageVector = if (uiState.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                            contentDescription = if (uiState.isFavorite) "Eliminar de favoritos" else "Agregar a favoritos",
+                            tint = if (uiState.isFavorite) Color(0xFFFF6B9D) else Color.White,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
                 }
             }
             
-            errorMessage != null -> {
-                PointsFeedback(
-                    message = errorMessage ?: "Error desconocido",
-                    type = "error",
-                    onRetry = { /* Retry logic */ }
-                )
-            }
-            
-            poi != null -> {
-                POIDetailContent(
-                    poi = poi!!, 
-                    navController = navController, 
-                    uiState = uiState,
-                    viewModel = viewModel
-                )
-            }
-            
-            else -> {
-                // POI no encontrado
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+            // Contenido principal
+            when {
+                isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            Icons.Filled.LocationOff,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "Punto de interés no encontrado",
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "El punto de interés que buscas no existe o ha sido eliminado.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                        Button(
-                            onClick = { navController.popBackStack() }
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(ButtonText.VOLVER.value)
+                            CircularProgressIndicator(
+                                color = PointsPrimary,
+                                modifier = Modifier.size(64.dp),
+                                strokeWidth = 6.dp
+                            )
+                            Spacer(modifier = Modifier.height(20.dp))
+                            Text(
+                                text = "Cargando detalles...",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                    }
+                }
+                
+                errorMessage != null -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        ModernCard(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(32.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(80.dp)
+                                        .background(PointsError.copy(0.15f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Default.Error,
+                                        contentDescription = null,
+                                        tint = PointsError,
+                                        modifier = Modifier.size(40.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(20.dp))
+                                Text(
+                                    text = "Error al cargar el lugar",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = errorMessage ?: "Error desconocido",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(0.7f),
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(24.dp))
+                                ModernButton(
+                                    text = "Volver",
+                                    onClick = { navController.popBackStack() },
+                                    variant = ButtonVariant.Primary,
+                                    icon = Icons.Default.ArrowBack,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                poi != null -> {
+                    POIDetailContent(
+                        poi = poi!!, 
+                        navController = navController, 
+                        uiState = uiState,
+                        viewModel = viewModel
+                    )
+                }
+                
+                else -> {
+                    // POI no encontrado
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        ModernCard(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                modifier = Modifier.padding(32.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(80.dp)
+                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(0.5f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Filled.LocationOff,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(40.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Text(
+                                    text = "Punto de interés no encontrado",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "El punto de interés que buscas no existe o ha sido eliminado.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                ModernButton(
+                                    text = "Volver",
+                                    onClick = { navController.popBackStack() },
+                                    variant = ButtonVariant.Primary,
+                                    icon = Icons.Default.ArrowBack,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
                         }
                     }
                 }

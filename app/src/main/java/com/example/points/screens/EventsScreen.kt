@@ -1,15 +1,14 @@
 package com.example.points.screens
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -19,10 +18,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.points.models.CategoriaEvento
@@ -38,8 +40,11 @@ import com.example.points.constants.ErrorMessage
 import com.example.points.constants.SectionTitle
 import com.example.points.constants.ContentDescription
 import com.example.points.constants.AppSpacing
-import com.example.points.ui.theme.ButtonSize
+import com.example.points.ui.theme.*
+import com.example.points.ui.components.*
 import com.example.points.utils.getCategoryIcon
+import com.example.points.components.OptimizedRoundedImage
+import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -50,12 +55,10 @@ fun EventsScreen(
     viewModel: EventViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var visible by remember { mutableStateOf(false) }
     
     // Estados locales
-    var showCreateEventDialog by remember { mutableStateOf(false) }
     var showFilters by remember { mutableStateOf(false) }
-    var selectedEvent by remember { mutableStateOf<Event?>(null) }
-    var showEventDetails by remember { mutableStateOf(false) }
     var showSuccessMessage by remember { mutableStateOf(false) }
     var snackbarHostState by remember { mutableStateOf(SnackbarHostState()) }
     
@@ -63,16 +66,16 @@ fun EventsScreen(
     LaunchedEffect(Unit) {
         viewModel.loadAllEvents()
         viewModel.loadUpcomingEvents()
-        viewModel.loadUserEvents() // Cargar eventos del usuario (incluyendo pendientes)
+        viewModel.loadUserEvents()
+        visible = true
     }
     
-    // Observar cambios en el estado del ViewModel para mostrar mensaje de éxito
+    // Observar cambios en el estado del ViewModel
     LaunchedEffect(uiState.eventCreated) {
         if (uiState.eventCreated) {
-            showCreateEventDialog = false
             viewModel.clearEventCreated()
             snackbarHostState.showSnackbar(
-                message = "Evento creado exitosamente. Está pendiente de aprobación.",
+                message = "✅ Evento creado exitosamente y publicado.",
                 duration = SnackbarDuration.Short
             )
         }
@@ -83,123 +86,142 @@ fun EventsScreen(
             SnackbarHost(hostState = snackbarHostState)
         }
     ) { paddingValues ->
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
             .padding(paddingValues)
     ) {
-        val iconButtonSize = 48.dp
-
-        // Header con título y botón de crear evento
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(
-                modifier = Modifier.weight(1f, fill = false)
-            ) {
-                Text(
-                    text = "🎉 Eventos",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = "Descubre eventos en tu localidad",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            
-            Spacer(modifier = Modifier.width(8.dp))
-            
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Botón de filtros
-                IconButton(
-                    onClick = { showFilters = !showFilters },
-                    modifier = Modifier
-                        .size(iconButtonSize)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(
-                            if (showFilters) MaterialTheme.colorScheme.primary 
-                            else MaterialTheme.colorScheme.surface,
-                        ),
-                    colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = if (showFilters) MaterialTheme.colorScheme.onPrimary
-                        else MaterialTheme.colorScheme.onSurface
-                    )
-                ) {
-                    Icon(
-                        imageVector = if (showFilters) Icons.Default.Close else Icons.Default.FilterList,
-                        contentDescription = ContentDescription.FILTROS.value
-                    )
-                }
-                
-                // Botón de crear evento
-                Button(
-                    onClick = { showCreateEventDialog = true },
-                    modifier = Modifier.heightIn(min = ButtonSize.height),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = ButtonText.CREAR.value,
-                        maxLines = 1
-                    )
-                }
-            }
-        }
+        // Fondo animado
+        AnimatedBackground()
         
-        // Panel de filtros con animación de expansión
-        AnimatedVisibility(
-            visible = showFilters,
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically()
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
-            Column {
-                Card(
+            // Header moderno con gradiente
+            AnimatedVisibility(
+                visible = visible,
+                enter = fadeIn() + slideInVertically(initialOffsetY = { -40 })
+            ) {
+                ModernCard(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    withGradient = true,
+                    gradientColors = listOf(
+                        PointsAccent.copy(alpha = 0.8f),
+                        Color(0xFFFF6B9D).copy(alpha = 0.8f)
+                    ),
+                    elevation = 8.dp
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = "🎉 Eventos",
+                                style = MaterialTheme.typography.headlineMedium.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 24.sp
+                                ),
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Descubre eventos increíbles",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White.copy(alpha = 0.9f)
+                            )
+                        }
+                        
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // Botón de filtros
+                            Surface(
+                                onClick = { showFilters = !showFilters },
+                                modifier = Modifier.size(48.dp),
+                                shape = CircleShape,
+                                color = if (showFilters) Color.White else Color.White.copy(alpha = 0.2f)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = if (showFilters) Icons.Default.Close else Icons.Default.FilterList,
+                                        contentDescription = null,
+                                        tint = if (showFilters) PointsAccent else Color.White
+                                    )
+                                }
+                            }
+                            
+                            // Botón de crear evento
+                            Surface(
+                                onClick = { navController.navigate(com.example.points.constants.AppRoutes.CREATE_EVENT) },
+                                modifier = Modifier.size(48.dp),
+                                shape = CircleShape,
+                                color = Color.White.copy(alpha = 0.2f)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = "Crear evento",
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Panel de filtros moderno
+            AnimatedVisibility(
+                visible = showFilters,
+                enter = fadeIn() + expandVertically() + slideInVertically(initialOffsetY = { -20 }),
+                exit = fadeOut() + shrinkVertically() + slideOutVertically(targetOffsetY = { -20 })
+            ) {
+                ModernCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 8.dp),
+                    elevation = 8.dp
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(20.dp)
                     ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.FilterList,
+                                contentDescription = null,
+                                tint = PointsAccent,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Filtros",
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
                         Text(
-                            text = SectionTitle.FILTROS.value,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            text = "Categoría",
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         
-                        Spacer(modifier = Modifier.height(AppSpacing.STANDARD))
-                        
-                        // Filtro de categoría
-                        Text(
-                            text = SectionTitle.CATEGORIA.value,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-                        
-                        Spacer(modifier = Modifier.height(AppSpacing.MEDIUM))
+                        Spacer(modifier = Modifier.height(12.dp))
                         
                         LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -207,263 +229,504 @@ fun EventsScreen(
                             item {
                                 FilterChip(
                                     onClick = { viewModel.clearSearch() },
-                                    label = { Text(ButtonText.TODAS.value) },
+                                    label = { 
+                                        Text(
+                                            "Todos",
+                                            fontWeight = if (uiState.selectedCategory == null) FontWeight.Bold else FontWeight.Normal
+                                        ) 
+                                    },
                                     selected = uiState.selectedCategory == null,
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Default.Clear,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
+                                    leadingIcon = if (uiState.selectedCategory == null) {
+                                        { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
+                                    } else null
                                 )
                             }
                             
-                            items(CategoriaEvento.values()) { category ->
+                            items(CategoriaEvento.values().toList()) { categoria ->
                                 FilterChip(
                                     onClick = { 
-                                        if (uiState.selectedCategory == category) {
+                                        if (uiState.selectedCategory == categoria) {
                                             viewModel.clearSearch()
                                         } else {
-                                            viewModel.loadEventsByCategory(category)
+                                            viewModel.loadEventsByCategory(categoria)
                                         }
                                     },
-                                    label = { Text(category.displayName) },
-                                    selected = uiState.selectedCategory == category,
-                                    leadingIcon = {
-                                        Icon(
-                                            getCategoryIcon(category.icon),
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
+                                    label = { 
+                                        Text(
+                                            categoria.displayName,
+                                            fontWeight = if (uiState.selectedCategory == categoria) FontWeight.Bold else FontWeight.Normal
+                                        ) 
+                                    },
+                                    selected = uiState.selectedCategory == categoria,
+                                    leadingIcon = if (uiState.selectedCategory == categoria) {
+                                        { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
+                                    } else null
                                 )
                             }
                         }
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        // Filtro de mostrar solo próximos
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                    }
+                }
+            }
+            
+            // Contenido principal
+            when {
+                uiState.isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Text(
-                                text = SectionTitle.SOLO_PROXIMOS.value,
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Medium
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(48.dp),
+                                color = PointsAccent,
+                                strokeWidth = 4.dp
                             )
-                            
-                            Switch(
-                                checked = uiState.showOnlyUpcoming,
-                                onCheckedChange = { viewModel.toggleShowOnlyUpcoming() }
+                            Text(
+                                text = "Cargando eventos...",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
                 }
                 
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-        }
-        
-        // Contenido principal
-        when {
-            uiState.isLoading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    PointsLoading(message = LoadingMessage.CARGANDO_EVENTOS.value)
-                }
-            }
-            
-            uiState.errorMessage != null -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    PointsFeedback(
-                        message = uiState.errorMessage ?: ErrorMessage.ERROR_DESCONOCIDO.value,
-                        type = "error",
-                        onRetry = { viewModel.loadAllEvents() }
-                    )
-                }
-            }
-            
-            else -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // Sección de eventos próximos
-                    if (uiState.upcomingEvents.isNotEmpty() && uiState.showOnlyUpcoming) {
-                        item {
-                            Text(
-                                text = SectionTitle.PROXIMOS_EVENTOS.value,
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onBackground
-                            )
-                        }
-                        
-                        items(uiState.upcomingEvents) { event ->
-                            EventCard(
-                                event = event,
-                                onClick = {
-                                    selectedEvent = event
-                                    showEventDetails = true
-                                },
-                                onRegisterClick = {
-                                    viewModel.registerToEvent(event.id)
-                                }
-                            )
-                        }
-                    }
-                    
-                    // Sección de mis eventos (incluyendo pendientes)
-                    if (uiState.userEvents.isNotEmpty()) {
-                        item {
-                            Text(
-                                text = "Mis Eventos",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onBackground
-                            )
-                        }
-                        
-                        items(uiState.userEvents) { event ->
-                            EventCard(
-                                event = event,
-                                onClick = {
-                                    selectedEvent = event
-                                    showEventDetails = true
-                                },
-                                onRegisterClick = {
-                                    if (event.estado == EstadoEvento.APROBADO) {
-                                        viewModel.registerToEvent(event.id)
-                                    }
-                                }
-                            )
-                        }
-                        
-                        item {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Divider()
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-                    }
-                    
-                    // Sección de todos los eventos aprobados
-                    if (!uiState.showOnlyUpcoming || uiState.upcomingEvents.isEmpty()) {
-                        item {
-                            Text(
-                                text = if (uiState.selectedCategory != null) {
-                                    "📋 ${uiState.selectedCategory!!.displayName}"
-                                } else {
-                                    SectionTitle.TODOS_LOS_EVENTOS.value
-                                },
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onBackground
-                            )
-                        }
-                        
-                        if (uiState.events.isEmpty()) {
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(32.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.EventBusy,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(64.dp),
-                                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                                        )
-                                        Spacer(modifier = Modifier.height(16.dp))
-                                        Text(
-                                            text = ErrorMessage.NO_HAY_EVENTOS.value,
-                                            style = MaterialTheme.typography.titleMedium,
-                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                                        )
-                                        Text(
-                                            text = "${ErrorMessage.INTENTA_CAMBIAR_FILTROS.value} evento",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                                        )
-                                    }
-                                }
-                            }
-                        } else {
-                            items(uiState.events) { event ->
-                                EventCard(
-                                    event = event,
-                                    onClick = {
-                                        selectedEvent = event
-                                        showEventDetails = true
-                                    },
-                                    onRegisterClick = {
-                                        viewModel.registerToEvent(event.id)
-                                    }
+                uiState.errorMessage != null -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        ModernCard(
+                            modifier = Modifier.padding(24.dp),
+                            elevation = 8.dp
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    Icons.Default.Error,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(64.dp),
+                                    tint = PointsError
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = uiState.errorMessage ?: "Error desconocido",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                ModernButton(
+                                    text = "Reintentar",
+                                    onClick = { viewModel.loadAllEvents() },
+                                    icon = Icons.Default.Refresh,
+                                    variant = ButtonVariant.Primary
                                 )
                             }
                         }
                     }
                 }
+                
+                uiState.events.isEmpty() -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.EventBusy,
+                                contentDescription = null,
+                                modifier = Modifier.size(80.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "No hay eventos disponibles",
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Intenta cambiar los filtros o crea un nuevo evento",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(24.dp))
+                            ModernButton(
+                                text = "Crear Evento",
+                                onClick = { navController.navigate(com.example.points.constants.AppRoutes.CREATE_EVENT) },
+                                icon = Icons.Default.Add,
+                                variant = ButtonVariant.Primary
+                            )
+                        }
+                    }
+                }
+                
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        item {
+                            AnimatedVisibility(
+                                visible = visible,
+                                enter = fadeIn(animationSpec = tween(400, 200))
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(CircleShape)
+                                            .background(PointsAccent.copy(alpha = 0.2f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Event,
+                                            contentDescription = null,
+                                            tint = PointsAccent,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column {
+                                        Text(
+                                            text = if (uiState.selectedCategory != null) {
+                                                uiState.selectedCategory!!.displayName
+                                            } else {
+                                                "Todos los eventos"
+                                            },
+                                            style = MaterialTheme.typography.titleLarge.copy(
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        )
+                                        Text(
+                                            text = "${uiState.events.size} eventos encontrados",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        
+                        itemsIndexed(uiState.events) { index, event ->
+                            var itemVisible by remember { mutableStateOf(false) }
+                            
+                            LaunchedEffect(visible) {
+                                if (visible) {
+                                    delay(300L + (index * 80L))
+                                    itemVisible = true
+                                }
+                            }
+                            
+                            AnimatedVisibility(
+                                visible = itemVisible,
+                                enter = fadeIn() + slideInHorizontally(
+                                    initialOffsetX = { 100 },
+                                    animationSpec = tween(400, easing = EaseOutCubic)
+                                ) + expandVertically()
+                            ) {
+                                ModernEventCard(
+                                    event = event,
+                                    onClick = {
+                                        navController.navigate("${com.example.points.constants.AppRoutes.EVENT_DETAIL}/${event.id}")
+                                    }
+                                )
+                            }
+                        }
+                        
+                        // Espaciado inferior
+                        item {
+                            Spacer(modifier = Modifier.height(80.dp))
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Botón flotante moderno
+        var fabScale by remember { mutableStateOf(0f) }
+        
+        LaunchedEffect(visible) {
+            if (visible) {
+                delay(800)
+                animate(
+                    initialValue = 0f,
+                    targetValue = 1f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMedium
+                    )
+                ) { value, _ ->
+                    fabScale = value
+                }
+            }
+        }
+        
+        FloatingActionButton(
+            onClick = { navController.navigate(com.example.points.constants.AppRoutes.CREATE_EVENT) },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(24.dp)
+                .scale(fabScale),
+            containerColor = PointsAccent,
+            contentColor = Color.White,
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = null
+                )
+                Text(
+                    text = "Crear Evento",
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
     }
-    
-    // Diálogo de detalles del evento
-    if (showEventDetails && selectedEvent != null) {
-        EventDetailsDialog(
-            event = selectedEvent!!,
-            onDismiss = {
-                showEventDetails = false
-                selectedEvent = null
-            },
-            onRegisterClick = {
-                viewModel.registerToEvent(selectedEvent!!.id)
-                showEventDetails = false
-                selectedEvent = null
-            },
-            onShareClick = {
-                // TODO: Implementar compartir evento
-            }
-        )
+}
+
+@Composable
+private fun getEventCategoryColor(categoria: CategoriaEvento): Color {
+    return when (categoria) {
+        CategoriaEvento.CULTURAL -> Color(0xFF4ECDC4)
+        CategoriaEvento.DEPORTIVO -> Color(0xFFFF6B6B)
+        CategoriaEvento.MUSICAL -> Color(0xFFE91E63)
+        CategoriaEvento.EDUCATIVO -> Color(0xFF95E1D3)
+        CategoriaEvento.GASTRONOMICO -> Color(0xFFFF9800)
+        CategoriaEvento.TECNOLOGICO -> Color(0xFF2196F3)
+        CategoriaEvento.ARTISTICO -> Color(0xFF9C27B0)
+        CategoriaEvento.COMERCIAL -> Color(0xFF4CAF50)
+        CategoriaEvento.RELIGIOSO -> Color(0xFFFFC107)
+        CategoriaEvento.COMUNITARIO -> Color(0xFF6BCF7F)
+        CategoriaEvento.FESTIVAL -> Color(0xFFFF5722)
+        CategoriaEvento.CONFERENCIA -> Color(0xFF3F51B5)
+        CategoriaEvento.TALLER -> Color(0xFF009688)
+        CategoriaEvento.EXPOSICION -> Color(0xFF795548)
+        CategoriaEvento.FERIA -> Color(0xFFCDDC39)
+        CategoriaEvento.OTRO -> Color(0xFF9B59B6)
     }
-    
-    // Diálogo de crear evento
-    if (showCreateEventDialog) {
-        CreateEventDialog(
-            onDismiss = { 
-                if (!uiState.isLoading) {
-                    showCreateEventDialog = false
-                    viewModel.clearError()
+}
+
+@Composable
+private fun ModernEventCard(
+    event: Event,
+    onClick: () -> Unit
+) {
+    ModernCard(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
+        elevation = 6.dp
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
+        ) {
+            // Imagen del evento o icono si no hay imagen
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                // Imagen del evento
+                if (event.imagenes.isNotEmpty() && event.imagenes.first().isNotEmpty()) {
+                    OptimizedRoundedImage(
+                        imageUrl = event.imagenes.first(),
+                        contentDescription = "Imagen del evento ${event.nombre}",
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                    )
+                } else {
+                    // Icono por defecto si no hay imagen
+                    Box(
+                        modifier = Modifier
+                            .size(100.dp)
+                            .background(
+                                getEventCategoryColor(event.categoria).copy(alpha = 0.15f),
+                                RoundedCornerShape(16.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = getCategoryIcon(event.categoria.displayName),
+                            contentDescription = null,
+                            tint = getEventCategoryColor(event.categoria),
+                            modifier = Modifier.size(48.dp)
+                        )
+                    }
                 }
-            },
-            onCreateEvent = { event ->
-                viewModel.createEvent(event)
-            },
-            isLoading = uiState.isLoading,
-            errorMessage = uiState.errorMessage,
-            onErrorShown = {
-                viewModel.clearError()
-            },
-            onEventCreated = {
-                // Cerrar el diálogo cuando el evento se crea exitosamente
-                showCreateEventDialog = false
+                
+                // Contenido del evento
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Text(
+                            text = event.nombre,
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold
+                            ),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                        
+                        Spacer(modifier = Modifier.width(8.dp))
+                        
+                        // Estado del evento
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = when (event.estado) {
+                                EstadoEvento.PENDIENTE -> FeedbackWarning.copy(alpha = 0.15f)
+                                EstadoEvento.EN_REVISION -> FeedbackInfo.copy(alpha = 0.15f)
+                                EstadoEvento.APROBADO -> PointsSuccess.copy(alpha = 0.15f)
+                                EstadoEvento.RECHAZADO -> PointsError.copy(alpha = 0.15f)
+                                EstadoEvento.CANCELADO -> Color.Gray.copy(alpha = 0.15f)
+                                EstadoEvento.FINALIZADO -> Color.DarkGray.copy(alpha = 0.15f)
+                            }
+                        ) {
+                            Text(
+                                text = when (event.estado) {
+                                    EstadoEvento.PENDIENTE -> "⏳"
+                                    EstadoEvento.EN_REVISION -> "👀"
+                                    EstadoEvento.APROBADO -> "✅"
+                                    EstadoEvento.RECHAZADO -> "❌"
+                                    EstadoEvento.CANCELADO -> "🚫"
+                                    EstadoEvento.FINALIZADO -> "🏁"
+                                },
+                                modifier = Modifier.padding(8.dp),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Text(
+                        text = event.descripcion,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
-        )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Categoría
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = getEventCategoryColor(event.categoria).copy(alpha = 0.15f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = getCategoryIcon(event.categoria.displayName),
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = getEventCategoryColor(event.categoria)
+                        )
+                        Text(
+                            text = event.categoria.displayName,
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                            color = getEventCategoryColor(event.categoria)
+                        )
+                    }
+                }
+                
+                // Fecha
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = PointsPrimary.copy(alpha = 0.15f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarToday,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = PointsPrimary
+                        )
+                        Text(
+                            text = SimpleDateFormat("dd MMM", Locale("es")).format(event.fechaInicio.toDate()),
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                            color = PointsPrimary
+                        )
+                    }
+                }
+            }
+            
+            // Ubicación
+            if (event.ubicacion.direccion.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = event.ubicacion.direccion,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
     }
+}
+
+// Mantener la función original para compatibilidad
+@Composable
+fun EventCard(
+    event: Event,
+    onClick: () -> Unit
+) {
+    ModernEventCard(event = event, onClick = onClick)
 }
 
 @Composable

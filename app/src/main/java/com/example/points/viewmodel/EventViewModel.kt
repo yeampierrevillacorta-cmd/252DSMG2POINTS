@@ -319,6 +319,10 @@ class EventViewModel : ViewModel() {
         }
     }
     
+    suspend fun getEventById(eventId: String): Result<Event?> {
+        return repository.getEventById(eventId)
+    }
+    
     fun clearError() {
         _uiState.value = _uiState.value.copy(errorMessage = null)
     }

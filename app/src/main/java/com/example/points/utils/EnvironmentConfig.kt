@@ -192,10 +192,6 @@ object EnvironmentConfig {
     
     // Backend URL para sincronización
     val BACKEND_BASE_URL: String
-        get() = getEnvValue("BACKEND_BASE_URL")
-    
-    // Backend Spring Boot
-    val BACKEND_BASE_URL: String
         get() = getEnvValue("BACKEND_BASE_URL").ifEmpty { "https://mysyncapp-backend-860998153214.us-central1.run.app/" }
     
     // Environment

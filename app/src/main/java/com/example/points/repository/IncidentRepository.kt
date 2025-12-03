@@ -367,6 +367,52 @@ class IncidentRepository {
         }
     }
     
+    // Obtener incidentes cercanos a una ubicación
+    fun getNearbyIncidents(lat: Double, lon: Double, radiusKm: Double = 10.0): Flow<List<Incident>> = callbackFlow {
+        val listener = incidentsCollection
+            .whereEqualTo("estado", EstadoIncidente.CONFIRMADO.name)
+            .orderBy("fechaHora", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("IncidentRepository", "Error getting nearby incidents", error)
+                    close(error)
+                    return@addSnapshotListener
+                }
+                
+                val allIncidents = snapshot?.documents?.mapNotNull { doc ->
+                    parseDocumentToIncident(doc)
+                } ?: emptyList()
+                
+                // Filtrar por distancia usando fórmula de Haversine
+                val nearbyIncidents = allIncidents.filter { incident ->
+                    val distance = calculateDistance(lat, lon, incident.ubicacion.lat, incident.ubicacion.lon)
+                    distance <= radiusKm
+                }.sortedBy { incident ->
+                    calculateDistance(lat, lon, incident.ubicacion.lat, incident.ubicacion.lon)
+                }
+                
+                trySend(nearbyIncidents)
+            }
+        
+        awaitClose { listener.remove() }
+    }
+    
+    // Calcular distancia entre dos puntos (fórmula de Haversine)
+    private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val earthRadius = 6371.0 // Radio de la Tierra en kilómetros
+        
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+        
+        val a = kotlin.math.sin(dLat / 2) * kotlin.math.sin(dLat / 2) +
+                kotlin.math.cos(Math.toRadians(lat1)) * kotlin.math.cos(Math.toRadians(lat2)) *
+                kotlin.math.sin(dLon / 2) * kotlin.math.sin(dLon / 2)
+        
+        val c = 2 * kotlin.math.atan2(kotlin.math.sqrt(a), kotlin.math.sqrt(1 - a))
+        
+        return earthRadius * c
+    }
+    
     // Función auxiliar para parsear un documento de Firebase a Incident
     private fun parseDocumentToIncident(doc: com.google.firebase.firestore.DocumentSnapshot): Incident? {
         return try {

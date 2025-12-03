@@ -1,58 +1,68 @@
 package com.example.points.ui.screens
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.points.data.model.DatosPorMes
-import com.github.tehras.charts.bar.BarChart
-import com.github.tehras.charts.bar.BarChartData
-import com.github.tehras.charts.bar.renderer.label.SimpleValueDrawer
+import com.example.points.ui.components.ModernCard
+import com.example.points.ui.theme.*
+import kotlinx.coroutines.delay
 
 @Composable
 fun DashboardMensualScreen(data: List<DatosPorMes>) {
-    Card(
+    ModernCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            .padding(horizontal = 0.dp, vertical = 8.dp),
+        elevation = 4.dp
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(20.dp)
         ) {
-            Text(
-                text = "Distribución por Mes",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 20.dp),
-                textAlign = TextAlign.Center
-            )
-            BarrasMensuales(data)
+            // Título mejorado
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "📅 Distribución Mensual",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                
+                Text(
+                    text = "${data.size} meses",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(0.6f)
+                )
+            }
+            
             Spacer(modifier = Modifier.height(20.dp))
+            
+            BarrasMensuales(data)
+            
+            Spacer(modifier = Modifier.height(20.dp))
+            
             LeyendaMensual()
         }
     }
@@ -70,163 +80,228 @@ fun BarrasMensuales(data: List<DatosPorMes>) {
         return
     }
     
-    val barras = ArrayList<BarChartData.Bar>()
-    
     // Colores para cada tipo de dato
-    val colorIncidentes = androidx.compose.ui.graphics.Color(0xFFF44336) // Rojo
-    val colorEventos = androidx.compose.ui.graphics.Color(0xFF2196F3) // Azul
-    val colorPOIs = androidx.compose.ui.graphics.Color(0xFF4CAF50) // Verde
+    val colorIncidentes = Color(0xFFFF6B6B) // Rojo vibrante
+    val colorEventos = Color(0xFF4ECDC4) // Turquesa
+    val colorPOIs = Color(0xFF6BCF7F) // Verde
     
-    // Crear barras agrupadas por mes
-    // Para cada mes, creamos 3 barras (incidentes, eventos, POIs)
-    data.forEach { datosMes ->
-        // Usar solo el mes sin año para simplificar
-        val mesCorto = datosMes.mes.split(" ").firstOrNull() ?: datosMes.mes
-        
-        // Barra de incidentes
-        barras.add(
-            BarChartData.Bar(
-                label = "I",
-                value = datosMes.incidentes.toFloat(),
-                color = colorIncidentes
+    val maxValue = data.maxOfOrNull { 
+        maxOf(it.incidentes, it.eventos, it.pois).toFloat()
+    } ?: 1f
+    
+    // Scroll horizontal para meses
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(24.dp)
+    ) {
+        data.forEach { datosMes ->
+            MonthBarGroup(
+                mes = datosMes.mes,
+                incidentes = datosMes.incidentes,
+                eventos = datosMes.eventos,
+                pois = datosMes.pois,
+                maxValue = maxValue,
+                colorIncidentes = colorIncidentes,
+                colorEventos = colorEventos,
+                colorPOIs = colorPOIs
             )
-        )
-        // Barra de eventos
-        barras.add(
-            BarChartData.Bar(
-                label = "E",
-                value = datosMes.eventos.toFloat(),
-                color = colorEventos
-            )
-        )
-        // Barra de POIs
-        barras.add(
-            BarChartData.Bar(
-                label = "P",
-                value = datosMes.pois.toFloat(),
-                color = colorPOIs
-            )
-        )
+        }
+    }
+}
+
+@Composable
+fun MonthBarGroup(
+    mes: String,
+    incidentes: Int,
+    eventos: Int,
+    pois: Int,
+    maxValue: Float,
+    colorIncidentes: Color,
+    colorEventos: Color,
+    colorPOIs: Color
+) {
+    var animationPlayed by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(Unit) {
+        delay(100)
+        animationPlayed = true
     }
     
-    // Crear un diseño horizontal scrollable para evitar sobreposición
     Column(
-        modifier = Modifier.fillMaxWidth()
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.width(100.dp)
     ) {
-        // Mostrar los meses como etiquetas separadas
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 8.dp),
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp)
-        ) {
-            data.forEach { datosMes ->
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .width(80.dp)
-                        .padding(horizontal = 2.dp)
-                ) {
-                    Text(
-                        text = datosMes.mes,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Medium,
-                        textAlign = TextAlign.Center,
-                        maxLines = 2,
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    )
-                }
-            }
-        }
-        
-        // Gráfico de barras
-        BarChart(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 140.dp)
-                .height(500.dp),
-            labelDrawer = SimpleValueDrawer(
-                drawLocation = SimpleValueDrawer.DrawLocation.XAxis
-            ),
-            barChartData = BarChartData(
-                bars = barras
-            )
+        // Mes
+        Text(
+            text = mes.split(" ").firstOrNull() ?: mes,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurface
         )
         
-        // Etiquetas de los meses debajo del gráfico
+        // Barras verticales agrupadas
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 8.dp),
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp)
+                .height(180.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.Bottom
         ) {
-            data.forEachIndexed { index, datosMes ->
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .width(80.dp)
-                        .padding(horizontal = 2.dp)
-                ) {
-                    Text(
-                        text = datosMes.mes,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center,
-                        maxLines = 2,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "I:${datosMes.incidentes} E:${datosMes.eventos} P:${datosMes.pois}",
-                        fontSize = 9.sp,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            // Barra de incidentes
+            AnimatedBar(
+                value = incidentes.toFloat(),
+                maxValue = maxValue,
+                color = colorIncidentes,
+                animationPlayed = animationPlayed,
+                modifier = Modifier.weight(1f)
+            )
+            
+            Spacer(modifier = Modifier.width(4.dp))
+            
+            // Barra de eventos
+            AnimatedBar(
+                value = eventos.toFloat(),
+                maxValue = maxValue,
+                color = colorEventos,
+                animationPlayed = animationPlayed,
+                modifier = Modifier.weight(1f)
+            )
+            
+            Spacer(modifier = Modifier.width(4.dp))
+            
+            // Barra de POIs
+            AnimatedBar(
+                value = pois.toFloat(),
+                maxValue = maxValue,
+                color = colorPOIs,
+                animationPlayed = animationPlayed,
+                modifier = Modifier.weight(1f)
+            )
         }
+        
+        // Valores
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Text(
+                text = "$incidentes",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = colorIncidentes,
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "$eventos",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = colorEventos,
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "$pois",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = colorPOIs,
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+fun AnimatedBar(
+    value: Float,
+    maxValue: Float,
+    color: Color,
+    animationPlayed: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val animatedHeight = remember { Animatable(0f) }
+    
+    LaunchedEffect(animationPlayed) {
+        if (animationPlayed) {
+            animatedHeight.animateTo(
+                targetValue = value / maxValue,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessLow
+                )
+            )
+        }
+    }
+    
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Bottom
+    ) {
+        Box(
+            modifier = Modifier
+                .width(22.dp)
+                .fillMaxHeight(animatedHeight.value.coerceIn(0f, 1f))
+                .shadow(4.dp, RoundedCornerShape(6.dp))
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            color,
+                            color.copy(alpha = 0.7f)
+                        )
+                    ),
+                    shape = RoundedCornerShape(6.dp)
+                )
+        )
     }
 }
 
 @Composable
 fun LeyendaMensual() {
-    val colorIncidentes = androidx.compose.ui.graphics.Color(0xFFF44336)
-    val colorEventos = androidx.compose.ui.graphics.Color(0xFF2196F3)
-    val colorPOIs = androidx.compose.ui.graphics.Color(0xFF4CAF50)
+    val colorIncidentes = Color(0xFFFF6B6B)
+    val colorEventos = Color(0xFF4ECDC4)
+    val colorPOIs = Color(0xFF6BCF7F)
     
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp),
-        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
+            .background(
+                MaterialTheme.colorScheme.surfaceVariant.copy(0.3f),
+                RoundedCornerShape(12.dp)
+            )
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        ItemLeyendaMensual("Incidentes", colorIncidentes)
-        Spacer(modifier = Modifier.width(24.dp))
-        ItemLeyendaMensual("Eventos", colorEventos)
-        Spacer(modifier = Modifier.width(24.dp))
-        ItemLeyendaMensual("POIs", colorPOIs)
+        ItemLeyendaMensual("🚨 Incidentes", colorIncidentes)
+        ItemLeyendaMensual("🎉 Eventos", colorEventos)
+        ItemLeyendaMensual("📍 POIs", colorPOIs)
     }
 }
 
 @Composable
-fun ItemLeyendaMensual(texto: String, color: androidx.compose.ui.graphics.Color) {
+fun ItemLeyendaMensual(texto: String, color: Color) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(vertical = 4.dp)
     ) {
         Box(
             modifier = Modifier
-                .size(20.dp)
+                .size(16.dp)
+                .shadow(4.dp, CircleShape)
                 .background(color, shape = CircleShape)
         )
-        Spacer(modifier = Modifier.width(10.dp))
+        Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = texto,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface
         )
     }

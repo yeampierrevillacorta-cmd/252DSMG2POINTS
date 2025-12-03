@@ -20,12 +20,9 @@ interface AppContainer {
     val localSearchRepository: LocalSearchRepository
     val localFileStorage: LocalFileStorage
     val geminiRepository: GeminiRepository?
-<<<<<<< HEAD
     val syncPreferences: SyncPreferences
     val remoteSyncRepository: RemoteSyncRepository
     val syncWorkManager: SyncWorkManager
-=======
     val syncRepository: SyncRepository?
->>>>>>> 3616147010ca71a00c51183b96f2dd12eda121ab
 }
 

@@ -1,30 +1,29 @@
 package com.example.points.screens
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -45,9 +44,13 @@ import com.example.points.constants.ContentDescription
 import com.example.points.constants.AppSpacing
 import com.example.points.constants.AppRoutes
 import com.example.points.constants.IconSize
-import com.example.points.ui.theme.ButtonSize
+import com.example.points.ui.theme.*
+import com.example.points.ui.components.ModernCard
+import com.example.points.ui.components.ModernButton
+import com.example.points.ui.components.ButtonVariant
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,122 +78,155 @@ fun IncidentsScreen(
         viewModel.loadAllIncidents()
     }
     
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+    Box(
+        modifier = Modifier.fillMaxSize()
     ) {
-        val iconButtonSize = 48.dp
-
-        // Header con título y botones
-        Row(
+        // Fondo moderno con gradiente sutil
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(
-                modifier = Modifier.weight(1f, fill = false)
-            ) {
-                Text(
-                    text = "🚨 Incidentes",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFFFFF8F0),
+                            Color(0xFFFFFBF5),
+                            MaterialTheme.colorScheme.background
+                        )
+                    )
                 )
-                Text(
-                    text = "Descubre el incidente de tu localidad",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            
-            Spacer(modifier = Modifier.width(8.dp))
-            
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Botón de filtros
-                IconButton(
-                    onClick = { showFilters = !showFilters },
-                    modifier = Modifier
-                        .size(iconButtonSize)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(
-                            if (showFilters) MaterialTheme.colorScheme.primary 
-                            else MaterialTheme.colorScheme.surface,
-                        ),
-                    colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = if (showFilters) MaterialTheme.colorScheme.onPrimary
-                        else MaterialTheme.colorScheme.onSurface
-                    )
-                ) {
-                    Icon(
-                        imageVector = if (showFilters) Icons.Default.Close else Icons.Default.FilterList,
-                        contentDescription = ContentDescription.FILTROS.value
-                    )
-                }
-                
-                // Botón de crear incidente
-                Button(
-                    onClick = { navController.navigate(AppRoutes.INCIDENTS_MAP) },
-                    modifier = Modifier.heightIn(min = ButtonSize.height),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = null,
-                        modifier = Modifier.size(IconSize.STANDARD)
-                    )
-                    Spacer(modifier = Modifier.width(AppSpacing.SMALL))
-                    Text(
-                        text = ButtonText.CREAR.value,
-                        maxLines = 1
-                    )
-                }
-            }
-        }
+        )
         
-        // Panel de filtros con animación de expansión
-        AnimatedVisibility(
-            visible = showFilters,
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically()
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
-            Column {
-                Card(
+            // Header moderno con gradiente
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                Color(0xFFFF6B6B),
+                                Color(0xFFFF8E53)
+                            ),
+                            start = Offset.Zero,
+                            end = Offset.Infinite
+                        )
+                    )
+                    .padding(horizontal = 20.dp, vertical = 24.dp)
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Título con animación
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(Color.White.copy(0.2f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "🚨",
+                                        style = MaterialTheme.typography.headlineSmall
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "Incidentes",
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Reporta y descubre incidentes en tu localidad",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White.copy(alpha = 0.9f)
+                            )
+                        }
+                        
+                        // Botón de filtros moderno
+                        Surface(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .shadow(if (showFilters) 8.dp else 4.dp, CircleShape)
+                                .clickable { showFilters = !showFilters },
+                            shape = CircleShape,
+                            color = if (showFilters) Color.White else Color.White.copy(0.3f)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = if (showFilters) Icons.Default.Close else Icons.Default.FilterList,
+                                    contentDescription = ContentDescription.FILTROS.value,
+                                    tint = if (showFilters) Color(0xFFFF6B6B) else Color.White,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Botón de crear incidente moderno
+                    ModernButton(
+                        text = "Reportar Incidente",
+                        onClick = { navController.navigate(AppRoutes.INCIDENTS_MAP) },
+                        variant = ButtonVariant.Secondary,
+                        icon = Icons.Default.Add,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+            
+            // Panel de filtros con animación de expansión
+            AnimatedVisibility(
+                visible = showFilters,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                ModernCard(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(20.dp)
                     ) {
-                        Text(
-                            text = SectionTitle.FILTROS.value,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.FilterList,
+                                contentDescription = null,
+                                tint = PointsPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Text(
+                                text = "Filtros",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                         
-                        Spacer(modifier = Modifier.height(AppSpacing.STANDARD))
+                        Spacer(modifier = Modifier.height(16.dp))
                         
                         // Filtro de tipo de incidente
                         Text(
-                            text = SectionTitle.TIPO_INCIDENTE.value,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Medium
+                            text = "Tipo de Incidente",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface.copy(0.8f)
                         )
                         
-                        Spacer(modifier = Modifier.height(AppSpacing.MEDIUM))
+                        Spacer(modifier = Modifier.height(12.dp))
                         
                         LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -198,15 +234,20 @@ fun IncidentsScreen(
                             item {
                                 FilterChip(
                                     onClick = { viewModel.filterByType(null) },
-                                    label = { Text(ButtonText.TODOS.value) },
+                                    label = { 
+                                        Text(
+                                            "Todos",
+                                            fontWeight = if (safeUiState.selectedType == null) FontWeight.Bold else FontWeight.Normal
+                                        ) 
+                                    },
                                     selected = safeUiState.selectedType == null,
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Default.Clear,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
+                                    leadingIcon = if (safeUiState.selectedType == null) {
+                                        { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
+                                    } else null,
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = PointsPrimary,
+                                        selectedLabelColor = Color.White
+                                    )
                                 )
                             }
                             
@@ -219,7 +260,12 @@ fun IncidentsScreen(
                                             viewModel.filterByType(tipo)
                                         }
                                     },
-                                    label = { Text(tipo.displayName) },
+                                    label = { 
+                                        Text(
+                                            tipo.displayName,
+                                            fontWeight = if (safeUiState.selectedType == tipo) FontWeight.Bold else FontWeight.Normal
+                                        ) 
+                                    },
                                     selected = safeUiState.selectedType == tipo,
                                     leadingIcon = {
                                         Icon(
@@ -227,21 +273,26 @@ fun IncidentsScreen(
                                             contentDescription = null,
                                             modifier = Modifier.size(18.dp)
                                         )
-                                    }
+                                    },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = getIncidentTypeColor(tipo.displayName),
+                                        selectedLabelColor = Color.White
+                                    )
                                 )
                             }
                         }
                         
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(20.dp))
                         
                         // Filtro de estado
                         Text(
-                            text = SectionTitle.ESTADO.value,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Medium
+                            text = "Estado",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface.copy(0.8f)
                         )
                         
-                        Spacer(modifier = Modifier.height(AppSpacing.MEDIUM))
+                        Spacer(modifier = Modifier.height(12.dp))
                         
                         LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -249,15 +300,20 @@ fun IncidentsScreen(
                             item {
                                 FilterChip(
                                     onClick = { viewModel.filterByStatus(null) },
-                                    label = { Text(ButtonText.TODOS.value) },
+                                    label = { 
+                                        Text(
+                                            "Todos",
+                                            fontWeight = if (safeUiState.selectedStatus == null) FontWeight.Bold else FontWeight.Normal
+                                        ) 
+                                    },
                                     selected = safeUiState.selectedStatus == null,
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Default.Clear,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
+                                    leadingIcon = if (safeUiState.selectedStatus == null) {
+                                        { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
+                                    } else null,
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = PointsPrimary,
+                                        selectedLabelColor = Color.White
+                                    )
                                 )
                             }
                             
@@ -270,7 +326,12 @@ fun IncidentsScreen(
                                             viewModel.filterByStatus(estado)
                                         }
                                     },
-                                    label = { Text(estado.displayName) },
+                                    label = { 
+                                        Text(
+                                            estado.displayName,
+                                            fontWeight = if (safeUiState.selectedStatus == estado) FontWeight.Bold else FontWeight.Normal
+                                        ) 
+                                    },
                                     selected = safeUiState.selectedStatus == estado,
                                     leadingIcon = {
                                         Icon(
@@ -278,16 +339,17 @@ fun IncidentsScreen(
                                             contentDescription = null,
                                             modifier = Modifier.size(18.dp)
                                         )
-                                    }
+                                    },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = getIncidentStatusColorModern(estado),
+                                        selectedLabelColor = Color.White
+                                    )
                                 )
                             }
                         }
                     }
                 }
-                
-                Spacer(modifier = Modifier.height(16.dp))
             }
-        }
         
         // Contenido principal
         when {
@@ -317,71 +379,123 @@ fun IncidentsScreen(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Sección de todos los incidentes
-                        item {
-                            Text(
-                                text = if (safeUiState.selectedType != null || safeUiState.selectedStatus != null) {
-                                    SectionTitle.INCIDENTES_FILTRADOS.value
-                                } else {
-                                    SectionTitle.TODOS_LOS_INCIDENTES.value
-                                },
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onBackground
+                    // Sección de estadísticas
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            StatsCard(
+                                title = "Total",
+                                value = safeUiState.filteredIncidents.size.toString(),
+                                icon = Icons.Default.Warning,
+                                color = Color(0xFFFF6B6B),
+                                modifier = Modifier.weight(1f)
+                            )
+                            StatsCard(
+                                title = "Activos",
+                                value = safeUiState.filteredIncidents.count { 
+                                    it.estado != EstadoIncidente.RESUELTO && it.estado != EstadoIncidente.RECHAZADO 
+                                }.toString(),
+                                icon = Icons.Default.Schedule,
+                                color = Color(0xFFFFBE0B),
+                                modifier = Modifier.weight(1f)
+                            )
+                            StatsCard(
+                                title = "Resueltos",
+                                value = safeUiState.filteredIncidents.count { 
+                                    it.estado == EstadoIncidente.RESUELTO 
+                                }.toString(),
+                                icon = Icons.Default.CheckCircle,
+                                color = Color(0xFF6BCF7F),
+                                modifier = Modifier.weight(1f)
                             )
                         }
+                    }
+                    
+                    // Título de sección
+                    item {
+                        Text(
+                            text = if (safeUiState.selectedType != null || safeUiState.selectedStatus != null) {
+                                "Incidentes Filtrados"
+                            } else {
+                                "Todos los Incidentes"
+                            },
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
                     
                     if (safeUiState.filteredIncidents.isEmpty()) {
                         item {
-                            Box(
+                            ModernCard(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(32.dp),
-                                contentAlignment = Alignment.Center
+                                    .padding(vertical = 32.dp)
                             ) {
                                 Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(48.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.ReportProblem,
+                                        imageVector = Icons.Default.Search,
                                         contentDescription = null,
-                                        modifier = Modifier.size(64.dp),
-                                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                        modifier = Modifier.size(72.dp),
+                                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
                                     )
                                     Spacer(modifier = Modifier.height(16.dp))
                                     Text(
-                                        text = ErrorMessage.NO_HAY_INCIDENTES.value,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                        text = "No hay incidentes",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                        textAlign = TextAlign.Center
                                     )
+                                    Spacer(modifier = Modifier.height(8.dp))
                                     Text(
-                                        text = "${ErrorMessage.INTENTA_CAMBIAR_FILTROS.value} incidente",
+                                        text = "Prueba ajustando los filtros o reporta uno nuevo",
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                        textAlign = TextAlign.Center
                                     )
                                 }
                             }
                         }
                     } else {
-                        items(safeUiState.filteredIncidents) { incident ->
-                            IncidentCard(
-                                incident = incident,
-                                onClick = {
-                                    selectedIncident = incident
-                                    showIncidentDetails = true
-                                },
-                                onViewDetailsClick = {
-                                    navController.navigate("${AppRoutes.INCIDENT_DETAIL}/${incident.id}")
-                                }
-                            )
+                        itemsIndexed(safeUiState.filteredIncidents) { index, incident ->
+                            var visible by remember { mutableStateOf(false) }
+                            LaunchedEffect(Unit) {
+                                delay(index * 50L)
+                                visible = true
+                            }
+                            
+                            AnimatedVisibility(
+                                visible = visible,
+                                enter = fadeIn() + slideInVertically { it / 2 }
+                            ) {
+                                ModernIncidentCard(
+                                    incident = incident,
+                                    onClick = {
+                                        selectedIncident = incident
+                                        showIncidentDetails = true
+                                    },
+                                    onViewDetailsClick = {
+                                        navController.navigate("${AppRoutes.INCIDENT_DETAIL}/${incident.id}")
+                                    }
+                                )
+                            }
                         }
                     }
                 }
             }
         }
     }
+}
     
     // Diálogo de detalles del incidente
     if (showIncidentDetails && selectedIncident != null) {
@@ -400,214 +514,285 @@ fun IncidentsScreen(
     }
 }
 
+// Componente de tarjeta de estadísticas
 @Composable
-fun IncidentCard(
+private fun StatsCard(
+    title: String,
+    value: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    ModernCard(
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(color.copy(alpha = 0.15f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            var animatedValue by remember { mutableStateOf(0) }
+            val targetValue = value.toIntOrNull() ?: 0
+            LaunchedEffect(targetValue) {
+                val step = if (targetValue > 0) targetValue / 20 else 0
+                repeat(20) {
+                    animatedValue = (animatedValue + step).coerceAtMost(targetValue)
+                    delay(30)
+                }
+                animatedValue = targetValue
+            }
+            
+            Text(
+                text = animatedValue.toString(),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = color
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(0.6f)
+            )
+        }
+    }
+}
+
+@Composable
+fun ModernIncidentCard(
     incident: Incident,
     onClick: () -> Unit,
     onViewDetailsClick: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     
-    Card(
+    ModernCard(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            .clickable { expanded = !expanded }
     ) {
         Column(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(20.dp)
                 .animateContentSize(
                     animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
                         stiffness = Spring.StiffnessMedium
                     )
                 )
         ) {
-            // Header del incidente - siempre visible
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
-                // Imagen del incidente en círculo
-                OptimizedRoundedImage(
-                    imageUrl = incident.fotoUrl,
-                    size = 56.dp,
-                    contentDescription = "Foto del incidente",
-                    placeholder = getIncidentTypeIconFromString(incident.tipo),
-                    modifier = Modifier
-                )
+                // Foto del incidente o icono si no hay foto
+                if (incident.fotoUrl != null && incident.fotoUrl!!.isNotEmpty()) {
+                    OptimizedRoundedImage(
+                        imageUrl = incident.fotoUrl!!,
+                        contentDescription = "Foto del incidente",
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .background(
+                                getIncidentTypeColor(incident.tipo).copy(0.15f),
+                                RoundedCornerShape(16.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = getIncidentTypeIconFromString(incident.tipo),
+                            contentDescription = null,
+                            tint = getIncidentTypeColor(incident.tipo),
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
+                }
                 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(16.dp))
                 
-                // Título y fecha
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
+                    // Tipo de incidente
                     Text(
                         text = incident.tipo,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     
                     Spacer(modifier = Modifier.height(4.dp))
                     
+                    // Fecha y hora
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Default.Schedule,
                             contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = formatIncidentDateTime(incident),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        )
-                    }
-                }
-                
-                // Chevron de expandir/colapsar
-                IconButton(
-                    onClick = { expanded = !expanded },
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Icon(
-                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (expanded) ContentDescription.COLAPSAR.value else ContentDescription.EXPANDIR.value,
-                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-            }
-            
-            // Contenido expandido - solo se muestra cuando expanded = true
-            if (expanded) {
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Estado del incidente
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = getIncidentTypeIconFromString(incident.tipo),
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = getIncidentTypeColor(incident.tipo)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = incident.tipo,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     }
                     
-                    // Estado del incidente
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = when (incident.estado) {
-                                EstadoIncidente.CONFIRMADO -> MaterialTheme.colorScheme.primaryContainer
-                                EstadoIncidente.PENDIENTE -> MaterialTheme.colorScheme.secondaryContainer
-                                EstadoIncidente.EN_REVISION -> MaterialTheme.colorScheme.tertiaryContainer
-                                EstadoIncidente.RESUELTO -> MaterialTheme.colorScheme.surfaceVariant
-                                EstadoIncidente.RECHAZADO -> MaterialTheme.colorScheme.errorContainer
-                            }
-                        )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // Estado con badge moderno
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = getIncidentStatusColorModern(incident.estado).copy(alpha = 0.15f)
                     ) {
-                        Text(
-                            text = getIncidentReviewStatusText(incident),
-                            style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            color = when (incident.estado) {
-                                EstadoIncidente.CONFIRMADO -> MaterialTheme.colorScheme.onPrimaryContainer
-                                EstadoIncidente.PENDIENTE -> MaterialTheme.colorScheme.onSecondaryContainer
-                                EstadoIncidente.EN_REVISION -> MaterialTheme.colorScheme.onTertiaryContainer
-                                EstadoIncidente.RESUELTO -> MaterialTheme.colorScheme.onSurfaceVariant
-                                EstadoIncidente.RECHAZADO -> MaterialTheme.colorScheme.onErrorContainer
-                            }
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                // Descripción
-                if (incident.descripcion.isNotEmpty()) {
-                    Text(
-                        text = incident.descripcion,
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
-                
-                // Información del incidente
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Ubicación
-                    if (incident.ubicacion.direccion.isNotEmpty()) {
                         Row(
-                            verticalAlignment = Alignment.CenterVertically
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.LocationOn,
+                                imageVector = getIncidentStatusIcon(incident.estado),
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                modifier = Modifier.size(14.dp),
+                                tint = getIncidentStatusColorModern(incident.estado)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = incident.ubicacion.direccion,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                text = incident.estado.displayName,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = getIncidentStatusColorModern(incident.estado)
                             )
                         }
                     }
                 }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Botones de acción
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = onClick,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(ButtonText.VER_DETALLES.value)
+            }
+            
+            // Contenido expandido
+            AnimatedVisibility(visible = expanded) {
+                Column {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Divider decorativo
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(MaterialTheme.colorScheme.onSurface.copy(0.1f))
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Descripción
+                    if (incident.descripcion.isNotEmpty()) {
+                        Text(
+                            text = incident.descripcion,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                            lineHeight = MaterialTheme.typography.bodyLarge.lineHeight
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
                     
-                    Button(
-                        onClick = onViewDetailsClick,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
+                    // Ubicación
+                    if (incident.ubicacion.direccion.isNotEmpty()) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(0.5f),
+                                    RoundedCornerShape(12.dp)
+                                )
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(PointsPrimary.copy(0.15f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.LocationOn,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = PointsPrimary
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = incident.ubicacion.direccion,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                    
+                    // Botones de acción
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text(ButtonText.IR_A_MAPA.value)
+                        OutlinedButton(
+                            onClick = onClick,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Ver Detalles")
+                        }
+                        
+                        Button(
+                            onClick = onViewDetailsClick,
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = PointsPrimary
+                            )
+                        ) {
+                            Icon(Icons.Default.Map, null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Ver en Mapa")
+                        }
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+fun IncidentCard(
+    incident: Incident,
+    onClick: () -> Unit,
+    onViewDetailsClick: () -> Unit
+) {
+    ModernIncidentCard(
+        incident = incident,
+        onClick = onClick,
+        onViewDetailsClick = onViewDetailsClick
+    )
 }
 
 // Función auxiliar para formatear fecha y hora del incidente
@@ -670,14 +855,25 @@ private fun getIncidentReviewStatusText(incident: Incident): String {
 
 // Función para obtener el color del tipo de incidente
 private fun getIncidentTypeColor(tipo: String): Color {
-    return when (tipo) {
-        "Inseguridad" -> Color(0xFFFF9800)
-        "Accidente de Tránsito" -> Color(0xFFF44336)
-        "Incendio" -> Color(0xFFFF5722)
-        "Inundación" -> Color(0xFF2196F3)
-        "Vandalismo" -> Color(0xFF9C27B0)
-        "Servicio Público" -> Color(0xFF607D8B)
-        else -> Color(0xFF6200EE) // Color primario por defecto
+    return when (tipo.lowercase()) {
+        "inseguridad" -> Color(0xFFFF9800)
+        "accidente de tránsito", "accidente de transito" -> Color(0xFFF44336)
+        "incendio" -> Color(0xFFFF5722)
+        "inundación", "inundacion" -> Color(0xFF2196F3)
+        "vandalismo" -> Color(0xFF9C27B0)
+        "servicio público", "servicio publico" -> Color(0xFF607D8B)
+        else -> Color(0xFFFF6B6B)
+    }
+}
+
+// Función para obtener el color del estado del incidente (moderna)
+private fun getIncidentStatusColorModern(estado: EstadoIncidente): Color {
+    return when (estado) {
+        EstadoIncidente.PENDIENTE -> Color(0xFFFFBE0B)
+        EstadoIncidente.EN_REVISION -> Color(0xFF4ECDC4)
+        EstadoIncidente.CONFIRMADO -> Color(0xFF6BCF7F)
+        EstadoIncidente.RESUELTO -> Color(0xFF38A3A5)
+        EstadoIncidente.RECHAZADO -> Color(0xFFFF6B6B)
     }
 }
 

@@ -55,7 +55,6 @@ import com.example.points.auth.RegisterScreen
 import com.example.points.components.MainLayout
 import com.example.points.components.AdminMainLayout
 import com.example.points.profile.ProfileScreen
-import com.example.points.profile.EditProfileScreen
 import com.example.points.screens.AdminHomeScreen
 import com.example.points.screens.ClientHomeScreen
 import com.example.points.screens.HomeScreen
@@ -202,6 +201,32 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                     navController.navigate(AppRoutes.SELECT_LOCATION_MAP)
                 },
                 viewModel = viewModel
+            )
+        }
+        
+        composable(AppRoutes.CREATE_EVENT) {
+            val eventViewModel: com.example.points.viewmodel.EventViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+            
+            com.example.points.screens.CreateEventScreen(
+                navController = navController,
+                onCreateEvent = { event ->
+                    eventViewModel.createEvent(event)
+                    navController.popBackStack()
+                },
+                isLoading = eventViewModel.uiState.value.isLoading,
+                errorMessage = eventViewModel.uiState.value.errorMessage,
+                onErrorShown = { eventViewModel.clearError() },
+                onEventCreated = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable("${AppRoutes.EVENT_DETAIL}/{eventId}") { backStackEntry ->
+            val eventId = backStackEntry.arguments?.getString("eventId") ?: ""
+            com.example.points.screens.EventDetailScreen(
+                navController = navController,
+                eventId = eventId
             )
         }
         
@@ -381,7 +406,7 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 navController = navController,
                 onProfileClick = { navController.navigate(AppRoutes.PROFILE) }
             ) {
-                AlertsScreen()
+                com.example.points.screens.AlertsScreen(navController = navController)
             }
         }
 
@@ -411,12 +436,17 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 navController = navController,
                 onProfileClick = { navController.navigate(AppRoutes.PROFILE) }
             ) {
-                EditProfileScreen(
-                    onBack = {
-                        navController.popBackStack()
+                ProfileScreen(
+                    onSignOut = {
+                        navController.navigate(AppRoutes.LOGIN) {
+                            popUpTo(0) { inclusive = true }
+                        }
                     },
-                    onSaveSuccess = {
-                        navController.popBackStack()
+                    onEditProfile = {
+                        // TODO: Implementar edición de perfil
+                    },
+                    onSyncSettingsClick = {
+                        navController.navigate(AppRoutes.SYNC_SETTINGS)
                     }
                 )
             }
@@ -508,12 +538,17 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 navController = navController,
                 onProfileClick = { navController.navigate(AppRoutes.ADMIN_PROFILE) }
             ) {
-                EditProfileScreen(
-                    onBack = {
-                        navController.popBackStack()
+                ProfileScreen(
+                    onSignOut = {
+                        navController.navigate(AppRoutes.LOGIN) {
+                            popUpTo(0) { inclusive = true }
+                        }
                     },
-                    onSaveSuccess = {
-                        navController.popBackStack()
+                    onEditProfile = {
+                        // TODO: Implementar edición de perfil
+                    },
+                    onSyncSettingsClick = {
+                        navController.navigate(AppRoutes.SYNC_SETTINGS)
                     }
                 )
             }
@@ -551,36 +586,10 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
     }
 }
 
-// Pantalla temporal (placeholder)
+// Pantalla de alertas implementada
 @Composable
 fun AlertsScreen() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            Icons.Default.NotificationImportant,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "🔔 Alertas y Notificaciones",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Próximamente: Notificaciones en tiempo real sobre eventos cercanos",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-            textAlign = TextAlign.Center
-        )
-    }
+    com.example.points.screens.AlertsScreen()
 }
 
 // Pantallas de administración

@@ -4,6 +4,9 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.GetContent
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -18,6 +21,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -30,16 +35,17 @@ import com.google.firebase.auth.FirebaseAuth
 import com.example.points.repository.UserRepository
 import com.example.points.models.TipoUsuario
 import androidx.compose.runtime.LaunchedEffect
+import com.example.points.ui.components.ModernCard
+import com.example.points.ui.components.ModernButton
+import com.example.points.ui.components.ButtonVariant
+import com.example.points.ui.theme.PointsPrimary
+import com.example.points.ui.theme.PointsSecondary
 
 @Composable
 fun ProfileScreen(
     onSignOut: () -> Unit,
     onEditProfile: () -> Unit,
-<<<<<<< HEAD
     onSyncSettingsClick: (() -> Unit)? = null,
-=======
-    onSyncSettings: () -> Unit = {},
->>>>>>> 3616147010ca71a00c51183b96f2dd12eda121ab
     viewModel: ProfileViewModel = viewModel()
 ) {
     val profile by viewModel.profile.collectAsState()
@@ -50,326 +56,376 @@ fun ProfileScreen(
     var showSignOutDialog by remember { mutableStateOf(false) }
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+    // Animaciones
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        visible = true
+    }
+    
+    val avatarScale by animateFloatAsState(
+        targetValue = if (visible) 1f else 0.8f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        )
+    )
+
+    Box(
+        modifier = Modifier.fillMaxSize()
     ) {
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Card principal con información del perfil
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Avatar del usuario
-                Box(
-                    modifier = Modifier
-                        .size(120.dp)
-                        .background(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                            CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    OptimizedRoundedImage(
-                        imageUrl = profile.photoUrl,
-                        contentDescription = "Foto de perfil",
-                        size = 120.dp
+        // Fondo con gradiente sutil
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            PointsPrimary.copy(alpha = 0.05f),
+                            MaterialTheme.colorScheme.surface,
+                            PointsSecondary.copy(alpha = 0.05f)
+                        )
                     )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Nombre del usuario
-                Text(
-                    text = profile.name.ifEmpty { "Usuario" },
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center
                 )
+        )
 
-                Spacer(modifier = Modifier.height(8.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
 
-                // Email del usuario (desde Firestore)
-                Text(
-                    text = profile.email.ifEmpty { "No disponible" },
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Información adicional
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            // Card principal con información del perfil
+            AnimatedVisibility(
+                visible = visible,
+                enter = fadeIn() + slideInVertically(initialOffsetY = { -40 })
+            ) {
+                ModernCard(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // Avatar del usuario con borde y sombra
+                        Box(
+                            modifier = Modifier
+                                .size(150.dp)
+                                .scale(avatarScale)
+                                .background(
+                                    Brush.radialGradient(
+                                        colors = listOf(
+                                            PointsPrimary.copy(alpha = 0.25f),
+                                            PointsSecondary.copy(alpha = 0.15f)
+                                        )
+                                    ),
+                                    CircleShape
+                                )
+                                .padding(5.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            OptimizedRoundedImage(
+                                imageUrl = profile.photoUrl,
+                                contentDescription = "Foto de perfil",
+                                size = 140.dp
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        // Nombre del usuario
+                        Text(
+                            text = profile.name.ifEmpty { "Usuario" },
+                            style = MaterialTheme.typography.headlineLarge.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 28.sp
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Email del usuario (desde Firestore)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Email,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = profile.email.ifEmpty { "No disponible" },
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // Información adicional
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(16.dp)
                     ) {
-                        // Teléfono
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.Phone,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = "Teléfono",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Text(
-                                text = profile.phone.ifEmpty { "No especificado" },
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Estado de notificaciones
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.Notifications,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = "Notificaciones",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = if (profile.notificaciones) {
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                                } else {
-                                    MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
-                                }
+                            // Teléfono
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = if (profile.notificaciones) "Activadas" else "Desactivadas",
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        fontWeight = FontWeight.Bold
-                                    ),
-                                    color = if (profile.notificaciones) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        MaterialTheme.colorScheme.outline
-                                    },
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Tipo de usuario
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.AdminPanelSettings,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = "Tipo de cuenta",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = when (profile.tipo) {
-                                    TipoUsuario.ADMINISTRADOR -> MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
-                                    TipoUsuario.MODERADOR -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
-                                    else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(
+                                            PointsPrimary.copy(alpha = 0.15f),
+                                            CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Default.Phone,
+                                        contentDescription = null,
+                                        tint = PointsPrimary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
                                 }
-                            ) {
-                                Text(
-                                    text = profile.tipo.displayName,
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        fontWeight = FontWeight.Bold
-                                    ),
-                                    color = when (profile.tipo) {
-                                        TipoUsuario.ADMINISTRADOR -> MaterialTheme.colorScheme.error
-                                        TipoUsuario.MODERADOR -> MaterialTheme.colorScheme.secondary
-                                        else -> MaterialTheme.colorScheme.primary
-                                    },
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Teléfono",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                    Text(
+                                        text = profile.phone.ifEmpty { "No especificado" },
+                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                            fontWeight = FontWeight.SemiBold
+                                        ),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
                             }
-                        }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Estado de notificaciones
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(
+                                            if (profile.notificaciones) 
+                                                PointsSecondary.copy(alpha = 0.15f)
+                                            else 
+                                                MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
+                                            CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        if (profile.notificaciones) Icons.Default.NotificationsActive else Icons.Default.NotificationsOff,
+                                        contentDescription = null,
+                                        tint = if (profile.notificaciones) PointsSecondary else MaterialTheme.colorScheme.outline,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Notificaciones",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                    Text(
+                                        text = if (profile.notificaciones) "Activadas ✓" else "Desactivadas",
+                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                            fontWeight = FontWeight.SemiBold
+                                        ),
+                                        color = if (profile.notificaciones) {
+                                            PointsSecondary
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                        }
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Tipo de usuario
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(
+                                            when (profile.tipo) {
+                                                TipoUsuario.ADMINISTRADOR -> MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
+                                                TipoUsuario.MODERADOR -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f)
+                                                else -> PointsPrimary.copy(alpha = 0.15f)
+                                            },
+                                            CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        when (profile.tipo) {
+                                            TipoUsuario.ADMINISTRADOR -> Icons.Default.AdminPanelSettings
+                                            TipoUsuario.MODERADOR -> Icons.Default.Shield
+                                            else -> Icons.Default.Person
+                                        },
+                                        contentDescription = null,
+                                        tint = when (profile.tipo) {
+                                            TipoUsuario.ADMINISTRADOR -> MaterialTheme.colorScheme.error
+                                            TipoUsuario.MODERADOR -> MaterialTheme.colorScheme.tertiary
+                                            else -> PointsPrimary
+                                        },
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Tipo de cuenta",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = profile.tipo.displayName,
+                                            style = MaterialTheme.typography.bodyLarge.copy(
+                                                fontWeight = FontWeight.Bold
+                                            ),
+                                            color = when (profile.tipo) {
+                                                TipoUsuario.ADMINISTRADOR -> MaterialTheme.colorScheme.error
+                                                TipoUsuario.MODERADOR -> MaterialTheme.colorScheme.tertiary
+                                                else -> PointsPrimary
+                                            }
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        when (profile.tipo) {
+                                            TipoUsuario.ADMINISTRADOR -> Text("👑", fontSize = 16.sp)
+                                            TipoUsuario.MODERADOR -> Text("⭐", fontSize = 16.sp)
+                                            else -> {}
+                                        }
+                                    }
+                                }
+                            }
                     }
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Botón para configuración de sincronización
-        OutlinedButton(
-            onClick = onSyncSettings,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.outlinedButtonColors(
-                contentColor = MaterialTheme.colorScheme.primary
-            ),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Icon(
-                Icons.Default.Sync,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Sincronización",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Medium
-                )
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Botón para modificar datos
-        Button(
-            onClick = onEditProfile,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            ),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Icon(
-                Icons.Default.Edit,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Modificar Datos",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold
-                )
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // Botón de sincronización
-        if (onSyncSettingsClick != null) {
-            OutlinedButton(
-                onClick = onSyncSettingsClick,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(
-                    Icons.Default.Sync,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Sincronización",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Medium
-                    )
-                )
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-        }
 
-        // Botón de cerrar sesión
-        OutlinedButton(
-            onClick = {
-                showSignOutDialog = true
-            },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.outlinedButtonColors(
-                contentColor = MaterialTheme.colorScheme.error
-            ),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Icon(
-                Icons.Default.ExitToApp,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Cerrar Sesión",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Medium
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Botones de acción con animaciones
+            AnimatedVisibility(
+                visible = visible,
+                enter = fadeIn(animationSpec = tween(300, delayMillis = 200)) + 
+                        slideInVertically(initialOffsetY = { 40 })
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                // Botón para modificar datos
+                ModernButton(
+                    text = "Modificar Datos",
+                    onClick = onEditProfile,
+                    variant = ButtonVariant.Primary,
+                    icon = Icons.Default.Edit,
+                    modifier = Modifier.fillMaxWidth()
                 )
-            )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Botón de sincronización
+                if (onSyncSettingsClick != null) {
+                    ModernButton(
+                        text = "Sincronización",
+                        onClick = onSyncSettingsClick,
+                        variant = ButtonVariant.Secondary,
+                        icon = Icons.Default.Sync,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
+                // Botón de cerrar sesión
+                OutlinedButton(
+                    onClick = {
+                        showSignOutDialog = true
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
+                ) {
+                    Icon(
+                        Icons.Default.ExitToApp,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Cerrar Sesión",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Medium
+                        )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Botón de eliminar cuenta
+                TextButton(
+                    onClick = {
+                        showDeleteAccountDialog = true
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Eliminar Cuenta",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+                }
+            }
         }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Botón de eliminar cuenta
-        TextButton(
-            onClick = {
-                showDeleteAccountDialog = true
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(
-                Icons.Default.Delete,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-                tint = MaterialTheme.colorScheme.error
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Eliminar Cuenta",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error
-            )
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
     }
     
     // Diálogo de confirmación para cerrar sesión
