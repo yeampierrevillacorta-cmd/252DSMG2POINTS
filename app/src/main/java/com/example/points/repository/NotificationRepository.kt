@@ -17,10 +17,10 @@ class NotificationRepository {
     private val notificationsCollection = firestore.collection("notificaciones")
     
     // Obtener todas las notificaciones del usuario
+    // Nota: Ordenamos en memoria para evitar requerir índice compuesto en Firestore
     fun getUserNotifications(userId: String): Flow<List<Notification>> = callbackFlow {
         val listener = notificationsCollection
             .whereEqualTo("usuarioId", userId)
-            .orderBy("fechaHora", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     Log.e("NotificationRepository", "Error getting notifications", error)
@@ -48,7 +48,7 @@ class NotificationRepository {
                         Log.e("NotificationRepository", "Error parsing notification ${doc.id}", e)
                         null
                     }
-                } ?: emptyList()
+                }?.sortedByDescending { it.fechaHora } ?: emptyList() // Ordenar en memoria
                 
                 trySend(notifications)
             }
@@ -117,13 +117,18 @@ class NotificationRepository {
     // Obtener conteo de notificaciones no leídas
     suspend fun getUnreadCount(userId: String): Result<Int> {
         return try {
+            // Obtener todas las notificaciones del usuario y filtrar en memoria
+            // para evitar requerir índice compuesto
             val snapshot = notificationsCollection
                 .whereEqualTo("usuarioId", userId)
-                .whereEqualTo("leida", false)
                 .get()
                 .await()
             
-            Result.success(snapshot.size())
+            val unreadCount = snapshot.documents.count { doc ->
+                (doc.data?.get("leida") as? Boolean) == false
+            }
+            
+            Result.success(unreadCount)
         } catch (e: Exception) {
             Log.e("NotificationRepository", "Error getting unread count", e)
             Result.failure(e)

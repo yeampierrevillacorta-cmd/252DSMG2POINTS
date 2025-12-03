@@ -205,7 +205,19 @@ fun AlertsScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = "Activa las alertas para recibir notificaciones sobre incidentes y eventos cercanos",
+                                text = if (uiState.alertsEnabled) {
+                                    "Las alertas están activas. Recibirás notificaciones cuando haya incidentes o eventos cercanos."
+                                } else {
+                                    "⚠️ IMPORTANTE: Para recibir notificaciones, debes activar las alertas.\n\n" +
+                                    "1. Toca el botón de configuración (⚙️) arriba\n" +
+                                    "2. Configura el radio de búsqueda\n" +
+                                    "3. Selecciona los tipos de alertas (Incidentes/Eventos)\n" +
+                                    "4. Presiona 'Activar'\n\n" +
+                                    "También necesitas:\n" +
+                                    "• Permisos de ubicación concedidos\n" +
+                                    "• Permisos de notificaciones (Android 13+)\n" +
+                                    "• GPS activado"
+                                },
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center,

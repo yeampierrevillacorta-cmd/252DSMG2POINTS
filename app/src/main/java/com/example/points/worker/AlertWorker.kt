@@ -62,14 +62,35 @@ class AlertWorker(
             val enableIncidents = inputData.getBoolean(KEY_ENABLE_INCIDENTS, true)
             val enableEvents = inputData.getBoolean(KEY_ENABLE_EVENTS, true)
             
+            // Verificar permisos de ubicación
+            if (!locationService.checkPermissions()) {
+                Log.w(TAG, "Permisos de ubicación no concedidos")
+                return Result.success()
+            }
+            
+            // Verificar si la ubicación está habilitada
+            if (!locationService.isLocationEnabled()) {
+                Log.w(TAG, "Ubicación deshabilitada en el dispositivo")
+                return Result.success()
+            }
+            
             // Obtener ubicación actual del usuario
-            val locationState = locationService.getCurrentLocation()
-            val userLat = locationState.latitude
-            val userLon = locationState.longitude
+            // Intentar obtener ubicación actualizada, si falla usar última conocida
+            var locationState = locationService.getCurrentLocation()
+            var userLat = locationState.latitude
+            var userLon = locationState.longitude
+            
+            // Si no hay ubicación, intentar forzar actualización
+            if (userLat == null || userLon == null) {
+                Log.d(TAG, "No hay ubicación actual, intentando obtener última ubicación conocida...")
+                locationState = locationService.forceLocationUpdate()
+                userLat = locationState.latitude
+                userLon = locationState.longitude
+            }
             
             if (userLat == null || userLon == null) {
-                Log.w(TAG, "No se pudo obtener ubicación del usuario")
-                return Result.retry() // Reintentar más tarde
+                Log.w(TAG, "No se pudo obtener ubicación del usuario. Verifica que los permisos de ubicación estén concedidos y que el GPS esté activado.")
+                return Result.success() // No reintentar si no hay ubicación (evita loops infinitos)
             }
             
             Log.d(TAG, "Ubicación del usuario: lat=$userLat, lon=$userLon, radio=${radiusKm}km")

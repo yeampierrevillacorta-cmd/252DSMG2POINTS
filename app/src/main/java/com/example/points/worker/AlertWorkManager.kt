@@ -47,10 +47,9 @@ class AlertWorkManager(private val context: Context) {
     ) {
         val actualInterval = intervalMinutes.coerceAtLeast(MIN_PERIODIC_INTERVAL_MINUTES)
         
-        // Restricciones: requiere conexión a internet y batería no baja
+        // Restricciones: requiere conexión a internet (batería no baja removida para mejor funcionamiento)
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
-            .setRequiresBatteryNotLow(true)
             .build()
         
         val workRequest = PeriodicWorkRequestBuilder<AlertWorker>(
