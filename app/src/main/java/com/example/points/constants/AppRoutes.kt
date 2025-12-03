@@ -30,6 +30,9 @@ object AppRoutes {
     const val INCIDENTS_MAP = "incidents_map"
     const val CREATE_INCIDENT = "create_incident"
     const val ADMIN_INCIDENTS = "admin_incidents"
+    const val INCIDENT_HEATMAP = "incident_heatmap"
+    const val SELECT_LOCATION_MAP = "select_location_map"
+    const val SELECT_LOCATION_MAP_POI = "select_location_map_poi"
     
     // Puntos de Interés
     const val POI_LIST = "poi_list"
@@ -41,5 +44,8 @@ object AppRoutes {
     
     // Administración
     const val ADMIN_USER_MANAGEMENT = "admin_user_management"
+    
+    // Sincronización
+    const val SYNC_SETTINGS = "sync_settings"
 }
 

@@ -1,8 +1,11 @@
 package com.example.points.screens
 
 import android.Manifest
+import android.content.ContentValues
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -15,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
@@ -32,24 +36,97 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.points.components.OptimizedAsyncImage
 import com.example.points.models.TipoIncidente
 import com.example.points.models.Ubicacion
+import com.example.points.utils.GeocodingUtils
 import com.example.points.viewmodel.IncidentViewModel
 import com.google.android.gms.location.LocationServices
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateIncidentScreen(
     onBackClick: () -> Unit,
     onIncidentCreated: () -> Unit,
+    onSelectLocationClick: () -> Unit = {},
     viewModel: IncidentViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val createState by viewModel.createIncidentState.collectAsState()
     
-    // Launcher para seleccionar imagen
+    // Log para debugging - observar cambios en la ubicación
+    LaunchedEffect(createState.ubicacion) {
+        android.util.Log.d("CreateIncidentScreen", "Ubicación en el estado: lat=${createState.ubicacion.lat}, lon=${createState.ubicacion.lon}, direccion=${createState.ubicacion.direccion}")
+    }
+    
+    // URI temporal para la foto tomada
+    var photoUri by remember { mutableStateOf<Uri?>(null) }
+    
+    // Launcher para seleccionar imagen de galería
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         viewModel.updateSelectedImage(uri)
+    }
+    
+    // Launcher para tomar foto con la cámara
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && photoUri != null) {
+            viewModel.updateSelectedImage(photoUri)
+        }
+    }
+    
+    // Launcher para permisos de cámara
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // Crear URI para la foto
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "incident_photo_${System.currentTimeMillis()}.jpg")
+                put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, "Pictures/Points")
+                }
+            }
+            
+            val uri = context.contentResolver.insert(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                contentValues
+            )
+            photoUri = uri
+            uri?.let { cameraLauncher.launch(it) }
+        }
+    }
+    
+    // Función para tomar foto
+    fun takePhoto() {
+        val hasCameraPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+        
+        if (hasCameraPermission) {
+            // Crear URI para la foto
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "incident_photo_${System.currentTimeMillis()}.jpg")
+                put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, "Pictures/Points")
+                }
+            }
+            
+            val uri = context.contentResolver.insert(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                contentValues
+            )
+            photoUri = uri
+            uri?.let { cameraLauncher.launch(it) }
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
     }
     
     // Launcher para permisos de ubicación
@@ -200,34 +277,53 @@ fun CreateIncidentScreen(
                         
                         Spacer(modifier = Modifier.height(8.dp))
                         
-                        OutlinedButton(
-                            onClick = {
-                                val hasLocationPermission = ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.ACCESS_FINE_LOCATION
-                                ) == PackageManager.PERMISSION_GRANTED
-                                
-                                if (hasLocationPermission) {
-                                    getCurrentLocation(context) { ubicacion ->
-                                        viewModel.updateLocation(ubicacion)
-                                    }
-                                } else {
-                                    locationPermissionLauncher.launch(
-                                        arrayOf(
-                                            Manifest.permission.ACCESS_FINE_LOCATION,
-                                            Manifest.permission.ACCESS_COARSE_LOCATION
-                                        )
-                                    )
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth()
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.MyLocation,
-                                contentDescription = null
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Usar mi ubicación actual")
+                            // Botón para seleccionar en el mapa
+                            OutlinedButton(
+                                onClick = onSelectLocationClick,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.LocationOn,
+                                    contentDescription = null
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Seleccionar en mapa")
+                            }
+                            
+                            // Botón para usar ubicación actual
+                            OutlinedButton(
+                                onClick = {
+                                    val hasLocationPermission = ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.ACCESS_FINE_LOCATION
+                                    ) == PackageManager.PERMISSION_GRANTED
+                                    
+                                    if (hasLocationPermission) {
+                                        getCurrentLocation(context) { ubicacion ->
+                                            viewModel.updateLocation(ubicacion)
+                                        }
+                                    } else {
+                                        locationPermissionLauncher.launch(
+                                            arrayOf(
+                                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                                Manifest.permission.ACCESS_COARSE_LOCATION
+                                            )
+                                        )
+                                    }
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.MyLocation,
+                                    contentDescription = null
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Mi ubicación")
+                            }
                         }
                     }
                 }
@@ -263,19 +359,35 @@ fun CreateIncidentScreen(
                             Spacer(modifier = Modifier.height(8.dp))
                         }
                         
-                        OutlinedButton(
-                            onClick = { imagePickerLauncher.launch("image/*") },
-                            modifier = Modifier.fillMaxWidth()
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.CameraAlt,
-                                contentDescription = null
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                if (createState.selectedImageUri != null) "Cambiar imagen" 
-                                else "Seleccionar imagen"
-                            )
+                            // Botón para tomar foto
+                            OutlinedButton(
+                                onClick = { takePhoto() },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CameraAlt,
+                                    contentDescription = null
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Tomar foto")
+                            }
+                            
+                            // Botón para seleccionar de galería
+                            OutlinedButton(
+                                onClick = { imagePickerLauncher.launch("image/*") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Image,
+                                    contentDescription = null
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Galería")
+                            }
                         }
                     }
                 }
@@ -334,12 +446,23 @@ private fun getCurrentLocation(
     try {
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
             location?.let {
-                val ubicacion = Ubicacion(
-                    lat = it.latitude,
-                    lon = it.longitude,
-                    direccion = "Ubicación actual"
-                )
-                onLocationReceived(ubicacion)
+                // Obtener dirección mediante geocodificación inversa
+                CoroutineScope(Dispatchers.IO).launch {
+                    val address = GeocodingUtils.getAddressFromCoordinates(
+                        context,
+                        it.latitude,
+                        it.longitude
+                    ) ?: "Ubicación actual"
+                    
+                    val ubicacion = Ubicacion(
+                        lat = it.latitude,
+                        lon = it.longitude,
+                        direccion = address
+                    )
+                    CoroutineScope(Dispatchers.Main).launch {
+                        onLocationReceived(ubicacion)
+                    }
+                }
             }
         }
     } catch (e: SecurityException) {

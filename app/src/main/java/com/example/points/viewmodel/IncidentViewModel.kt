@@ -151,7 +151,9 @@ class IncidentViewModel(
     }
     
     fun updateLocation(ubicacion: Ubicacion) {
+        Log.d("IncidentViewModel", "Actualizando ubicación: lat=${ubicacion.lat}, lon=${ubicacion.lon}, direccion=${ubicacion.direccion}")
         _createIncidentState.value = _createIncidentState.value.copy(ubicacion = ubicacion)
+        Log.d("IncidentViewModel", "Ubicación actualizada en el estado. Estado actual: lat=${_createIncidentState.value.ubicacion.lat}, lon=${_createIncidentState.value.ubicacion.lon}")
     }
     
     fun updateSelectedImage(uri: Uri?) {
@@ -162,6 +164,11 @@ class IncidentViewModel(
         viewModelScope.launch {
             val currentState = _createIncidentState.value
             
+            Log.d("IncidentViewModel", "createIncident llamado - Estado actual:")
+            Log.d("IncidentViewModel", "  - Descripción: '${currentState.descripcion}'")
+            Log.d("IncidentViewModel", "  - Ubicación: lat=${currentState.ubicacion.lat}, lon=${currentState.ubicacion.lon}")
+            Log.d("IncidentViewModel", "  - Dirección: '${currentState.ubicacion.direccion}'")
+            
             if (currentState.descripcion.isBlank()) {
                 _createIncidentState.value = currentState.copy(
                     errorMessage = "La descripción es requerida"
@@ -170,8 +177,9 @@ class IncidentViewModel(
             }
             
             if (currentState.ubicacion.lat == 0.0 && currentState.ubicacion.lon == 0.0) {
+                Log.e("IncidentViewModel", "ERROR: La ubicación no está configurada (lat=0.0, lon=0.0)")
                 _createIncidentState.value = currentState.copy(
-                    errorMessage = "La ubicación es requerida"
+                    errorMessage = "La ubicación es requerida. Por favor selecciona una ubicación en el mapa."
                 )
                 return@launch
             }

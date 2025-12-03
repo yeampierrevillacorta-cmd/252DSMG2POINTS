@@ -438,18 +438,6 @@ class PointOfInterestViewModel(
     // Generar descripción para un POI usando Gemini
     fun generateDescription(nombre: String, categoria: CategoriaPOI, direccion: String? = null) {
         viewModelScope.launch {
-            // Verificar si Gemini está disponible
-            val geminiRepo = geminiRepository
-            if (geminiRepo == null) {
-                Log.w("POIViewModel", "GeminiRepository no disponible - API key no configurada")
-                _uiState.value = _uiState.value.copy(
-                    isGeneratingDescription = false,
-                    descriptionGenerationError = "La generación de descripciones no está disponible. Configura GEMINI_API_KEY en el archivo .env",
-                    generatedDescription = null
-                )
-                return@launch
-            }
-            
             // Validar que el nombre y la categoría no estén vacíos
             if (nombre.isBlank()) {
                 _uiState.value = _uiState.value.copy(
@@ -466,36 +454,87 @@ class PointOfInterestViewModel(
                 generatedDescription = null
             )
             
-            try {
-                val result = geminiRepo.generatePOIDescription(nombre, categoria, direccion)
-                
-                result.fold(
-                    onSuccess = { description ->
-                        Log.d("POIViewModel", "Descripción generada exitosamente: $description")
-                        _uiState.value = _uiState.value.copy(
-                            isGeneratingDescription = false,
-                            generatedDescription = description,
-                            descriptionGenerationError = null
-                        )
-                    },
-                    onFailure = { exception ->
-                        Log.e("POIViewModel", "Error al generar descripción", exception)
-                        _uiState.value = _uiState.value.copy(
-                            isGeneratingDescription = false,
-                            generatedDescription = null,
-                            descriptionGenerationError = exception.message ?: "Error al generar la descripción"
-                        )
-                    }
-                )
-            } catch (e: Exception) {
-                Log.e("POIViewModel", "Error inesperado al generar descripción", e)
+            // Intentar usar Gemini si está disponible
+            val geminiRepo = geminiRepository
+            if (geminiRepo != null) {
+                try {
+                    val result = geminiRepo.generatePOIDescription(nombre, categoria, direccion)
+                    
+                    result.fold(
+                        onSuccess = { description ->
+                            Log.d("POIViewModel", "Descripción generada exitosamente: $description")
+                            _uiState.value = _uiState.value.copy(
+                                isGeneratingDescription = false,
+                                generatedDescription = description,
+                                descriptionGenerationError = null
+                            )
+                        },
+                        onFailure = { exception ->
+                            // Si falla Gemini, generar descripción predeterminada
+                            Log.w("POIViewModel", "Error al generar con Gemini, usando descripción predeterminada", exception)
+                            val defaultDescription = generateDefaultDescription(nombre, categoria, direccion)
+                            _uiState.value = _uiState.value.copy(
+                                isGeneratingDescription = false,
+                                generatedDescription = defaultDescription,
+                                descriptionGenerationError = null
+                            )
+                        }
+                    )
+                } catch (e: Exception) {
+                    // Si hay excepción, generar descripción predeterminada
+                    Log.w("POIViewModel", "Excepción al generar con Gemini, usando descripción predeterminada", e)
+                    val defaultDescription = generateDefaultDescription(nombre, categoria, direccion)
+                    _uiState.value = _uiState.value.copy(
+                        isGeneratingDescription = false,
+                        generatedDescription = defaultDescription,
+                        descriptionGenerationError = null
+                    )
+                }
+            } else {
+                // Si no hay Gemini disponible, generar descripción predeterminada directamente
+                Log.d("POIViewModel", "Gemini no disponible, generando descripción predeterminada")
+                val defaultDescription = generateDefaultDescription(nombre, categoria, direccion)
                 _uiState.value = _uiState.value.copy(
                     isGeneratingDescription = false,
-                    generatedDescription = null,
-                    descriptionGenerationError = "Error inesperado: ${e.message}"
+                    generatedDescription = defaultDescription,
+                    descriptionGenerationError = null
                 )
             }
         }
+    }
+    
+    /**
+     * Genera una descripción predeterminada basada en la información del POI
+     */
+    private fun generateDefaultDescription(
+        nombre: String,
+        categoria: CategoriaPOI,
+        direccion: String?
+    ): String {
+        val categoriaDesc = when (categoria) {
+            CategoriaPOI.COMIDA -> "un establecimiento gastronómico que ofrece una experiencia culinaria única"
+            CategoriaPOI.ENTRETENIMIENTO -> "un lugar de entretenimiento ideal para disfrutar en tu tiempo libre"
+            CategoriaPOI.CULTURA -> "un espacio cultural que enriquece la vida de la comunidad"
+            CategoriaPOI.DEPORTE -> "un centro deportivo donde puedes mantenerte activo y saludable"
+            CategoriaPOI.SALUD -> "un centro de salud comprometido con el bienestar de la comunidad"
+            CategoriaPOI.EDUCACION -> "una institución educativa que contribuye al desarrollo y aprendizaje"
+            CategoriaPOI.TRANSPORTE -> "un punto de transporte que facilita la movilidad urbana"
+            CategoriaPOI.SERVICIOS -> "un centro de servicios que atiende las necesidades de la comunidad"
+            CategoriaPOI.TURISMO -> "un destino turístico que vale la pena visitar"
+            CategoriaPOI.RECARGA_ELECTRICA -> "una estación de recarga eléctrica para vehículos sostenibles"
+            CategoriaPOI.PARQUES -> "un espacio verde perfecto para relajarse y disfrutar de la naturaleza"
+            CategoriaPOI.SHOPPING -> "un centro comercial con diversas opciones de compra y servicios"
+            CategoriaPOI.OTRO -> "un punto de interés destacado en la zona"
+        }
+        
+        val ubicacionDesc = if (direccion != null && direccion.isNotEmpty()) {
+            "Ubicado en $direccion, "
+        } else {
+            ""
+        }
+        
+        return "$nombre es $categoriaDesc. $ubicacionDesc" +
+                "Un lugar que merece ser conocido y visitado por su contribución a la comunidad."
     }
     
     // Limpiar el estado de la descripción generada

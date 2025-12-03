@@ -7,6 +7,9 @@ import com.example.points.repository.LocalPOIRepository
 import com.example.points.repository.LocalSearchRepository
 import com.example.points.repository.WeatherRepository
 import com.example.points.storage.LocalFileStorage
+import com.example.points.sync.data.SyncPreferences
+import com.example.points.sync.repository.RemoteSyncRepository
+import com.example.points.sync.worker.SyncWorkManager
 
 interface AppContainer {
     val weatherRepository: WeatherRepository
@@ -16,5 +19,8 @@ interface AppContainer {
     val localSearchRepository: LocalSearchRepository
     val localFileStorage: LocalFileStorage
     val geminiRepository: GeminiRepository?
+    val syncPreferences: SyncPreferences
+    val remoteSyncRepository: RemoteSyncRepository
+    val syncWorkManager: SyncWorkManager
 }
 

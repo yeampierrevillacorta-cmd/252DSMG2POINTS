@@ -4,6 +4,9 @@ import android.app.Application
 import com.example.points.data.AppContainer
 import com.example.points.data.DefaultAppContainer
 import com.example.points.utils.EnvironmentConfig
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Clase Application personalizada para inicializar configuraciones globales
@@ -34,6 +37,19 @@ class PointsApplication : Application() {
             configInfo.forEach { (key, value) ->
                 android.util.Log.d("PointsApp", "$key: $value")
             }
+        }
+        
+        // Inicializar sincronización automática si está habilitada
+        try {
+            CoroutineScope(Dispatchers.IO).launch {
+                val syncEnabled = container.syncPreferences.getAutoSyncEnabled()
+                if (syncEnabled) {
+                    android.util.Log.d("PointsApp", "Programando sincronización automática...")
+                    container.syncWorkManager.schedulePeriodicSync()
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("PointsApp", "Error al inicializar sincronización", e)
         }
     }
 }

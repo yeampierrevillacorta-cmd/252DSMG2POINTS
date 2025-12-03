@@ -57,6 +57,7 @@ dependencies {
     
     // Google Maps
     implementation("com.google.maps.android:maps-compose:4.4.1")
+    implementation("com.google.maps.android:maps-compose-utils:4.4.1")
     implementation("com.google.android.gms:play-services-maps:18.2.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
     
@@ -128,6 +129,9 @@ dependencies {
     
     // DataStore (alternativa moderna a SharedPreferences)
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+    
+    // WorkManager para tareas en segundo plano (Unidad 7)
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
     
     // Gson para serialización JSON
     implementation("com.google.code.gson:gson:2.10.1")

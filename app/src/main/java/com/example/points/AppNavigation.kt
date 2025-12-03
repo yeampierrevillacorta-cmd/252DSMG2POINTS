@@ -35,6 +35,7 @@ import androidx.navigation.NavHostController
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.text.font.FontWeight
 import com.example.points.viewmodel.UserManagementViewModel
 import com.example.points.viewmodel.UserManagementUiState
@@ -184,9 +185,50 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
         }
         
         composable(AppRoutes.CREATE_INCIDENT) {
+            // Obtener el ViewModel usando el backStackEntry para asegurar que se comparta
+            val backStackEntry = it
+            val viewModel: com.example.points.viewmodel.IncidentViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
+                viewModelStoreOwner = backStackEntry
+            )
+            
+            android.util.Log.d("AppNavigation", "CREATE_INCIDENT - ViewModel obtenido, estado inicial: lat=${viewModel.createIncidentState.value.ubicacion.lat}, lon=${viewModel.createIncidentState.value.ubicacion.lon}")
+            
             com.example.points.screens.CreateIncidentScreen(
                 onBackClick = { navController.popBackStack() },
                 onIncidentCreated = { 
+                    navController.popBackStack()
+                },
+                onSelectLocationClick = {
+                    navController.navigate(AppRoutes.SELECT_LOCATION_MAP)
+                },
+                viewModel = viewModel
+            )
+        }
+        
+        composable(AppRoutes.SELECT_LOCATION_MAP) {
+            // Obtener el ViewModel del backStackEntry de CREATE_INCIDENT para compartir la misma instancia
+            val createIncidentEntry = navController.getBackStackEntry(AppRoutes.CREATE_INCIDENT)
+            val viewModel: com.example.points.viewmodel.IncidentViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
+                viewModelStoreOwner = createIncidentEntry
+            )
+            val createState by viewModel.createIncidentState.collectAsState()
+            
+            // Log para debugging
+            android.util.Log.d("AppNavigation", "SELECT_LOCATION_MAP - Estado actual: lat=${createState.ubicacion.lat}, lon=${createState.ubicacion.lon}")
+            
+            com.example.points.screens.SelectLocationMapScreen(
+                initialLocation = createState.ubicacion.takeIf { 
+                    it.lat != 0.0 && it.lon != 0.0 
+                },
+                onLocationSelected = { ubicacion ->
+                    android.util.Log.d("AppNavigation", "onLocationSelected llamado: lat=${ubicacion.lat}, lon=${ubicacion.lon}, direccion=${ubicacion.direccion}")
+                    viewModel.updateLocation(ubicacion)
+                    // Verificar que se actualizó inmediatamente
+                    val updatedState = viewModel.createIncidentState.value
+                    android.util.Log.d("AppNavigation", "Después de updateLocation: lat=${updatedState.ubicacion.lat}, lon=${updatedState.ubicacion.lon}, direccion=${updatedState.ubicacion.direccion}")
+                    navController.popBackStack()
+                },
+                onCancel = {
                     navController.popBackStack()
                 }
             )
@@ -270,6 +312,22 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 navController = navController
             )
         }
+        
+        composable(AppRoutes.SELECT_LOCATION_MAP_POI) {
+            com.example.points.screens.SelectLocationMapScreen(
+                initialLocation = null,
+                onLocationSelected = { ubicacion ->
+                    // Guardar los datos como valores primitivos (SavedStateHandle no acepta objetos personalizados)
+                    navController.previousBackStackEntry?.savedStateHandle?.set("selectedLat", ubicacion.lat)
+                    navController.previousBackStackEntry?.savedStateHandle?.set("selectedLon", ubicacion.lon)
+                    navController.previousBackStackEntry?.savedStateHandle?.set("selectedDireccion", ubicacion.direccion)
+                    navController.popBackStack()
+                },
+                onCancel = {
+                    navController.popBackStack()
+                }
+            )
+        }
 
         composable(AppRoutes.EVENTS) {
             MainLayout(
@@ -326,6 +384,9 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                     },
                     onEditProfile = {
                         navController.navigate(AppRoutes.EDIT_PROFILE)
+                    },
+                    onSyncSettingsClick = {
+                        navController.navigate(AppRoutes.SYNC_SETTINGS)
                     }
                 )
             }
@@ -360,6 +421,12 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                     }
                 )
             }
+        }
+
+        composable(AppRoutes.INCIDENT_HEATMAP) {
+            com.example.points.screens.IncidentHeatmapScreen(
+                onBackClick = { navController.popBackStack() }
+            )
         }
 
         composable(AppRoutes.ADMIN_USER_MANAGEMENT) {
@@ -414,6 +481,9 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                     },
                     onEditProfile = {
                         navController.navigate("admin_edit_profile")
+                    },
+                    onSyncSettingsClick = {
+                        navController.navigate(AppRoutes.SYNC_SETTINGS)
                     }
                 )
             }
@@ -451,6 +521,17 @@ fun AppNavigation(navController: NavHostController = rememberNavController()) {
                 onProfileClick = { navController.navigate(AppRoutes.PROFILE) }
             ) {
                 NotificationsScreen()
+            }
+        }
+        
+        composable(AppRoutes.SYNC_SETTINGS) {
+            MainLayout(
+                navController = navController,
+                onProfileClick = { navController.navigate(AppRoutes.PROFILE) }
+            ) {
+                com.example.points.sync.screens.SyncSettingsScreen(
+                    onBackClick = { navController.popBackStack() }
+                )
             }
         }
     }

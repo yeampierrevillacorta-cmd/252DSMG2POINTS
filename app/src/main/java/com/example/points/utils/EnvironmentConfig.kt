@@ -88,6 +88,8 @@ object EnvironmentConfig {
             android.util.Log.d("EnvironmentConfig", "FIREBASE_API_KEY: ${if (FIREBASE_API_KEY.isNotEmpty()) "***configurada***" else "❌ FALTA"}")
             android.util.Log.d("EnvironmentConfig", "FIREBASE_APP_ID: ${if (FIREBASE_APP_ID.isNotEmpty()) "***configurada***" else "❌ FALTA"}")
             android.util.Log.d("EnvironmentConfig", "OPENWEATHER_API_KEY: ${if (OPENWEATHER_API_KEY.isNotEmpty()) "***configurada*** (${OPENWEATHER_API_KEY.length} chars)" else "❌ FALTA"}")
+            android.util.Log.d("EnvironmentConfig", "GEMINI_API_KEY: ${if (GEMINI_API_KEY.isNotEmpty()) "***configurada*** (${GEMINI_API_KEY.length} chars)" else "❌ FALTA"}")
+            android.util.Log.d("EnvironmentConfig", "BACKEND_BASE_URL: ${if (BACKEND_BASE_URL.isNotEmpty()) "***configurada***" else "❌ FALTA"}")
             
             // Verificar específicamente la API key de Gemini (CRÍTICO)
             val geminiKey = GEMINI_API_KEY
@@ -178,7 +180,19 @@ object EnvironmentConfig {
     
     // Google Gemini
     val GEMINI_API_KEY: String
-        get() = getEnvValue("GEMINI_API_KEY")
+        get() {
+            val envValue = getEnvValue("GEMINI_API_KEY")
+            // Fallback a la API key local si no está en .env
+            return if (envValue.isEmpty()) {
+                "AIzaSyAA0Bd-Ppbk6GvTwbOPen4q_VuQs35AC5c"
+            } else {
+                envValue
+            }
+        }
+    
+    // Backend URL para sincronización
+    val BACKEND_BASE_URL: String
+        get() = getEnvValue("BACKEND_BASE_URL")
     
     // Environment
     val ENVIRONMENT: String

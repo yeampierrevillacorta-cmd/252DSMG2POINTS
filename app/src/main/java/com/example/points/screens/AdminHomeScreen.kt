@@ -46,6 +46,12 @@ fun AdminHomeScreen(
             route = "admin_incidents"
         ),
         AdminFeatureCard(
+            title = "Mapa de Calor",
+            description = "Visualiza densidad de incidentes",
+            icon = Icons.Default.Whatshot,
+            route = "incident_heatmap"
+        ),
+        AdminFeatureCard(
             title = "Moderar Eventos",
             description = "Gestiona eventos pendientes",
             icon = Icons.Default.Event,
@@ -282,6 +288,7 @@ fun AdminHomeScreen(
                 onClick = {
                     when (feature.route) {
                         "admin_incidents" -> navController.navigate("admin_incidents")
+                        "incident_heatmap" -> navController.navigate("incident_heatmap")
                         "admin_events" -> navController.navigate("admin_events")
                         "admin_pois" -> navController.navigate("admin_pois")
                         "admin_users" -> navController.navigate("admin_users")

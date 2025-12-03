@@ -72,8 +72,8 @@ fun Barras(data: List<IncidentesPorTipo>) {
     
     BarChart(
         modifier = Modifier
-            .padding(30.dp, 80.dp)
-            .height(300.dp),
+            .padding(start = 50.dp, end = 50.dp, top = 20.dp, bottom = 100.dp)
+            .height(350.dp),
         labelDrawer = SimpleValueDrawer(
             drawLocation = SimpleValueDrawer.DrawLocation.XAxis
         ),

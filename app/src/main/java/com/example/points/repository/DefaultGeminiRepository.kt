@@ -62,25 +62,21 @@ class DefaultGeminiRepository(
             Result.success(generatedText.trim())
             
         } catch (e: IllegalStateException) {
-            Log.e(TAG, "Error: API key no configurada", e)
-            Result.failure(e)
+            Log.w(TAG, "API key no configurada, generando descripción automática", e)
+            // Generar descripción automática cuando no hay API key
+            Result.success(generateDefaultDescription(nombre, categoria, direccion))
         } catch (e: HttpException) {
-            Log.e(TAG, "Error HTTP al generar descripción: ${e.code()}", e)
-            val errorMessage = when (e.code()) {
-                400 -> "Solicitud inválida a Gemini API"
-                401 -> "API key inválida o no autorizada"
-                403 -> "Acceso denegado a Gemini API"
-                429 -> "Límite de solicitudes excedido. Intenta más tarde"
-                500 -> "Error del servidor de Gemini API"
-                else -> "Error del servidor: ${e.message()}"
-            }
-            Result.failure(Exception(errorMessage))
+            Log.w(TAG, "Error HTTP al generar descripción: ${e.code()}, generando descripción automática", e)
+            // Generar descripción automática cuando hay error HTTP
+            Result.success(generateDefaultDescription(nombre, categoria, direccion))
         } catch (e: IOException) {
-            Log.e(TAG, "Error de red al generar descripción", e)
-            Result.failure(Exception("Error de conexión. Verifica tu conexión a internet."))
+            Log.w(TAG, "Error de red al generar descripción, generando descripción automática", e)
+            // Generar descripción automática cuando hay error de conexión
+            Result.success(generateDefaultDescription(nombre, categoria, direccion))
         } catch (e: Exception) {
-            Log.e(TAG, "Error inesperado al generar descripción", e)
-            Result.failure(Exception("Error al generar descripción: ${e.message}"))
+            Log.w(TAG, "Error inesperado al generar descripción, generando descripción automática", e)
+            // Generar descripción automática cuando hay cualquier otro error
+            Result.success(generateDefaultDescription(nombre, categoria, direccion))
         }
     }
     
@@ -106,6 +102,40 @@ class DefaultGeminiRepository(
             
             Solo genera la descripción, sin títulos ni encabezados.
         """.trimIndent()
+    }
+    
+    /**
+     * Genera una descripción automática basada en la información del POI
+     */
+    private fun generateDefaultDescription(
+        nombre: String,
+        categoria: CategoriaPOI,
+        direccion: String?
+    ): String {
+        val categoriaDesc = when (categoria) {
+            CategoriaPOI.COMIDA -> "un establecimiento gastronómico que ofrece una experiencia culinaria única"
+            CategoriaPOI.ENTRETENIMIENTO -> "un lugar de entretenimiento ideal para disfrutar en tu tiempo libre"
+            CategoriaPOI.CULTURA -> "un espacio cultural que enriquece la vida de la comunidad"
+            CategoriaPOI.DEPORTE -> "un centro deportivo donde puedes mantenerte activo y saludable"
+            CategoriaPOI.SALUD -> "un centro de salud comprometido con el bienestar de la comunidad"
+            CategoriaPOI.EDUCACION -> "una institución educativa que contribuye al desarrollo y aprendizaje"
+            CategoriaPOI.TRANSPORTE -> "un punto de transporte que facilita la movilidad urbana"
+            CategoriaPOI.SERVICIOS -> "un centro de servicios que atiende las necesidades de la comunidad"
+            CategoriaPOI.TURISMO -> "un destino turístico que vale la pena visitar"
+            CategoriaPOI.RECARGA_ELECTRICA -> "una estación de recarga eléctrica para vehículos sostenibles"
+            CategoriaPOI.PARQUES -> "un espacio verde perfecto para relajarse y disfrutar de la naturaleza"
+            CategoriaPOI.SHOPPING -> "un centro comercial con diversas opciones de compra y servicios"
+            CategoriaPOI.OTRO -> "un punto de interés destacado en la zona"
+        }
+        
+        val ubicacionDesc = if (direccion != null && direccion.isNotEmpty()) {
+            "Ubicado en $direccion, "
+        } else {
+            ""
+        }
+        
+        return "$nombre es $categoriaDesc. $ubicacionDesc" +
+                "Un lugar que merece ser conocido y visitado por su contribución a la comunidad."
     }
 }
 

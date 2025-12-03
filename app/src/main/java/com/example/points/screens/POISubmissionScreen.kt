@@ -28,6 +28,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import android.Manifest
+import android.content.ContentValues
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import com.example.points.components.OptimizedAsyncImage
+import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.tasks.await
 import com.example.points.R
 import com.example.points.models.CategoriaPOI
 import com.example.points.models.CaracteristicaPOI
@@ -42,12 +54,15 @@ import com.example.points.components.PointsFeedback
 import com.example.points.utils.getCategoryIcon
 import com.example.points.services.LocationService
 import com.example.points.ui.theme.PointsTheme
+import com.example.points.constants.AppRoutes
 import com.google.firebase.Timestamp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun POISubmissionScreen(
     navController: NavController,
+    initialUbicacion: Ubicacion? = null,
+    onUbicacionSelected: (Ubicacion) -> Unit = {},
     viewModel: PointOfInterestViewModel = viewModel(factory = PointOfInterestViewModel.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -69,9 +84,35 @@ fun POISubmissionScreen(
     var imagenes by remember { mutableStateOf<List<String>>(emptyList()) }
     
     // Ubicación del usuario
-    var ubicacion by remember { mutableStateOf<Ubicacion?>(null) }
+    var ubicacion by remember(initialUbicacion) { 
+        mutableStateOf<Ubicacion?>(initialUbicacion) 
+    }
     var isLoadingLocation by remember { mutableStateOf(true) }
     var shouldRequestLocation by remember { mutableStateOf(true) }
+    
+    // Observar cambios en la ubicación desde la navegación
+    // SavedStateHandle solo acepta tipos primitivos, así que reconstruimos el objeto
+    val savedLat = navController.currentBackStackEntry?.savedStateHandle?.get<Double>("selectedLat")
+    val savedLon = navController.currentBackStackEntry?.savedStateHandle?.get<Double>("selectedLon")
+    val savedDireccion = navController.currentBackStackEntry?.savedStateHandle?.get<String>("selectedDireccion")
+    
+    LaunchedEffect(savedLat, savedLon, savedDireccion) {
+        if (savedLat != null && savedLon != null) {
+            val nuevaUbicacion = Ubicacion(
+                lat = savedLat,
+                lon = savedLon,
+                direccion = savedDireccion ?: ""
+            )
+            ubicacion = nuevaUbicacion
+            direccion = nuevaUbicacion.direccion
+            onUbicacionSelected(nuevaUbicacion)
+            
+            // Limpiar los valores guardados
+            navController.currentBackStackEntry?.savedStateHandle?.remove<Double>("selectedLat")
+            navController.currentBackStackEntry?.savedStateHandle?.remove<Double>("selectedLon")
+            navController.currentBackStackEntry?.savedStateHandle?.remove<String>("selectedDireccion")
+        }
+    }
     
     // Horarios
     var horarios by remember { mutableStateOf<List<Horario>>(emptyList()) }
@@ -131,6 +172,14 @@ fun POISubmissionScreen(
             }
         )
         
+        // Pegar automáticamente la descripción generada en el campo
+        LaunchedEffect(uiState.generatedDescription) {
+            uiState.generatedDescription?.let { generatedDesc ->
+                descripcion = generatedDesc
+                viewModel.clearGeneratedDescription()
+            }
+        }
+        
         if (uiState.submitSuccess) {
             PointsFeedback(
                 message = "¡Punto de interés enviado exitosamente! Será revisado por nuestros moderadores antes de ser publicado.",
@@ -173,6 +222,9 @@ fun POISubmissionScreen(
                                 isLoadingLocation = true
                                 shouldRequestLocation = true
                             }
+                        },
+                        onSelectLocationClick = {
+                            navController.navigate(AppRoutes.SELECT_LOCATION_MAP_POI)
                         }
                     )
                 }
@@ -193,7 +245,8 @@ fun POISubmissionScreen(
                 item {
                     ImagesSection(
                         imagenes = imagenes,
-                        onImagenesChange = { imagenes = it }
+                        onImagenesChange = { imagenes = it },
+                        context = context
                     )
                 }
                 
@@ -260,22 +313,6 @@ fun POISubmissionScreen(
                             message = error,
                             type = "error",
                             onRetry = { viewModel.clearError() }
-                        )
-                    }
-                }
-                
-                // Mostrar descripción generada si existe
-                uiState.generatedDescription?.let { generatedDesc ->
-                    item {
-                        GeneratedDescriptionCard(
-                            description = generatedDesc,
-                            onUseDescription = {
-                                descripcion = generatedDesc
-                                viewModel.clearGeneratedDescription()
-                            },
-                            onDismiss = {
-                                viewModel.clearGeneratedDescription()
-                            }
                         )
                     }
                 }
@@ -561,7 +598,8 @@ fun LocationSection(
     ubicacion: Ubicacion?,
     onUbicacionChange: (Ubicacion?) -> Unit,
     isLoadingLocation: Boolean,
-    onRequestLocation: () -> Unit
+    onRequestLocation: () -> Unit,
+    onSelectLocationClick: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -598,6 +636,38 @@ fun LocationSection(
                 Spacer(modifier = Modifier.height(16.dp))
             }
             
+            // Mostrar dirección si hay ubicación seleccionada
+            if (ubicacion != null && ubicacion.direccion.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Filled.LocationOn,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = ubicacion.direccion,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+            
             OutlinedTextField(
                 value = direccion,
                 onValueChange = onDireccionChange,
@@ -609,103 +679,40 @@ fun LocationSection(
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // Coordenadas (solo si se obtuvo la ubicación)
-            if (ubicacion != null) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = ubicacion.lat.toString(),
-                        onValueChange = { 
-                            it.toDoubleOrNull()?.let { lat ->
-                                onUbicacionChange(ubicacion.copy(lat = lat))
-                            }
-                        },
-                        label = { Text("Latitud") },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-                    )
-                    
-                    OutlinedTextField(
-                        value = ubicacion.lon.toString(),
-                        onValueChange = { 
-                            it.toDoubleOrNull()?.let { lon ->
-                                onUbicacionChange(ubicacion.copy(lon = lon))
-                            }
-                        },
-                        label = { Text("Longitud") },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Text(
-                    text = "✅ Ubicación obtenida automáticamente",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            } else if (!isLoadingLocation) {
-                // Si no se pudo obtener la ubicación, mostrar campos vacíos
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = "",
-                        onValueChange = { 
-                            it.toDoubleOrNull()?.let { lat ->
-                                onUbicacionChange(Ubicacion(lat = lat, lon = 0.0, direccion = ""))
-                            }
-                        },
-                        label = { Text("Latitud") },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        placeholder = { Text("Ej: -12.0464") }
-                    )
-                    
-                    OutlinedTextField(
-                        value = "",
-                        onValueChange = { 
-                            it.toDoubleOrNull()?.let { lon ->
-                                onUbicacionChange(Ubicacion(lat = 0.0, lon = lon, direccion = ""))
-                            }
-                        },
-                        label = { Text("Longitud") },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        placeholder = { Text("Ej: -77.0428") }
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Text(
-                    text = "⚠️ No se pudo obtener tu ubicación automáticamente. Verifica que el GPS esté activado y los permisos de ubicación otorgados.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            OutlinedButton(
-                onClick = onRequestLocation,
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !isLoadingLocation
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (isLoadingLocation) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp
+                // Botón para seleccionar en el mapa
+                OutlinedButton(
+                    onClick = onSelectLocationClick,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        Icons.Filled.LocationOn,
+                        contentDescription = null
                     )
-                } else {
-                    Icon(Icons.Filled.MyLocation, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Seleccionar en mapa")
                 }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(if (isLoadingLocation) "Obteniendo ubicación..." else "Usar ubicación actual")
+                
+                // Botón para usar ubicación actual
+                OutlinedButton(
+                    onClick = onRequestLocation,
+                    modifier = Modifier.weight(1f),
+                    enabled = !isLoadingLocation
+                ) {
+                    if (isLoadingLocation) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(Icons.Filled.MyLocation, contentDescription = null)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(if (isLoadingLocation) "Obteniendo..." else "Mi ubicación")
+                }
             }
         }
     }
@@ -1061,7 +1068,8 @@ fun SubmitButton(
 @Composable
 fun ImagesSection(
     imagenes: List<String>,
-    onImagenesChange: (List<String>) -> Unit
+    onImagenesChange: (List<String>) -> Unit,
+    context: android.content.Context
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -1087,21 +1095,129 @@ fun ImagesSection(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Botón para agregar imagen
-            OutlinedButton(
-                        onClick = {
-                            // TODO: Implementar selector de imágenes real
-                            // Por ahora, no se pueden agregar imágenes hasta implementar el selector
-                        },
-                modifier = Modifier.fillMaxWidth()
+            // Estado para URI temporal de foto
+            var photoUri by remember { mutableStateOf<Uri?>(null) }
+            
+            // Función helper para subir imagen y agregar a la lista
+            fun uploadImageAndAddToList(uri: Uri) {
+                val storage = FirebaseStorage.getInstance()
+                val storageRef = storage.reference
+                val imageRef = storageRef.child("pois/${System.currentTimeMillis()}.jpg")
+                
+                imageRef.putFile(uri)
+                    .addOnSuccessListener {
+                        imageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                            onImagenesChange(imagenes + downloadUri.toString())
+                        }
+                    }
+                    .addOnFailureListener {
+                        // Manejar error
+                    }
+            }
+            
+            // Launcher para seleccionar imagen de galería
+            val imagePickerLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.GetContent()
+            ) { uri: Uri? ->
+                uri?.let {
+                    // Subir imagen a Firebase Storage y agregar URL a la lista
+                    uploadImageAndAddToList(it)
+                }
+            }
+            
+            // Launcher para tomar foto con la cámara
+            val cameraLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.TakePicture()
+            ) { success ->
+                if (success && photoUri != null) {
+                    photoUri?.let {
+                        uploadImageAndAddToList(it)
+                    }
+                }
+            }
+            
+            // Launcher para permisos de cámara
+            val cameraPermissionLauncher = rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestPermission()
+            ) { isGranted ->
+                if (isGranted) {
+                    // Crear URI para la foto
+                    val contentValues = ContentValues().apply {
+                        put(MediaStore.MediaColumns.DISPLAY_NAME, "poi_photo_${System.currentTimeMillis()}.jpg")
+                        put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            put(MediaStore.MediaColumns.RELATIVE_PATH, "Pictures/Points")
+                        }
+                    }
+                    
+                    val uri = context.contentResolver.insert(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        contentValues
+                    )
+                    photoUri = uri
+                    uri?.let { cameraLauncher.launch(it) }
+                }
+            }
+            
+            // Función para tomar foto
+            fun takePhoto() {
+                val hasCameraPermission = ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.CAMERA
+                ) == PackageManager.PERMISSION_GRANTED
+                
+                if (hasCameraPermission) {
+                    // Crear URI para la foto
+                    val contentValues = ContentValues().apply {
+                        put(MediaStore.MediaColumns.DISPLAY_NAME, "poi_photo_${System.currentTimeMillis()}.jpg")
+                        put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            put(MediaStore.MediaColumns.RELATIVE_PATH, "Pictures/Points")
+                        }
+                    }
+                    
+                    val uri = context.contentResolver.insert(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        contentValues
+                    )
+                    photoUri = uri
+                    uri?.let { cameraLauncher.launch(it) }
+                } else {
+                    cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                }
+            }
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    Icons.Filled.AddPhotoAlternate,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Agregar Imagen")
+                // Botón para tomar foto
+                OutlinedButton(
+                    onClick = { takePhoto() },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        Icons.Filled.CameraAlt,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Tomar foto")
+                }
+                
+                // Botón para seleccionar de galería
+                OutlinedButton(
+                    onClick = { imagePickerLauncher.launch("image/*") },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        Icons.Filled.Image,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Galería")
+                }
             }
             
             // Mostrar imágenes seleccionadas
@@ -1117,13 +1233,10 @@ fun ImagesSection(
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Box {
-                                AsyncImage(
-                                    model = imagenes[index],
+                                OptimizedAsyncImage(
+                                    imageUrl = imagenes[index],
                                     contentDescription = "Imagen ${index + 1}",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop,
-                                    error = painterResource(id = R.drawable.placeholder_poi),
-                                    placeholder = painterResource(id = R.drawable.placeholder_poi)
+                                    modifier = Modifier.fillMaxSize()
                                 )
                                 
                                 // Botón para eliminar imagen

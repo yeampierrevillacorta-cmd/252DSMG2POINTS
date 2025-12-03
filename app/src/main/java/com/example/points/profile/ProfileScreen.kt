@@ -33,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 fun ProfileScreen(
     onSignOut: () -> Unit,
     onEditProfile: () -> Unit,
+    onSyncSettingsClick: (() -> Unit)? = null,
     viewModel: ProfileViewModel = viewModel()
 ) {
     val profile by viewModel.profile.collectAsState()
@@ -263,6 +264,30 @@ fun ProfileScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+        
+        // Botón de sincronización
+        if (onSyncSettingsClick != null) {
+            OutlinedButton(
+                onClick = onSyncSettingsClick,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    Icons.Default.Sync,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Sincronización",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Medium
+                    )
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+        }
 
         // Botón de cerrar sesión
         OutlinedButton(

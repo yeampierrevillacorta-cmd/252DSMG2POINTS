@@ -94,12 +94,12 @@ fun Pie(data: List<IncidentesPorTipo>) {
     
     Column(
         modifier = Modifier
-            .padding(horizontal = 2.dp, vertical = 16.dp),
+            .padding(horizontal = 16.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         PieChart(
             modifier = Modifier
-                .padding(30.dp, 80.dp)
+                .padding(horizontal = 20.dp, vertical = 20.dp)
                 .height(300.dp),
             sliceDrawer = SimpleSliceDrawer(
                 sliceThickness = 100f
@@ -108,28 +108,39 @@ fun Pie(data: List<IncidentesPorTipo>) {
                 slices = slices
             )
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
         // Leyenda del Pie - usar el mismo color que el slice correspondiente
-        datos.forEachIndexed { index, it ->
-            val porcentaje = if (total > 0) {
-                (it.cantidad / total * 100).toInt()
-            } else {
-                0
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(vertical = 4.dp)
-            ) {
-                Box(
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            datos.forEachIndexed { index, it ->
+                val porcentaje = if (total > 0) {
+                    (it.cantidad / total * 100).toInt()
+                } else {
+                    0
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .size(16.dp)
-                        .background(
-                            coloresAsignados[index],
-                            shape = CircleShape
-                        )
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("${it.descripcion}: ${it.cantidad} (${porcentaje}%)")
+                        .padding(vertical = 6.dp)
+                        .padding(horizontal = 8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(18.dp)
+                            .background(
+                                coloresAsignados[index],
+                                shape = CircleShape
+                            )
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "${it.descripcion}: ${it.cantidad} (${porcentaje}%)",
+                        fontSize = 14.sp,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
     }
